@@ -1,0 +1,277 @@
+/* File: wp-content/themes/grand-sunrise/css/car-lookup.css */
+/* Adjust styles for 3 vehicle comparison */
+
+:root {
+  --ddpc-primary:   #1a3b5c; /* pick your logo’s darkest hue */
+  --ddpc-accent:    #f2a541; /* your secondary highlight */
+  --ddpc-bg:        #ffffff;
+  --ddpc-border:    #e0e0e0;
+  --ddpc-text:      #333333;
+  --ddpc-muted:     #666666;
+}
+.car-lookup-app {
+  background-color: var(--ddpc-bg);
+  border-color:     var(--ddpc-border);
+  color:            var(--ddpc-text);
+}
+/* Buttons */
+.lookup-button {
+  background-color: var(--ddpc-primary);
+}
+.lookup-button:hover {
+  background-color: var(--ddpc-accent);
+}
+#add-vehicle-btn { background-color: var(--ddpc-accent); }
+
+/* --- General Container Styling --- */
+.car-lookup-app { font-family: sans-serif; border: 1px solid #e0e0e0; padding: 20px; background-color: #f9f9f9; border-radius: 8px; max-width: 1100px; margin: 20px auto; } /* Increased max-width slightly */
+.car-lookup-app h2, .car-lookup-app h3, .car-lookup-app h4 { color: #333; margin-top: 0; margin-bottom: 15px; }
+.car-lookup-app h4 { margin-top: 20px; }
+
+/* --- Forms Styling --- */
+.lookup-forms {
+    margin-bottom: 20px;
+    display: flex; /* Use flexbox for forms */
+    flex-wrap: wrap; /* Allow wrapping */
+    gap: 15px; /* Space between forms */
+}
+.vehicle-form {
+    border: 1px solid #ccc; padding: 15px 20px; background-color: #fff; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.3s ease-in-out;
+    flex: 1 1 300px; /* Allow forms to grow, shrink, base width 300px */
+    min-width: 280px; /* Slightly smaller min-width */
+    margin-bottom: 0; /* Remove bottom margin when using gap */
+    position: relative; /* For positioning remove button */
+    padding-bottom: 50px; /* Add padding for remove button */
+}
+.vehicle-form h3 { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+.vehicle-form div { margin-bottom: 10px; }
+.vehicle-form label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; color: #555; }
+.vehicle-form select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background-color: #fff; font-size: 1em; }
+.vehicle-form select:disabled { background-color: #f0f0f0; cursor: not-allowed; color: #888; }
+
+/* --- Controls Styling --- */
+.lookup-controls { margin-bottom: 25px; padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; flex-wrap: wrap; } /* Use flex for button layout */
+.lookup-controls button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.95em; /* margin-right: 10px; (replaced by gap) */ transition: background-color 0.2s ease; }
+#add-vehicle-btn { background-color: #28a745; color: white; }
+#add-vehicle-btn:hover { background-color: #218838; }
+
+/* Style for remove buttons inside forms */
+.remove-vehicle-button {
+    background-color: #dc3545; color: white;
+    position: absolute; /* Position inside the form */
+    bottom: 15px;
+    right: 20px;
+    padding: 6px 10px;
+    font-size: 0.85em;
+}
+.remove-vehicle-button:hover { background-color: #c82333; }
+
+/* Style for Reset All button */
+#reset-all-btn {
+    background-color: #6c757d; /* Grey */
+    color: white;
+    margin-left: auto; /* Push reset button to the right */
+}
+#reset-all-btn:hover { background-color: #5a6268; }
+
+.lookup-button { background-color: #007bff; color: white; padding: 12px 18px; font-size: 1em; font-weight: bold; margin-top: 10px; width: calc(100% - 130px); /* Adjust width to leave space for remove button if needed */ }
+.lookup-button:hover:not(:disabled) { background-color: #0056b3; }
+.lookup-button:disabled { background-color: #6c757d; cursor: not-allowed; opacity: 0.7; }
+
+/* --- Results Area Styling --- */
+.results-container { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; background-color: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+#results-placeholder { color: #666; font-style: italic; }
+
+/* --- Vehicle Thumbnail Image Styling --- */
+.vehicle-photo-wrapper {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.vehicle-photo,
+.cmp-photo {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.comparison-stats-table th .cmp-photo {
+  display: block;
+  margin: 0 auto 0.25rem;
+  width: 60px;
+  height: auto;
+}
+
+/* Stats List Styling (SINGLE VIEW) */
+#single-vehicle-stats {}
+#single-vehicle-stats .stat-group { margin-bottom: 15px; }
+#single-vehicle-stats .stat-group-title { font-size: 1.15em; font-weight: bold; color: #111; margin-top: 10px; margin-bottom: 10px; padding-bottom: 3px; }
+#single-vehicle-stats .stat-group:first-child .stat-group-title { margin-top: 0; }
+#single-vehicle-stats .stat-group ul { list-style: none; padding: 0; margin: 0; }
+#single-vehicle-stats .stat-group ul li { padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 0.95em; line-height: 1.4; }
+#single-vehicle-stats .stat-group ul li:last-child { border-bottom: none; }
+#single-vehicle-stats .stat-group ul li strong { color: #333; min-width: 150px; display: inline-block; margin-right: 10px; vertical-align: top; }
+
+/* Narrative Styling */
+.results-container .narrative-content, #single-vehicle-narrative { margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; line-height: 1.6; font-size: 0.95em; color: #444; }
+
+/* ========================================= */
+/* --- THEME CONTROLS STYLES --- */
+/* ========================================= */
+.theme-controls { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.theme-controls span { font-weight: bold; margin-right: 5px; color: #555; }
+.theme-button { padding: 6px 12px; font-size: 0.9em; border: 1px solid #ccc; background-color: #fff; color: #333; border-radius: 4px; cursor: pointer; transition: all 0.2s ease; }
+.theme-button:hover { background-color: #f0f0f0; border-color: #bbb; }
+.theme-button.active { background-color: #007bff; color: white; border-color: #0056b3; font-weight: bold; }
+
+/* ========================================= */
+/* --- COMPARISON VIEW STYLES --- */
+/* ========================================= */
+/* No change needed for .lookup-forms in comparison view, already flex */
+/* .car-lookup-app.comparison-view .vehicle-form { flex: 1 1 300px; min-width: 280px; } */ /* Already set above */
+
+.car-lookup-app.comparison-view .comparison-header { display: flex; gap: 15px; margin-bottom: 0; } /* Reduced gap */
+.car-lookup-app.comparison-view .comparison-header h3 { flex: 1; text-align: center; font-size: 1.05em; background-color: #f0f0f0; border-bottom: 2px solid #ccc; margin-bottom: 0; padding: 8px 5px; border: 1px solid #e0e0e0; border-bottom-width: 2px; border-radius: 4px 4px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* Adjusted padding/size, added ellipsis */
+
+/* Styles for the comparison stats table */
+.car-lookup-app.comparison-view .comparison-stats { margin-bottom: 15px; overflow-x: auto; margin-top: 0; }
+.car-lookup-app.comparison-view .comparison-stats-table { width: 100%; border-collapse: collapse; font-size: 0.9em; } /* Slightly smaller font */
+.car-lookup-app.comparison-view .comparison-stats-table th,
+.car-lookup-app.comparison-view .comparison-stats-table td { padding: 6px 8px; border: 1px solid #e0e0e0; text-align: left; vertical-align: top; line-height: 1.4; } /* Reduced padding */
+.car-lookup-app.comparison-view .comparison-stats-table thead th { background-color: #f8f8f8; font-weight: bold; white-space: nowrap; }
+.car-lookup-app.comparison-view .comparison-stats-table td:first-child { font-weight: bold; color: #333; /* min-width: 140px; */ /* Adjusted min-width if needed */ }
+.car-lookup-app.comparison-view .comparison-stats-table tbody tr:nth-child(odd) { background-color: #fdfdfd; }
+
+/* Styles for table group header row */
+.car-lookup-app.comparison-view .comparison-stats-table th.stat-group-header { background-color: #e9ecef; color: #333; text-align: center; font-weight: bold; font-size: 1.0em; padding: 8px; border-top: 2px solid #ccc; border-bottom-width: 1px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; }
+.car-lookup-app.comparison-view .comparison-stats-table th[colspan="4"] {} /* Updated colspan */
+
+/* Individual Narrative Styling in Comparison */
+.car-lookup-app.comparison-view .comparison-narratives-individual { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; } /* Allow wrapping */
+.car-lookup-app.comparison-view .comparison-narratives-individual > div { flex: 1 1 280px; /* Allow flex basis */ padding: 15px; border: 1px solid #e0e0e0; border-radius: 4px; background-color: #fdfdfd; min-width: 280px; }
+.car-lookup-app.comparison-view .comparison-narratives-individual h4 { margin-bottom: 8px; font-size: 1em; color: #555; }
+
+/* Hide/Show Logic */
+.car-lookup-app.comparison-view #single-vehicle-output { display: none; }
+.car-lookup-app:not(.comparison-view) #comparison-output { display: none; }
+
+/* --- Loading / Error Message Styling --- */
+#loading-indicator { padding: 15px; background-color: #e9ecef; border: 1px solid #ced4da; text-align: center; color: #495057; border-radius: 4px; margin-top: 15px; }
+#error-message { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px; margin-top: 15px; }
+
+/* ensure full width and fixed layout for comparison table */
+.comparison-stats-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* stats column fixed width */
+.comparison-stats-table th.stat-col-header,
+.comparison-stats-table td:first-child {
+  width: 150px;  /* adjust to your preference */
+}
+
+/* remaining columns share the rest of the space equally */
+.comparison-stats-table th.vehicle-col-header,
+.comparison-stats-table td:not(:first-child) {
+  /* no explicit width → browser will divide remaining space evenly */
+}
+
+/* tweak vehicle column photo and title */
+.vehicle-col-header .cmp-photo {
+  display: block;
+  margin: 0 auto 0.5rem;
+  max-width: 80px;
+  height: auto;
+}
+.vehicle-col-header .cmp-title {
+  text-align: center;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Vehicle Image Feedback UI --- */
+.vehicle-image-feedback {
+  margin: 18px 0 0 0;
+  padding: 16px 18px;
+  background: #f8fafc;
+  border: 1px solid var(--ddpc-border);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  max-width: 420px;
+  font-size: 1em;
+  color: var(--ddpc-text);
+}
+.vehicle-image-feedback .feedback-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--ddpc-primary);
+  font-size: 1.05em;
+}
+.vehicle-image-feedback .feedback-btn {
+  display: inline-block;
+  margin-right: 10px;
+  margin-bottom: 6px;
+  padding: 8px 16px;
+  font-size: 1em;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  background: var(--ddpc-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.vehicle-image-feedback .feedback-btn:last-child {
+  margin-right: 0;
+}
+.vehicle-image-feedback .feedback-btn:hover,
+.vehicle-image-feedback .feedback-btn:focus {
+  background: var(--ddpc-primary);
+  outline: none;
+}
+.vehicle-image-feedback .feedback-btn:disabled {
+  background: #ccc;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.vehicle-image-feedback .feedback-thankyou {
+  margin-top: 10px;
+  color: #218838;
+  background: #eafbe7;
+  border: 1px solid #b6e2c6;
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-weight: 500;
+  font-size: 1em;
+  display: inline-block;
+}
+.vehicle-image-feedback .feedback-error {
+  margin-top: 10px;
+  color: #721c24;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-weight: 500;
+  font-size: 1em;
+  display: inline-block;
+}
+.vehicle-image-feedback .feedback-btn[aria-pressed="true"] {
+  background: var(--ddpc-primary);
+  box-shadow: 0 2px 6px rgba(26,59,92,0.08);
+}
+@media (max-width: 600px) {
+  .vehicle-image-feedback {
+    padding: 12px 6px;
+    max-width: 100%;
+  }
+  .vehicle-image-feedback .feedback-btn {
+    width: 100%;
+    margin: 0 0 8px 0;
+    font-size: 1em;
+  }
+}
