@@ -74,8 +74,9 @@ This plan outlines the sequential phases and key deliverables to revamp the car 
     - `EPA city/highway eMPG` (2.13%)
     - `EPA electricity range (mi)` (2.03%)
     - `EPA kWh/100 mi` (1.88%)
-    - `EPA time to charge batter (at240V) (hr)` (1.96%)
+    - `EPA time to charge battery (at240V) (hr)` (1.96%)
     - `Battery capacity (kWh)` (1.27%)
+
 2. [**Dimensions Tool (Free)**](ddpc_tool_dimensions_v1.md)
     ## Dimensions Tool
     [[ddpc_site_dimensions]]
@@ -156,6 +157,7 @@ This plan outlines the sequential phases and key deliverables to revamp the car 
     - `Doors` (100%)
     - `Front track (in)` (37.70%)
     - `Rear track (in)` (37.59%)
+
 3. [**Performance/Efficiency Tool (Free)**](ddpc_tool_performance_v1.md)
     ## Performance & Efficiency Tool
     [[ddpc_site_performance]]
@@ -252,10 +254,12 @@ This plan outlines the sequential phases and key deliverables to revamp the car 
     - `EPA city/highway eMPG` (2.13%) - display only
     - `EPA electricity range (mi)` (2.03%) - display only
     - `EPA kWh/100 mi` (1.88%) - display only
-    - `EPA time to charge batter (at240V) (hr)` (1.96%) - display only
+    - `EPA time to charge battery (at240V) (hr)` (1.96%) - display only
     - `Battery capacity (kWh)` (1.27%) - display only
+
 4. [**User Accounts & Saving (Free)**](ddpc_tool_user_accounts_v1.md)
     **Function:** Allows users to create a free account to save vehicles, search results from the tools, and eventually, their "MyDDPC Garage" data. Login is required to save any information.
+
 5. [**MyDDPC Garage (Paid Tier)**](ddpc_tool_my_garage_v1.md)
     ## My Garage Tool
     [[ddpc_site_my_garage]]
@@ -357,6 +361,7 @@ This plan outlines the sequential phases and key deliverables to revamp the car 
 
 ### Proposed Site Structure & Page Layout
 To maintain clarity and ease of navigation, a minimal number of distinct pages is recommended:
+
 1. [**Homepage**](ddpc_site_homepage.md)
     Overview of MyDDPC, entry points to the tools, and a clear call-to-action for "MyDDPC Garage."
     ### Prompt for AI Wireframe Generator ("MyDDPC Homepage Wireframe")
@@ -437,6 +442,7 @@ To maintain clarity and ease of navigation, a minimal number of distinct pages i
     - Incorporate subtle automotive design cues without being cluttered.
     - Ensure strong visual hierarchy to guide the user's eye through the page.
     - Call to action buttons should be prominent and clear.
+
 2. [**Discover Tool Page**](ddpc_site_discover.md)
     ### Prompt for "Google Stitch" (AI Wireframe UI Site Page Generator)
 
@@ -464,6 +470,7 @@ To maintain clarity and ease of navigation, a minimal number of distinct pages i
     - Place a 'Save Search' button (perhaps with a star icon) near the top of the results area, intended for logged-in users.
 
     The overall aesthetic should be functional, intuitive, and geared towards easy data consumption, with clear visual hierarchy. Use placeholder icons where appropriate (e.g., for sorting, saving)."
+
 3. [**Dimensions Tool Page**](ddpc_site_dimensions.md)
     ### Prompt for AI Wireframe Generator ("MyDDPC Dimensions Tool Wireframe with Diagram")
 
@@ -513,6 +520,7 @@ To maintain clarity and ease of navigation, a minimal number of distinct pages i
     - A 'Reset/Clear Vehicles' button in the selection area.
 
     The focus of this revised prompt is to integrate a clear, top-down visual representation of the vehicle's physical size and turning ability, directly addressing the core questions of the "Dimensions" tool. Ensure the AI understands the need for labeled dimensions within or near the diagram."
+
 4. [**Performance/Efficiency Tool Page**](ddpc_site_performance.md)
     ### Prompt for AI Wireframe Generator ("MyDDPC Performance/Efficiency Tool Wireframe")
 
@@ -671,6 +679,7 @@ To maintain clarity and ease of navigation, a minimal number of distinct pages i
     - The 20/80 split should be visually balanced. The sidebar should feel like a control panel, and the body like a results dashboard.
     - Graphs should be the visual highlight in H2H mode, designed for easy comparison.
     - Responsiveness: The layout should adapt gracefully to smaller screens. For mobile, the sidebar might stack above the main content or become a collapsible menu. H2H data tables might need to become scrollable or stack vertically. Graphs should resize appropriately.
+
 5. [**User Account Page**](ddpc_site_user_account.md)
     ### Prompt for AI Wireframe Generator ("MyDDPC Free User Account Page Wireframe")
 
@@ -739,6 +748,7 @@ To maintain clarity and ease of navigation, a minimal number of distinct pages i
     - Upgrade prompts should be noticeable but not overly intrusive for the free user experience.
     - Maintain consistency with the overall MyDDPC site design (fonts, colors, button styles).
     - Ensure forms are well-structured and input fields are clearly labeled.
+
 6. [**MyDDPC Garage Dashboard (Paid)**](ddpc_site_my_garage.md)
     The central hub for paid subscribers, managing their saved vehicles, garage dimensions, build lists, and modified vehicle data.
     [ddpc_garage_pages](ddpc_garage_pages.md)
@@ -805,6 +815,7 @@ To maintain clarity and ease of navigation, a minimal number of distinct pages i
     - Tables should be sortable and potentially filterable.
     - Consistent button styles for actions like 'Save', 'Edit', 'Add', 'Delete'.
     - Visual hierarchy to guide the user through the dense information.
+    
 7. [**Static Info Page**](ddpc_site_static_info.md)
     A static page for "housekeeping" items like:
     - About Us
