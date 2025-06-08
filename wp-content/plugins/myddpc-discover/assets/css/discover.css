@@ -141,8 +141,54 @@
         padding: 0.25em 0.4em;
     }
 }
+@media (min-width: 769px) {
+  #discover-results {
+    overflow-x: auto;
+  }
+}
 
 /* Hidden utility class for modals or overlays */
 .hidden {
     display: none !important;
+}
+
+select[multiple][size="1"] {
+  height: auto;
+  min-height: 2.5rem;
+}
+
+#filter-make {
+  width: 100%;
+  min-height: 2.5rem;
+}
+
+.disabled { opacity: 0.5; pointer-events: none; }
+
+.choices__list--dropdown {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.choices__inner {
+  min-height: 2.5rem;
+}
+
+@media (min-width: 768px) {
+  /* Choices.js desktop enhancements */
+  .choices__inner {
+    min-height: 2.5rem;
+  }
+  .choices__list--dropdown {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  /* Hide native multi-select arrow on desktop for enhanced selects */
+  select.multi-select-enhanced {
+    /* Hide the default arrow, but keep the element for accessibility */
+    background: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    color: transparent;
+    text-shadow: 0 0 0 #000;
+  }
 }

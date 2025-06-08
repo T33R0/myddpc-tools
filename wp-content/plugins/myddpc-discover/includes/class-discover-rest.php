@@ -22,6 +22,10 @@ class Discover_REST {
     public function get_filters( $request ) {
         $query = new Discover_Query();
         $data = $query->get_discover_filter_options();
+        // Add Make options
+        $data['make'] = $query->get_distinct_values('Make');
+        // Add Fuel Type options
+        $data['fuel_type'] = $query->get_distinct_values('Fuel type');
         return function_exists('rest_ensure_response') ? rest_ensure_response($data) : $data;
     }
     public function get_results( $request ) {

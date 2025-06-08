@@ -70,15 +70,16 @@ class Discover_Query {
 
         // Multi-select filters
         $multi_select_columns = [
-            'country_of_origin'    => 'Country of origin',
-            'body_type'            => 'Body type',
-            'car_classification'   => 'Car classification',
-            'drive_type'           => 'Drive type',
-            'transmission'         => 'Transmission',
-            'fuel_type'            => 'Fuel type',
-            'cylinders'            => 'Cylinders',
-            'doors'                => 'Doors',
-            'total_seating'        => 'Total seating'
+            'make'                => 'Make',
+            'fuel_type'           => 'Fuel type',
+            'country_of_origin'   => 'Country of origin',
+            'body_type'           => 'Body type',
+            'car_classification'  => 'Car classification',
+            'drive_type'          => 'Drive type',
+            'transmission'        => 'Transmission',
+            'cylinders'           => 'Cylinders',
+            'doors'               => 'Doors',
+            'total_seating'       => 'Total seating'
         ];
         foreach ( $multi_select_columns as $filter_key => $column_name ) {
             if ( ! empty( $filters[ $filter_key ] ) && is_array( $filters[ $filter_key ] ) ) {
@@ -140,51 +141,7 @@ class Discover_Query {
      * Get discover results with filters, limit, offset
      */
     public function get_discover_results( $filters, $limit = 50, $offset = 0 ) {
-        $where = [];
-        $values = [];
-        // Year min/max
-        if (!empty($filters['year_min']) && !empty($filters['year_max'])) {
-            $where[] = "`Year` BETWEEN %d AND %d";
-            $values[] = (int) $filters['year_min'];
-            $values[] = (int) $filters['year_max'];
-        }
-        // Drivetrain
-        if (!empty($filters['drive_type']) && is_array($filters['drive_type'])) {
-            $in = implode(',', array_fill(0, count($filters['drive_type']), '%s'));
-            $where[] = "`Drive type` IN ($in)";
-            foreach ($filters['drive_type'] as $v) $values[] = sanitize_text_field($v);
-        }
-        // Transmission
-        if (!empty($filters['transmission']) && is_array($filters['transmission'])) {
-            $in = implode(',', array_fill(0, count($filters['transmission']), '%s'));
-            $where[] = "`Transmission` IN ($in)";
-            foreach ($filters['transmission'] as $v) $values[] = sanitize_text_field($v);
-        }
-        // Cylinders
-        if (!empty($filters['cylinders']) && is_array($filters['cylinders'])) {
-            $in = implode(',', array_fill(0, count($filters['cylinders']), '%s'));
-            $where[] = "`Cylinders` IN ($in)";
-            foreach ($filters['cylinders'] as $v) $values[] = sanitize_text_field($v);
-        }
-        // Body type
-        if (!empty($filters['body_type']) && is_array($filters['body_type'])) {
-            $in = implode(',', array_fill(0, count($filters['body_type']), '%s'));
-            $where[] = "`Body type` IN ($in)";
-            foreach ($filters['body_type'] as $v) $values[] = sanitize_text_field($v);
-        }
-        // Country of origin
-        if (!empty($filters['country_of_origin']) && is_array($filters['country_of_origin'])) {
-            $in = implode(',', array_fill(0, count($filters['country_of_origin']), '%s'));
-            $where[] = "`Country of origin` IN ($in)";
-            foreach ($filters['country_of_origin'] as $v) $values[] = sanitize_text_field($v);
-        }
-        // Engine size min/max
-        if (isset($filters['engine_size_min']) && isset($filters['engine_size_max']) && $filters['engine_size_min'] !== '' && $filters['engine_size_max'] !== '') {
-            $where[] = "`Engine size (l)` BETWEEN %f AND %f";
-            $values[] = (float) $filters['engine_size_min'];
-            $values[] = (float) $filters['engine_size_max'];
-        }
-        $where_sql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        list( $where_sql, $values ) = $this->build_where_clauses( $filters );
         $columns = array_map(function($c){ return "`$c`"; }, $this->select_columns);
         $sql = "SELECT ".implode(',', $columns).", `ID` FROM {$this->table_name} $where_sql ORDER BY `Year` DESC, `Make` ASC LIMIT %d OFFSET %d";
         $values[] = (int) $limit;
