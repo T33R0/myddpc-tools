@@ -13,8 +13,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <label for="filter-make">Make</label>
             <select id="filter-make" name="make[]" multiple class="multi-select-enhanced"></select>
 
-            <label for="filter-drivetrain">Drivetrain</label>
-            <select id="filter-drivetrain" name="drivetrain[]" multiple class="multi-select-enhanced"></select>
+            <label>Drive</label>
+            <div id="filter-drive-type">
+                <label><input type="checkbox" name="drive_type[]" value="AWD"> AWD</label>
+                <label><input type="checkbox" name="drive_type[]" value="4WD"> 4WD</label>
+                <label><input type="checkbox" name="drive_type[]" value="FWD"> FWD</label>
+                <label><input type="checkbox" name="drive_type[]" value="RWD"> RWD</label>
+            </div>
 
             <label for="filter-transmission">Transmission</label>
             <select id="filter-transmission" name="transmission[]" multiple class="multi-select-enhanced"></select>
@@ -33,8 +38,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
             <label for="rows-per-page" style="margin-top:1rem;">Show:</label>
             <select id="rows-per-page" style="width:80px;display:block;margin-top:0.5rem;">
-                <option value="10" selected>10</option>
-                <option value="25">25</option>
+                <option value="10">10</option>
+                <option value="25" selected>25</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
             </select>

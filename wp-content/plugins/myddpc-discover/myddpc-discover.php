@@ -40,15 +40,6 @@ function myddpc_discover_enqueue_assets() {
             array(),
             '1.0.0'
         );
-        // Choices.js from CDN (enqueue only once)
-        if ( ! wp_style_is( 'choices-css', 'enqueued' ) ) {
-            wp_enqueue_style(
-                'choices-css',
-                'https://cdn.jsdelivr.net/npm/choices.js@9.1.1/public/assets/styles/choices.min.css',
-                [],
-                '9.1.1'
-            );
-        }
         wp_enqueue_script(
             'myddpc-discover-script',
             plugins_url( 'assets/js/discover.js', __FILE__ ),
@@ -56,15 +47,6 @@ function myddpc_discover_enqueue_assets() {
             '1.0.0',
             true
         );
-        if ( ! wp_script_is( 'choices-js', 'enqueued' ) ) {
-            wp_enqueue_script(
-                'choices-js',
-                'https://cdn.jsdelivr.net/npm/choices.js@9.1.1/public/assets/scripts/choices.min.js',
-                [],
-                '9.1.1',
-                true
-            );
-        }
         wp_localize_script(
             'myddpc-discover-script',
             'myddpc_discover_data',

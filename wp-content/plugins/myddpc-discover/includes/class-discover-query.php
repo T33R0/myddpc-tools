@@ -83,10 +83,34 @@ class Discover_Query {
         ];
         foreach ( $multi_select_columns as $filter_key => $column_name ) {
             if ( ! empty( $filters[ $filter_key ] ) && is_array( $filters[ $filter_key ] ) ) {
-                $placeholders = implode( ',', array_fill( 0, count( $filters[ $filter_key ] ), '%s' ) );
-                $where_clauses[] = "`$column_name` IN ($placeholders)";
-                foreach ( $filters[ $filter_key ] as $val ) {
-                    $values[] = is_numeric($val) ? (int)$val : (string)$val;
+                // Special handling for drive_type: match both abbreviations and spelled out values
+                if ($filter_key === 'drive_type') {
+                    $drive_map = [
+                        'AWD' => ['AWD', 'All Wheel Drive'],
+                        '4WD' => ['4WD', 'Four Wheel Drive', '4x4'],
+                        'FWD' => ['FWD', 'Front Wheel Drive'],
+                        'RWD' => ['RWD', 'Rear Wheel Drive']
+                    ];
+                    $all_vals = [];
+                    foreach ($filters[$filter_key] as $abbr) {
+                        if (isset($drive_map[$abbr])) {
+                            $all_vals = array_merge($all_vals, $drive_map[$abbr]);
+                        } else {
+                            $all_vals[] = $abbr;
+                        }
+                    }
+                    $all_vals = array_unique($all_vals);
+                    $placeholders = implode(',', array_fill(0, count($all_vals), '%s'));
+                    $where_clauses[] = "`$column_name` IN ($placeholders)";
+                    foreach ($all_vals as $val) {
+                        $values[] = $val;
+                    }
+                } else {
+                    $placeholders = implode(',', array_fill(0, count($filters[$filter_key]), '%s'));
+                    $where_clauses[] = "`$column_name` IN ($placeholders)";
+                    foreach ($filters[$filter_key] as $val) {
+                        $values[] = is_numeric($val) ? (int)$val : (string)$val;
+                    }
                 }
             }
         }

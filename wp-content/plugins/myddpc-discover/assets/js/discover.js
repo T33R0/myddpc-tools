@@ -1,3 +1,8 @@
+let currentPage = 1;
+let currentLimit = 25;
+let currentTotal = 0;
+let optionsData = null;
+
 // Fetch filter options from REST API
 async function fetchFilterOptions() {
     const res = await fetch(
@@ -168,171 +173,7 @@ async function fetchResults(filters = {}, limit = 50, offset = 0, sortBy = curre
     return await res.json();
 }
 
-// Render table rows for results
-function renderTableRows(results) {
-    if (!Array.isArray(results)) { return; }
-    const tbody = document.querySelector('#discover-table tbody');
-    if (!tbody) { return; }
-    tbody.innerHTML = '';
-    results.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.dataset.vehicleId = row.id || row.ID;
-        tr.innerHTML = `
-            <td>${row.Year}</td>
-            <td>${row.Make}</td>
-            <td>${row.Model}</td>
-            <td>${row.Trim}</td>
-            <td>${row['Engine size (l)']}</td>
-            <td>${row.Cylinders}</td>
-            <td>${row['Drive type']}</td>
-            <td>${row.Transmission}</td>
-            <td>${row['Body type']}</td>
-            <td>${row['Car classification']}</td>
-            <td>${row['Platform code / generation number']}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-// Implement renderDetailModal
-async function renderDetailModal(vehicleId) {
-    const modal = document.getElementById('discover-detail-modal');
-    if (!modal) return;
-    // Fetch full vehicle details (simulate by finding in last results for now)
-    let vehicle = null;
-    // Try to find in last results
-    const tbody = document.querySelector('#discover-table tbody');
-    if (tbody) {
-        const rows = Array.from(tbody.children);
-        for (const tr of rows) {
-            if (tr.dataset.vehicleId == vehicleId) {
-                // Use the data from the row if available
-                // (In real use, fetch from API)
-                vehicle = tr;
-                break;
-            }
-        }
-    }
-    // For now, just use the last fetched row data if available
-    // (Replace with API fetch for full details if needed)
-    if (vehicle) {
-        document.getElementById('detail-year').textContent = vehicle.children[0].textContent;
-        document.getElementById('detail-make').textContent = vehicle.children[1].textContent;
-        document.getElementById('detail-model').textContent = vehicle.children[2].textContent;
-        document.getElementById('detail-trim').textContent = vehicle.children[3].textContent;
-        document.getElementById('detail-engine').textContent = vehicle.children[4].textContent;
-        document.getElementById('detail-cylinders').textContent = vehicle.children[5].textContent;
-        document.getElementById('detail-drive').textContent = vehicle.children[6].textContent;
-        document.getElementById('detail-transmission').textContent = vehicle.children[7].textContent;
-        document.getElementById('detail-body').textContent = vehicle.children[8].textContent;
-        document.getElementById('detail-classification').textContent = vehicle.children[9].textContent;
-        document.getElementById('detail-platform').textContent = vehicle.children[10].textContent;
-    }
-    modal.dataset.currentVehicle = vehicleId;
-    modal.classList.remove('hidden');
-}
-
-// Event listeners
-
-document.addEventListener('DOMContentLoaded', () => {
-    let currentPage = 1;
-    let currentLimit = 50;
-    let currentTotal = 0;
-    let optionsData = null;
-    // Ensure rows-per-page select has 10, 25, 50, 100
-    const limitEl = document.getElementById('rows-per-page');
-    if (limitEl) {
-        limitEl.innerHTML = '';
-        [10, 25, 50, 100].forEach(val => {
-            const opt = document.createElement('option');
-            opt.value = val;
-            opt.textContent = val;
-            if (val === 10) opt.selected = true;
-            limitEl.appendChild(opt);
-        });
-        limitEl.addEventListener('change', () => {
-            currentLimit = parseInt(limitEl.value, 10);
-            currentPage = 1;
-        });
-    }
-    // Always render table header and pagination on load
-    renderTableHeader();
-    renderPagination(0, currentLimit, 1);
-    fetchFilterOptions().then(data => {
-        optionsData = data;
-        currentLimit = limitEl ? parseInt(limitEl.value, 10) : 50;
-        currentPage = 1;
-        currentSortBy = 'Year';
-        currentSortDir = 'desc';
-        fetchResults(getCurrentFilters(), currentLimit, 0, currentSortBy, currentSortDir).then(updateResultsTable);
-        attachFilterListeners();
-        initializeChoicesForMultiSelects();
-    });
-    window.addEventListener('resize', () => {
-        initializeChoicesForMultiSelects();
-    });
-    const resetBtn = document.getElementById('reset-filters');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            resetFilters();
-        });
-    }
-});
-
-function initializeChoicesForMultiSelects() {
-    if (window.innerWidth >= 768) {
-        document.querySelectorAll('.multi-select-enhanced').forEach(el => {
-            if (!el.classList.contains('choices-initialized')) {
-                new Choices(el, {
-                    removeItemButton: true,
-                    searchEnabled: true,
-                    placeholder: true,
-                    placeholderValue: 'Select…',
-                    shouldSort: false,
-                    closeDropdownOnSelect: false
-                });
-                el.classList.add('choices-initialized');
-            }
-        });
-    } else {
-        // Destroy Choices on mobile for native select
-        document.querySelectorAll('.multi-select-enhanced.choices-initialized').forEach(el => {
-            if (el.choices) {
-                el.choices.destroy();
-            }
-            el.classList.remove('choices-initialized');
-        });
-    }
-}
-
-function attachFilterListeners() {
-    const filterIds = [
-        'filter-year-min', 'filter-year-max',
-        'filter-make',
-        'filter-drivetrain', 'filter-transmission', 'filter-cylinders',
-        'filter-body-type', 'filter-country-of-origin',
-        'filter-fuel-type',
-        'rows-per-page'
-    ];
-    filterIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('change', handleFilterChange);
-        }
-    });
-}
-
-function handleFilterChange() {
-    const limitEl = document.getElementById('rows-per-page');
-    currentLimit = limitEl ? parseInt(limitEl.value, 10) : 50;
-    currentPage = 1;
-    currentSortBy = 'Year';
-    currentSortDir = 'desc';
-    const filters = getCurrentFilters();
-    fetchResults(filters, currentLimit, 0, currentSortBy, currentSortDir).then(updateResultsTable);
-}
-
+// In getCurrentFilters, update drive_type to read from checkboxes
 function getCurrentFilters() {
     const filters = {};
     // Year min/max
@@ -352,11 +193,25 @@ function getCurrentFilters() {
         const vals = Array.from(fuelSel.selectedOptions).map(o => o.value).filter(Boolean);
         if (vals.length) filters.fuel_type = vals;
     }
-    // Drivetrain
-    const drivetrainSel = document.getElementById('filter-drivetrain');
-    if (drivetrainSel) {
-        const vals = Array.from(drivetrainSel.selectedOptions).map(o => o.value).filter(Boolean);
-        if (vals.length) filters.drive_type = vals;
+    // Drive type (checkboxes)
+    const driveCheckboxes = document.querySelectorAll('input[name="drive_type[]"]:checked');
+    if (driveCheckboxes.length) {
+        const driveMap = {
+            'AWD': ['AWD', 'All Wheel Drive'],
+            '4WD': ['4WD', 'Four Wheel Drive', '4x4'],
+            'FWD': ['FWD', 'Front Wheel Drive'],
+            'RWD': ['RWD', 'Rear Wheel Drive']
+        };
+        let driveVals = [];
+        driveCheckboxes.forEach(cb => {
+            const val = cb.value;
+            if (driveMap[val]) {
+                driveVals = driveVals.concat(driveMap[val]);
+            } else {
+                driveVals.push(val);
+            }
+        });
+        filters.drive_type = Array.from(new Set(driveVals));
     }
     // Transmission
     const transSel = document.getElementById('filter-transmission');
@@ -419,15 +274,174 @@ function renderPagination(total, limit, page) {
     });
 }
 
-function updateResultsTable(json) {
-    const totalCountEl = document.getElementById('discover-total-count');
-    if (totalCountEl && Array.isArray(json.results)) {
-        totalCountEl.textContent = `Showing ${json.results.length} of ${json.total} matches`;
+// 1. Map all possible drive values to abbreviations in renderTableRows
+const DRIVE_TYPE_MAP = {
+    'All Wheel Drive': 'AWD',
+    'Four Wheel Drive': '4WD',
+    'Front Wheel Drive': 'FWD',
+    'Rear Wheel Drive': 'RWD',
+    'AWD': 'AWD',
+    '4WD': '4WD',
+    'FWD': 'FWD',
+    'RWD': 'RWD',
+    'AWD/4WD': 'AWD',
+    '4x4': '4WD',
+    'FWD/AWD': 'AWD',
+    'RWD/AWD': 'AWD',
+    'AWD/FWD': 'AWD',
+    'AWD/RWD': 'AWD',
+    '4WD/AWD': 'AWD',
+    'AWD/4WD/FWD': 'AWD',
+    'AWD/4WD/RWD': 'AWD',
+    'AWD/4WD/FWD/RWD': 'AWD',
+    '': ''
+};
+function renderTableRows(results) {
+    if (!Array.isArray(results)) { return; }
+    const tbody = document.querySelector('#discover-table tbody');
+    if (!tbody) { return; }
+    tbody.innerHTML = '';
+    results.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.dataset.vehicleId = row.id || row.ID;
+        // Robust abbreviation for drive type
+        let driveRaw = (row['Drive type'] || '').trim();
+        let driveAbbr = DRIVE_TYPE_MAP[driveRaw];
+        if (!driveAbbr) {
+            // Try regex match for common phrases, case-insensitive
+            if (/all\s*wheel\s*drive/i.test(driveRaw)) driveAbbr = 'AWD';
+            else if (/four\s*wheel\s*drive|4x4/i.test(driveRaw)) driveAbbr = '4WD';
+            else if (/front\s*wheel\s*drive/i.test(driveRaw)) driveAbbr = 'FWD';
+            else if (/rear\s*wheel\s*drive/i.test(driveRaw)) driveAbbr = 'RWD';
+            else driveAbbr = driveRaw;
+        }
+        tr.innerHTML = `
+            <td>${row.Year}</td>
+            <td>${row.Make}</td>
+            <td>${row.Model}</td>
+            <td>${row.Trim}</td>
+            <td>${row['Engine size (l)']}</td>
+            <td>${row.Cylinders}</td>
+            <td>${driveAbbr}</td>
+            <td>${row.Transmission}</td>
+            <td>${row['Body type']}</td>
+            <td>${row['Car classification']}</td>
+            <td>${row['Platform code / generation number']}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Implement renderDetailModal
+async function renderDetailModal(vehicleId) {
+    const modal = document.getElementById('discover-detail-modal');
+    if (!modal) return;
+    // Fetch full vehicle details (simulate by finding in last results for now)
+    let vehicle = null;
+    // Try to find in last results
+    const tbody = document.querySelector('#discover-table tbody');
+    if (tbody) {
+        const rows = Array.from(tbody.children);
+        for (const tr of rows) {
+            if (tr.dataset.vehicleId == vehicleId) {
+                // Use the data from the row if available
+                // (In real use, fetch from API)
+                vehicle = tr;
+                break;
+            }
+        }
     }
+    // For now, just use the last fetched row data if available
+    // (Replace with API fetch for full details if needed)
+    if (vehicle) {
+        document.getElementById('detail-year').textContent = vehicle.children[0].textContent;
+        document.getElementById('detail-make').textContent = vehicle.children[1].textContent;
+        document.getElementById('detail-model').textContent = vehicle.children[2].textContent;
+        document.getElementById('detail-trim').textContent = vehicle.children[3].textContent;
+        document.getElementById('detail-engine').textContent = vehicle.children[4].textContent;
+        document.getElementById('detail-cylinders').textContent = vehicle.children[5].textContent;
+        document.getElementById('detail-drive').textContent = vehicle.children[6].textContent;
+        document.getElementById('detail-transmission').textContent = vehicle.children[7].textContent;
+        document.getElementById('detail-body').textContent = vehicle.children[8].textContent;
+        document.getElementById('detail-classification').textContent = vehicle.children[9].textContent;
+        document.getElementById('detail-platform').textContent = vehicle.children[10].textContent;
+    }
+    modal.dataset.currentVehicle = vehicleId;
+    modal.classList.remove('hidden');
+}
+
+// Event listeners
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Ensure rows-per-page select has 10, 25, 50, 100
+    const limitEl = document.getElementById('rows-per-page');
+    if (limitEl) {
+        limitEl.innerHTML = '';
+        [10, 25, 50, 100].forEach(val => {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            if (val === 25) opt.selected = true;
+            limitEl.appendChild(opt);
+        });
+        limitEl.value = 25;
+        limitEl.addEventListener('change', () => {
+            currentLimit = parseInt(limitEl.value, 10);
+            currentPage = 1;
+        });
+    }
+    // Always render table header and pagination on load
     renderTableHeader();
-    renderTableRows(json.results);
-    currentTotal = json.total;
-    renderPagination(json.total, currentLimit, currentPage);
+    renderPagination(0, currentLimit, 1);
+    fetchFilterOptions().then(data => {
+        optionsData = data;
+        currentLimit = limitEl ? parseInt(limitEl.value, 10) : 25;
+        currentPage = 1;
+        currentSortBy = 'Year';
+        currentSortDir = 'desc';
+        fetchResults(getCurrentFilters(), currentLimit, 0, currentSortBy, currentSortDir).then(updateResultsTable);
+        attachFilterListeners();
+    });
+    window.addEventListener('resize', () => {
+    });
+    const resetBtn = document.getElementById('reset-filters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetFilters();
+        });
+    }
+});
+
+function attachFilterListeners() {
+    const filterIds = [
+        'filter-year-min', 'filter-year-max',
+        'filter-make',
+        'filter-transmission', 'filter-cylinders',
+        'filter-body-type', 'filter-country-of-origin',
+        'filter-fuel-type',
+        'rows-per-page'
+    ];
+    filterIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', handleFilterChange);
+        }
+    });
+    // Add listeners for Drive checkboxes
+    document.querySelectorAll('input[name="drive_type[]"]').forEach(cb => {
+        cb.addEventListener('change', handleFilterChange);
+    });
+}
+
+function handleFilterChange() {
+    const limitEl = document.getElementById('rows-per-page');
+    currentLimit = limitEl ? parseInt(limitEl.value, 10) : 50;
+    currentPage = 1;
+    currentSortBy = 'Year';
+    currentSortDir = 'desc';
+    const filters = getCurrentFilters();
+    fetchResults(filters, currentLimit, 0, currentSortBy, currentSortDir).then(updateResultsTable);
 }
 
 // 6) Row click to open detail modal
@@ -462,20 +476,40 @@ if (saveBtn) {
     });
 }
 
-// Add resetFilters function and event listener
+// 3. In resetFilters, set Year (Max) to optionsData.year.max
 function resetFilters() {
     // Reset all selects to their first option
     document.querySelectorAll('#discover-filter-form select').forEach(sel => {
         if (sel.multiple) {
             Array.from(sel.options).forEach(opt => opt.selected = false);
-            // If Choices.js is initialized, clear selections
-            if (sel.classList.contains('choices-initialized') && sel.choices) {
-                sel.choices.clearStore();
-            }
         } else {
             sel.selectedIndex = 0;
         }
     });
+    // Reset drive checkboxes
+    document.querySelectorAll('input[name="drive_type[]"]').forEach(cb => { cb.checked = false; });
+    // Set Year (Max) to max value
+    const yearMax = document.getElementById('filter-year-max');
+    if (yearMax && optionsData && optionsData.year && optionsData.year.max) {
+        yearMax.value = optionsData.year.max;
+    }
+    // Set Year (Min) to min value
+    const yearMin = document.getElementById('filter-year-min');
+    if (yearMin && optionsData && optionsData.year && optionsData.year.min) {
+        yearMin.value = optionsData.year.min;
+    }
     // Refresh results
     handleFilterChange();
+}
+
+// 4. Change 'matches' to 'vehicles' in updateResultsTable
+function updateResultsTable(json) {
+    const totalCountEl = document.getElementById('discover-total-count');
+    if (totalCountEl && Array.isArray(json.results)) {
+        totalCountEl.textContent = `Showing ${json.results.length} of ${json.total} vehicles`;
+    }
+    renderTableHeader();
+    renderTableRows(json.results);
+    currentTotal = json.total;
+    renderPagination(json.total, currentLimit, currentPage);
 }
