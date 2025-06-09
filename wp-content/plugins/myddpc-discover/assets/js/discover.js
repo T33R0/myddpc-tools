@@ -109,8 +109,50 @@ async function fetchFilterOptions() {
     return optionsData;
 }
 
+let currentSortBy = 'Year';
+let currentSortDir = 'desc';
+
+function renderTableHeader() {
+    const thead = document.querySelector('#discover-table thead tr');
+    if (!thead) return;
+    const columns = [
+        { key: 'Year', label: 'Year' },
+        { key: 'Make', label: 'Make' },
+        { key: 'Model', label: 'Model' },
+        { key: 'Trim', label: 'Trim' },
+        { key: 'Engine size (l)', label: 'Engine (L)' },
+        { key: 'Cylinders', label: 'Cylinders' },
+        { key: 'Drive type', label: 'Drive' },
+        { key: 'Transmission', label: 'Transmission' },
+        { key: 'Body type', label: 'Body' },
+        { key: 'Car classification', label: 'Classification' },
+        { key: 'Platform code / generation number', label: 'Platform' }
+    ];
+    thead.innerHTML = '';
+    columns.forEach(col => {
+        let indicator = '';
+        if (currentSortBy === col.key) {
+            indicator = currentSortDir === 'asc' ? ' ▲' : ' ▼';
+        }
+        const th = document.createElement('th');
+        th.textContent = col.label + indicator;
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', () => {
+            if (currentSortBy === col.key) {
+                currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortBy = col.key;
+                currentSortDir = 'asc';
+            }
+            currentPage = 1;
+            fetchResults(getCurrentFilters(), currentLimit, 0, currentSortBy, currentSortDir).then(updateResultsTable);
+        });
+        thead.appendChild(th);
+    });
+}
+
 // Fetch results from REST API
-async function fetchResults(filters = {}, limit = 50, offset = 0) {
+async function fetchResults(filters = {}, limit = 50, offset = 0, sortBy = currentSortBy, sortDir = currentSortDir) {
     const res = await fetch(
         myddpc_discover_data.root + myddpc_discover_data.routes.results,
         {
@@ -119,7 +161,7 @@ async function fetchResults(filters = {}, limit = 50, offset = 0) {
                 'Content-Type': 'application/json',
                 'X-WP-Nonce': myddpc_discover_data.nonce
             },
-            body: JSON.stringify({ filters, limit, offset })
+            body: JSON.stringify({ filters, limit, offset, sort_by: sortBy, sort_dir: sortDir })
         }
     );
     if (!res.ok) throw new Error('Failed to fetch results');
@@ -146,7 +188,7 @@ function renderTableRows(results) {
             <td>${row.Transmission}</td>
             <td>${row['Body type']}</td>
             <td>${row['Car classification']}</td>
-            <td>${row['Platform code / generation']}</td>
+            <td>${row['Platform code / generation number']}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -193,7 +235,9 @@ async function renderDetailModal(vehicleId) {
 // Event listeners
 
 document.addEventListener('DOMContentLoaded', () => {
+    let currentPage = 1;
     let currentLimit = 50;
+    let currentTotal = 0;
     let optionsData = null;
     // Ensure rows-per-page select has 10, 25, 50, 100
     const limitEl = document.getElementById('rows-per-page');
@@ -206,17 +250,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (val === 10) opt.selected = true;
             limitEl.appendChild(opt);
         });
+        limitEl.addEventListener('change', () => {
+            currentLimit = parseInt(limitEl.value, 10);
+            currentPage = 1;
+        });
     }
+    // Always render table header and pagination on load
+    renderTableHeader();
+    renderPagination(0, currentLimit, 1);
     fetchFilterOptions().then(data => {
         optionsData = data;
         currentLimit = limitEl ? parseInt(limitEl.value, 10) : 50;
-        fetchResults(getCurrentFilters(), currentLimit, 0).then(updateResultsTable);
+        currentPage = 1;
+        currentSortBy = 'Year';
+        currentSortDir = 'desc';
+        fetchResults(getCurrentFilters(), currentLimit, 0, currentSortBy, currentSortDir).then(updateResultsTable);
         attachFilterListeners();
         initializeChoicesForMultiSelects();
     });
     window.addEventListener('resize', () => {
         initializeChoicesForMultiSelects();
     });
+    const resetBtn = document.getElementById('reset-filters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            resetFilters();
+        });
+    }
 });
 
 function initializeChoicesForMultiSelects() {
@@ -264,9 +325,12 @@ function attachFilterListeners() {
 
 function handleFilterChange() {
     const limitEl = document.getElementById('rows-per-page');
-    const limit = limitEl ? parseInt(limitEl.value, 10) : 50;
+    currentLimit = limitEl ? parseInt(limitEl.value, 10) : 50;
+    currentPage = 1;
+    currentSortBy = 'Year';
+    currentSortDir = 'desc';
     const filters = getCurrentFilters();
-    fetchResults(filters, limit, 0).then(updateResultsTable);
+    fetchResults(filters, currentLimit, 0, currentSortBy, currentSortDir).then(updateResultsTable);
 }
 
 function getCurrentFilters() {
@@ -322,12 +386,48 @@ function getCurrentFilters() {
 }
 
 // Update results table and pagination info
+function renderPagination(total, limit, page) {
+    const totalPages = Math.ceil(total / limit);
+    const container = document.getElementById('discover-pagination');
+    if (!container) return;
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    let html = '';
+    html += `<button class="pagination-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>Prev</button>`;
+    // Show up to 5 page numbers, centered on current page
+    let start = Math.max(1, page - 2);
+    let end = Math.min(totalPages, page + 2);
+    if (page <= 2) end = Math.min(5, totalPages);
+    if (page >= totalPages - 1) start = Math.max(1, totalPages - 4);
+    for (let i = start; i <= end; i++) {
+        html += `<button class="pagination-btn${i === page ? ' active' : ''}" data-page="${i}">${i}</button>`;
+    }
+    html += `<button class="pagination-btn" data-page="${page + 1}" ${page === totalPages ? 'disabled' : ''}>Next</button>`;
+    container.innerHTML = html;
+    // Add event listeners
+    container.querySelectorAll('.pagination-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const newPage = parseInt(this.dataset.page, 10);
+            if (newPage >= 1 && newPage <= totalPages && newPage !== page) {
+                currentPage = newPage;
+                const offset = (currentPage - 1) * currentLimit;
+                fetchResults(getCurrentFilters(), currentLimit, offset, currentSortBy, currentSortDir).then(updateResultsTable);
+            }
+        });
+    });
+}
+
 function updateResultsTable(json) {
     const totalCountEl = document.getElementById('discover-total-count');
     if (totalCountEl && Array.isArray(json.results)) {
         totalCountEl.textContent = `Showing ${json.results.length} of ${json.total} matches`;
     }
+    renderTableHeader();
     renderTableRows(json.results);
+    currentTotal = json.total;
+    renderPagination(json.total, currentLimit, currentPage);
 }
 
 // 6) Row click to open detail modal
@@ -360,4 +460,22 @@ if (saveBtn) {
             // POST to /wp-json/myddpc/v1/discover/save with { vehicle_id: vehicleId }
         }
     });
+}
+
+// Add resetFilters function and event listener
+function resetFilters() {
+    // Reset all selects to their first option
+    document.querySelectorAll('#discover-filter-form select').forEach(sel => {
+        if (sel.multiple) {
+            Array.from(sel.options).forEach(opt => opt.selected = false);
+            // If Choices.js is initialized, clear selections
+            if (sel.classList.contains('choices-initialized') && sel.choices) {
+                sel.choices.clearStore();
+            }
+        } else {
+            sel.selectedIndex = 0;
+        }
+    });
+    // Refresh results
+    handleFilterChange();
 }

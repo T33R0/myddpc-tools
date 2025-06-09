@@ -33,8 +33,10 @@ class Discover_REST {
         $filters = isset($params['filters']) ? (array)$params['filters'] : [];
         $limit = isset($params['limit']) ? (int)$params['limit'] : 50;
         $offset = isset($params['offset']) ? (int)$params['offset'] : 0;
+        $sort_by = isset($params['sort_by']) ? $params['sort_by'] : 'Year';
+        $sort_dir = isset($params['sort_dir']) && strtolower($params['sort_dir']) === 'asc' ? 'asc' : 'desc';
         $query = new Discover_Query();
-        $data = $query->get_discover_results($filters, $limit, $offset);
+        $data = $query->get_discover_results($filters, $limit, $offset, $sort_by, $sort_dir);
         return function_exists('rest_ensure_response') ? rest_ensure_response($data) : $data;
     }
 }

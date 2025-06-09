@@ -138,12 +138,18 @@ class Discover_Query {
     }
 
     /**
-     * Get discover results with filters, limit, offset
+     * Get discover results with filters, limit, offset, sort_by, sort_dir
      */
-    public function get_discover_results( $filters, $limit = 50, $offset = 0 ) {
+    public function get_discover_results( $filters, $limit = 50, $offset = 0, $sort_by = 'Year', $sort_dir = 'desc' ) {
         list( $where_sql, $values ) = $this->build_where_clauses( $filters );
         $columns = array_map(function($c){ return "`$c`"; }, $this->select_columns);
-        $sql = "SELECT ".implode(',', $columns).", `ID` FROM {$this->table_name} $where_sql ORDER BY `Year` DESC, `Make` ASC LIMIT %d OFFSET %d";
+        // Sanitize sort_by
+        $allowed = array_combine($this->select_columns, $this->select_columns);
+        if (!isset($allowed[$sort_by])) {
+            $sort_by = 'Year';
+        }
+        $sort_dir = strtolower($sort_dir) === 'asc' ? 'ASC' : 'DESC';
+        $sql = "SELECT ".implode(',', $columns).", `ID` FROM {$this->table_name} $where_sql ORDER BY `$sort_by` $sort_dir, `Make` ASC LIMIT %d OFFSET %d";
         $values[] = (int) $limit;
         $values[] = (int) $offset;
         $results = $this->wpdb->get_results($this->wpdb->prepare($sql, $values), ARRAY_A);

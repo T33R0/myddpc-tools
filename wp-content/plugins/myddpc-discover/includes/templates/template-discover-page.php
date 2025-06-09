@@ -38,6 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <option value="50">50</option>
                 <option value="100">100</option>
             </select>
+            <button id="reset-filters" type="button" style="margin-top:1rem;">Reset Filters</button>
         </form>
     </aside>
 
@@ -65,6 +66,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
                 <!-- JS injects rows here -->
             </tbody>
         </table>
+        <div id="discover-pagination"></div>
     </main>
 </div>
 
