@@ -45,16 +45,7 @@ async function fetchFilterOptions() {
         });
     }
     // Populate Drivetrain
-    const drivetrainSelect = document.getElementById('filter-drivetrain');
-    if (drivetrainSelect && Array.isArray(optionsData.drive_type)) {
-        drivetrainSelect.innerHTML = '';
-        optionsData.drive_type.forEach(opt => {
-            const o = document.createElement('option');
-            o.value = opt;
-            o.textContent = opt;
-            drivetrainSelect.appendChild(o);
-        });
-    }
+    // (Drive checkboxes are static in HTML)
     // Populate Transmission
     const transSelect = document.getElementById('filter-transmission');
     if (transSelect && Array.isArray(optionsData.transmission)) {
@@ -173,7 +164,6 @@ async function fetchResults(filters = {}, limit = 50, offset = 0, sortBy = curre
     return await res.json();
 }
 
-// In getCurrentFilters, update drive_type to read from checkboxes
 function getCurrentFilters() {
     const filters = {};
     // Year min/max
@@ -240,7 +230,6 @@ function getCurrentFilters() {
     return filters;
 }
 
-// Update results table and pagination info
 function renderPagination(total, limit, page) {
     const totalPages = Math.ceil(total / limit);
     const container = document.getElementById('discover-pagination');
@@ -274,7 +263,6 @@ function renderPagination(total, limit, page) {
     });
 }
 
-// 1. Map all possible drive values to abbreviations in renderTableRows
 const DRIVE_TYPE_MAP = {
     'All Wheel Drive': 'AWD',
     'Four Wheel Drive': '4WD',
@@ -332,8 +320,7 @@ function renderTableRows(results) {
     });
 }
 
-// Implement renderDetailModal
-async function renderDetailModal(vehicleId) {
+function renderDetailModal(vehicleId) {
     const modal = document.getElementById('discover-detail-modal');
     if (!modal) return;
     // Fetch full vehicle details (simulate by finding in last results for now)
@@ -370,9 +357,130 @@ async function renderDetailModal(vehicleId) {
     modal.classList.remove('hidden');
 }
 
+function createCustomMultiSelect(select) {
+    if (!select || !select.multiple) return;
+    select.classList.add('custom-multiselect__select');
+    select.style.position = 'absolute';
+    select.style.left = '-9999px';
+
+    // Create wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'custom-multiselect';
+    wrapper.style.position = 'relative';
+
+    // Create button
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'custom-multiselect__button';
+    button.innerHTML = 'Select... <span class="arrow">&#9662;</span>';
+    wrapper.appendChild(button);
+
+    // Insert wrapper before select
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+
+    // Create popup
+    let popup = document.createElement('div');
+    popup.className = 'custom-multiselect-popup';
+
+    function renderPopupOptions() {
+        popup.innerHTML = '';
+        Array.from(select.options).forEach(opt => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'custom-multiselect__option';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = opt.value;
+            checkbox.checked = opt.selected;
+            checkbox.id = select.id + '-opt-' + opt.value;
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = opt.textContent;
+            optionDiv.appendChild(checkbox);
+            optionDiv.appendChild(label);
+            popup.appendChild(optionDiv);
+            checkbox.addEventListener('change', () => {
+                opt.selected = checkbox.checked;
+                updateButtonLabel();
+                handleFilterChange();
+            });
+        });
+    }
+
+    // Button click shows popup
+    button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        renderPopupOptions();
+        // Remove popup from any previous parent
+        if (popup.parentNode) popup.parentNode.removeChild(popup);
+
+        if (window.innerWidth <= 600) {
+            // Mobile: fixed, full screen
+            popup.style.position = 'fixed';
+            popup.style.left = '0';
+            popup.style.top = '0';
+            popup.style.width = '100vw';
+            popup.style.zIndex = '99999';
+            document.body.appendChild(popup);
+        } else {
+            // Desktop: absolute, anchored to wrapper
+            popup.style.position = 'absolute';
+            popup.style.left = '0';
+            popup.style.top = button.offsetHeight + 'px';
+            popup.style.width = button.offsetWidth + 'px';
+            popup.style.zIndex = '99999';
+            wrapper.appendChild(popup);
+        }
+        popup.classList.add('open');
+    });
+
+    // Close popup on outside click or Escape
+    function closePopup() {
+        popup.classList.remove('open');
+        if (popup.parentNode) popup.parentNode.removeChild(popup);
+    }
+    document.addEventListener('click', (e) => {
+        if (popup.classList.contains('open') && !popup.contains(e.target) && e.target !== button) {
+            closePopup();
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closePopup();
+    });
+
+    // Update button label
+    function updateButtonLabel() {
+        const selected = Array.from(select.selectedOptions).map(o => o.textContent);
+        button.innerHTML = (selected.length ? selected.join(', ') : 'Select...') + ' <span class="arrow">&#9662;</span>';
+    }
+    // Expose for global reset
+    select._updateCustomMultiSelectLabel = updateButtonLabel;
+    updateButtonLabel();
+}
+
+function updateAllCustomMultiSelectLabels() {
+    document.querySelectorAll('select.custom-multiselect__select').forEach(sel => {
+        if (typeof sel._updateCustomMultiSelectLabel === 'function') {
+            sel._updateCustomMultiSelectLabel();
+        }
+    });
+}
+
 // Event listeners
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Collapsible filter sections: collapse all by default
+    const collapsibles = document.querySelectorAll('.collapsible');
+    collapsibles.forEach((col) => {
+        col.classList.remove('open');
+        const header = col.querySelector('.collapsible-header');
+        if (header) {
+            header.addEventListener('click', function() {
+                col.classList.toggle('open');
+            });
+        }
+    });
     // Ensure rows-per-page select has 10, 25, 50, 100
     const limitEl = document.getElementById('rows-per-page');
     if (limitEl) {
@@ -411,6 +519,18 @@ document.addEventListener('DOMContentLoaded', () => {
             resetFilters();
         });
     }
+    // Enhance all multi-selects except Drivetrain
+    [
+        'filter-make',
+        'filter-transmission',
+        'filter-cylinders',
+        'filter-body-type',
+        'filter-country-of-origin',
+        'filter-fuel-type'
+    ].forEach(id => {
+        const sel = document.getElementById(id);
+        if (sel) createCustomMultiSelect(sel);
+    });
 });
 
 function attachFilterListeners() {
@@ -444,39 +564,6 @@ function handleFilterChange() {
     fetchResults(filters, currentLimit, 0, currentSortBy, currentSortDir).then(updateResultsTable);
 }
 
-// 6) Row click to open detail modal
-const table = document.getElementById('discover-table');
-if (table) {
-    table.addEventListener('click', function(e) {
-        const row = e.target.closest('tr');
-        if (row && row.dataset.vehicleId) {
-            renderDetailModal(row.dataset.vehicleId);
-        }
-    });
-}
-
-// 7) Modal close
-const modalClose = document.querySelector('.modal-close');
-if (modalClose) {
-    modalClose.addEventListener('click', () => {
-        const modal = document.getElementById('discover-detail-modal');
-        if (modal) modal.classList.add('hidden');
-    });
-}
-
-// 8) Save Vehicle (optional)
-const saveBtn = document.getElementById('discover-save-vehicle');
-if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-        const modal = document.getElementById('discover-detail-modal');
-        if (modal) {
-            const vehicleId = modal.dataset.currentVehicle;
-            // POST to /wp-json/myddpc/v1/discover/save with { vehicle_id: vehicleId }
-        }
-    });
-}
-
-// 3. In resetFilters, set Year (Max) to optionsData.year.max
 function resetFilters() {
     // Reset all selects to their first option
     document.querySelectorAll('#discover-filter-form select').forEach(sel => {
@@ -487,7 +574,7 @@ function resetFilters() {
         }
     });
     // Reset drive checkboxes
-    document.querySelectorAll('input[name="drive_type[]"]').forEach(cb => { cb.checked = false; });
+    document.querySelectorAll('input[name="drive_type[]"]').forEach(cb => cb.checked = false);
     // Set Year (Max) to max value
     const yearMax = document.getElementById('filter-year-max');
     if (yearMax && optionsData && optionsData.year && optionsData.year.max) {
@@ -498,16 +585,94 @@ function resetFilters() {
     if (yearMin && optionsData && optionsData.year && optionsData.year.min) {
         yearMin.value = optionsData.year.min;
     }
+    // Set rows-per-page to default 25
+    const rowsPerPage = document.getElementById('rows-per-page');
+    if (rowsPerPage) {
+        rowsPerPage.value = '25';
+    }
+    // Update custom multi-select button labels
+    updateAllCustomMultiSelectLabels();
     // Refresh results
     handleFilterChange();
 }
 
-// 4. Change 'matches' to 'vehicles' in updateResultsTable
+function renderFilterTags(filters) {
+    const tagsContainer = document.getElementById('filter-tags');
+    tagsContainer.innerHTML = '';
+    const filterLabels = {
+        year_min: 'Year (Min)',
+        year_max: 'Year (Max)',
+        make: 'Make',
+        drive_type: 'Drivetrain',
+        transmission: 'Transmission',
+        cylinders: 'Cylinders',
+        body_type: 'Body type',
+        country_of_origin: 'Country',
+        fuel_type: 'Fuel Type'
+    };
+    let tagCount = 0;
+    Object.entries(filters).forEach(([key, value]) => {
+        if (!value || (Array.isArray(value) && value.length === 0)) return;
+        // Only show year_min/year_max if not at default
+        if (key === 'year_min' && optionsData && optionsData.year && value == optionsData.year.min) return;
+        if (key === 'year_max' && optionsData && optionsData.year && value == optionsData.year.max) return;
+        let label = '';
+        if (Array.isArray(value)) {
+            label = value.map(v => `${v}`).join(', ');
+        } else {
+            label = value;
+        }
+        const tag = document.createElement('span');
+        tag.className = 'filter-tag';
+        tag.innerHTML = `${filterLabels[key] || key}: ${label} <span class="remove-tag" data-key="${key}">&times;</span>`;
+        tagsContainer.appendChild(tag);
+        tagCount++;
+    });
+    // Show/hide reset button
+    const resetBtn = document.getElementById('reset-filters');
+    if (resetBtn) {
+        resetBtn.style.display = tagCount > 0 ? '' : 'none';
+    }
+    tagsContainer.querySelectorAll('.remove-tag').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const key = this.dataset.key;
+            clearFilterSelection(key);
+            handleFilterChange();
+        });
+    });
+}
+
+function clearFilterSelection(key) {
+    if (key === 'drive_type') {
+        document.querySelectorAll('input[name="drive_type[]"]').forEach(cb => cb.checked = false);
+    } else if (key === 'year_min' || key === 'year_max') {
+        // Reset year min/max to default
+        const yearMin = document.getElementById('filter-year-min');
+        const yearMax = document.getElementById('filter-year-max');
+        if (key === 'year_min' && yearMin && optionsData && optionsData.year && optionsData.year.min) {
+            yearMin.value = optionsData.year.min;
+        }
+        if (key === 'year_max' && yearMax && optionsData && optionsData.year && optionsData.year.max) {
+            yearMax.value = optionsData.year.max;
+        }
+    } else {
+        const sel = document.getElementById('filter-' + key.replace(/_/g, '-'));
+        if (sel && sel.multiple) {
+            Array.from(sel.options).forEach(opt => opt.selected = false);
+            if (typeof sel._updateCustomMultiSelectLabel === 'function') {
+                sel._updateCustomMultiSelectLabel();
+            }
+        }
+    }
+    updateAllCustomMultiSelectLabels();
+}
+
 function updateResultsTable(json) {
     const totalCountEl = document.getElementById('discover-total-count');
     if (totalCountEl && Array.isArray(json.results)) {
         totalCountEl.textContent = `Showing ${json.results.length} of ${json.total} vehicles`;
     }
+    renderFilterTags(getCurrentFilters());
     renderTableHeader();
     renderTableRows(json.results);
     currentTotal = json.total;
