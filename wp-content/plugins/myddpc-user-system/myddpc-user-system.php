@@ -81,9 +81,6 @@ function myddpc_user_system_activate() {
 
 add_action( 'wp_enqueue_scripts', 'myddpc_user_system_enqueue_scripts' );
 function myddpc_user_system_enqueue_scripts() {
-    if ( ! is_user_logged_in() ) {
-        return;
-    }
     wp_enqueue_script(
         'myddpc-ajax-handler',
         plugin_dir_url( __FILE__ ) . 'js/myddpc-ajax-handler.js',
@@ -251,4 +248,152 @@ function myddpc_render_account_settings_view() {
     echo '<button type="submit">Save Changes</button>';
     echo '<div id="myddpc-account-settings-message"></div>';
     echo '</form>';
+}
+
+function myddpc_render_saved_items_view() {
+    global $wpdb;
+    $user_id = get_current_user_id();
+    $table_name = $wpdb->prefix . 'myddpc_saved_items';
+
+    $saved_items = $wpdb->get_results( $wpdb->prepare(
+        "SELECT id, item_type, item_title, created_at FROM $table_name WHERE user_id = %d ORDER BY created_at DESC",
+        $user_id
+    ) );
+
+    echo '<h2>Your Saved Items</h2>';
+
+    if ( empty( $saved_items ) ) {
+        echo "<p>You haven't saved any research yet. Explore our tools to discover, analyze, and save vehicles that catch your eye!</p>";
+        // Optional: Add buttons to tools here
+        return;
+    }
+
+    echo '<div class="myddpc-saved-items-container">';
+    foreach ( $saved_items as $item ) {
+        // Note: The id attribute is crucial for the delete JavaScript to work
+        echo '<div class="myddpc-saved-item-card" id="saved-item-' . esc_attr( $item->id ) . '">';
+        echo '  <div class="item-type-icon">' . esc_html( ucwords( str_replace( '_', ' ', $item->item_type ) ) ) . '</div>';
+        echo '  <div class="item-title">' . esc_html( $item->item_title ) . '</div>';
+        echo '  <div class="item-date">Saved on: ' . esc_html( date( "F j, Y", strtotime( $item->created_at ) ) ) . '</div>';
+        echo '  <div class="item-actions">';
+        // The "View" link will be a placeholder until the tools are integrated
+        echo '    <a href="#" class="myddpc-saved-item-view button">View</a>';
+        // The delete button has the data-item-id attribute for the JS handler
+        echo '    <button class="myddpc-saved-item-delete button-delete" data-item-id="' . esc_attr( $item->id ) . '">Delete</button>';
+        echo '  </div>';
+        echo '</div>';
+    }
+    echo '</div>';
+}
+
+// --- REGISTRATION SHORTCODE AND HANDLER ---
+add_shortcode('myddpc_registration_form', 'myddpc_registration_shortcode');
+function myddpc_registration_shortcode() {
+    if (is_user_logged_in()) {
+        return '<p>You are already registered and logged in.</p>';
+    }
+    ob_start();
+    ?>
+    <form id="myddpc-registration-form" action="" method="post">
+        <h3>Register</h3>
+        <p>
+            <label for="reg_username">Username</label>
+            <input type="text" name="reg_username" id="reg_username" required>
+        </p>
+        <p>
+            <label for="reg_email">Email</label>
+            <input type="email" name="reg_email" id="reg_email" required>
+        </p>
+        <p>
+            <label for="reg_password">Password</label>
+            <input type="password" name="reg_password" id="reg_password" required>
+        </p>
+        <p>
+            <?php wp_nonce_field('myddpc-register-nonce', 'myddpc_register_nonce_field'); ?>
+            <input type="submit" name="myddpc_register_submit" value="Register">
+        </p>
+    </form>
+    <?php
+    return ob_get_clean();
+}
+
+add_action('init', 'myddpc_handle_registration');
+function myddpc_handle_registration() {
+    if (isset($_POST['myddpc_register_submit'])) {
+        if (!isset($_POST['myddpc_register_nonce_field']) || !wp_verify_nonce($_POST['myddpc_register_nonce_field'], 'myddpc-register-nonce')) {
+            die('Security check failed.');
+        }
+
+        $username = sanitize_user($_POST['reg_username']);
+        $email = sanitize_email($_POST['reg_email']);
+        $password = $_POST['reg_password'];
+
+        if (empty($username) || empty($email) || empty($password) || !is_email($email) || username_exists($username) || email_exists($email)) {
+            // In a real implementation, you would add user-facing error messages
+            // For now, we just stop execution.
+            return;
+        }
+
+        $user_id = wp_create_user($username, $password, $email);
+        if (!is_wp_error($user_id)) {
+            // Automatically log in and redirect
+            $creds = ['user_login' => $username, 'user_password' => $password, 'remember' => true];
+            wp_signon($creds, false);
+            wp_redirect(home_url('/my-account'));
+            exit;
+        }
+    }
+}
+
+// --- LOGIN SHORTCODE AND HANDLER ---
+add_shortcode('myddpc_login_form', 'myddpc_login_shortcode');
+function myddpc_login_shortcode() {
+    if (is_user_logged_in()) {
+        $account_url = home_url('/my-account');
+        return '<p>You are already logged in. <a href="' . esc_url(wp_logout_url(home_url())) . '">Logout</a> | <a href="' . esc_url($account_url) . '">My Account</a></p>';
+    }
+    ob_start();
+    ?>
+    <form id="myddpc-login-form" action="" method="post">
+        <h3>Login</h3>
+        <p>
+            <label for="login_username">Username or Email</label>
+            <input type="text" name="login_username" id="login_username" required>
+        </p>
+        <p>
+            <label for="login_password">Password</label>
+            <input type="password" name="login_password" id="login_password" required>
+        </p>
+        <p>
+            <?php wp_nonce_field('myddpc-login-nonce', 'myddpc_login_nonce_field'); ?>
+            <input type="submit" name="myddpc_login_submit" value="Login">
+        </p>
+    </form>
+    <?php
+    return ob_get_clean();
+}
+
+add_action('init', 'myddpc_handle_login');
+function myddpc_handle_login() {
+    if (isset($_POST['myddpc_login_submit'])) {
+        if (!isset($_POST['myddpc_login_nonce_field']) || !wp_verify_nonce($_POST['myddpc_login_nonce_field'], 'myddpc-login-nonce')) {
+            die('Security check failed.');
+        }
+
+        $creds = [
+            'user_login'    => sanitize_user($_POST['login_username']),
+            'user_password' => $_POST['login_password'],
+            'remember'      => true,
+        ];
+
+        $user = wp_signon($creds, false);
+
+        if (is_wp_error($user)) {
+            // Add error handling, like redirecting back with a query arg
+            // wp_redirect(home_url('/login?login=failed')); exit;
+        } else {
+            wp_redirect(home_url('/my-account'));
+            exit;
+        }
+    }
 } 
