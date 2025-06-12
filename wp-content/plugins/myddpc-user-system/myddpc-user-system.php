@@ -94,6 +94,7 @@ function myddpc_user_system_enqueue_scripts() {
         array(
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'myddpc_ajax_nonce' ),
+            'is_logged_in' => is_user_logged_in(),
         )
     );
 }
@@ -121,6 +122,27 @@ function myddpc_ajax_save_item_handler() {
     if ( json_last_error() !== JSON_ERROR_NONE ) {
         wp_send_json_error( array( 'message' => 'Invalid item data.' ), 400 );
     }
+
+    // Enforce save limits per item type
+    switch ( $item_type ) {
+        case 'saved_vehicle':
+            $limit = 5;
+            break;
+        case 'discover_search':
+            $limit = 2;
+            break;
+        default:
+            $limit = 3; // Default limit for unknown types
+    }
+    $existing_count = $wpdb->get_var( $wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}myddpc_saved_items WHERE user_id = %d AND item_type = %s",
+        $user_id,
+        $item_type
+    ) );
+    if ( $existing_count >= $limit ) {
+        wp_send_json_error( array( 'error_code' => 'limit_reached', 'message' => 'You have reached your save limit for this item type.' ), 403 );
+    }
+
     $result = $wpdb->insert(
         $wpdb->prefix . 'myddpc_saved_items',
         array(
@@ -255,35 +277,157 @@ function myddpc_render_saved_items_view() {
     $user_id = get_current_user_id();
     $table_name = $wpdb->prefix . 'myddpc_saved_items';
 
+    // Only select saved_vehicle items
     $saved_items = $wpdb->get_results( $wpdb->prepare(
-        "SELECT id, item_type, item_title, created_at FROM $table_name WHERE user_id = %d ORDER BY created_at DESC",
-        $user_id
+        "SELECT id, item_type, item_title, item_data, created_at FROM $table_name WHERE user_id = %d AND item_type = %s ORDER BY created_at DESC",
+        $user_id,
+        'saved_vehicle'
     ) );
 
-    echo '<h2>Your Saved Items</h2>';
+    echo '<div class="myddpc-saved-items-section">';
+    echo '<h2>Your Saved Vehicles</h2>';
 
     if ( empty( $saved_items ) ) {
-        echo "<p>You haven't saved any research yet. Explore our tools to discover, analyze, and save vehicles that catch your eye!</p>";
-        // Optional: Add buttons to tools here
+        echo '<div class="myddpc-empty-state">';
+        echo '<p>You haven\'t saved any vehicles yet. Explore our tools to discover, analyze, and save vehicles that catch your eye!</p>';
+        echo '<a href="/discover" class="button">Start Discovering</a>';
+        echo '</div>';
         return;
     }
 
-    echo '<div class="myddpc-saved-items-container">';
+    echo '<div class="myddpc-saved-items-grid">';
     foreach ( $saved_items as $item ) {
-        // Note: The id attribute is crucial for the delete JavaScript to work
-        echo '<div class="myddpc-saved-item-card" id="saved-item-' . esc_attr( $item->id ) . '">';
-        echo '  <div class="item-type-icon">' . esc_html( ucwords( str_replace( '_', ' ', $item->item_type ) ) ) . '</div>';
-        echo '  <div class="item-title">' . esc_html( $item->item_title ) . '</div>';
-        echo '  <div class="item-date">Saved on: ' . esc_html( date( "F j, Y", strtotime( $item->created_at ) ) ) . '</div>';
-        echo '  <div class="item-actions">';
-        // The "View" link will be a placeholder until the tools are integrated
-        echo '    <a href="#" class="myddpc-saved-item-view button">View</a>';
-        // The delete button has the data-item-id attribute for the JS handler
-        echo '    <button class="myddpc-saved-item-delete button-delete" data-item-id="' . esc_attr( $item->id ) . '">Delete</button>';
+        $vehicle = json_decode( $item->item_data, true );
+        $year = isset($vehicle['year']) ? $vehicle['year'] : '';
+        $make = isset($vehicle['make']) ? $vehicle['make'] : '';
+        $model = isset($vehicle['model']) ? $vehicle['model'] : '';
+        $trim = isset($vehicle['trim']) ? $vehicle['trim'] : '';
+        $vehicle_id = isset($vehicle['vehicle_id']) ? $vehicle['vehicle_id'] : '';
+        
+        echo '<div class="myddpc-saved-vehicle-card" id="saved-item-' . esc_attr( $item->id ) . '">';
+        echo '  <div class="vehicle-header">';
+        echo '    <div class="vehicle-icon">🚗</div>';
+        echo '    <div class="vehicle-title">' . esc_html( $item->item_title ) . '</div>';
+        echo '  </div>';
+        echo '  <div class="vehicle-details">';
+        echo '    <div class="detail-row"><span class="label">Year:</span> <span class="value">' . esc_html($year) . '</span></div>';
+        echo '    <div class="detail-row"><span class="label">Make:</span> <span class="value">' . esc_html($make) . '</span></div>';
+        echo '    <div class="detail-row"><span class="label">Model:</span> <span class="value">' . esc_html($model) . '</span></div>';
+        if (!empty($trim)) {
+            echo '    <div class="detail-row"><span class="label">Trim:</span> <span class="value">' . esc_html($trim) . '</span></div>';
+        }
+        echo '  </div>';
+        echo '  <div class="vehicle-footer">';
+        echo '    <div class="saved-date">Saved on ' . esc_html( date( "F j, Y", strtotime( $item->created_at ) ) ) . '</div>';
+        echo '    <div class="vehicle-actions">';
+        echo '      <a href="/discover?vehicle_id=' . esc_attr($vehicle_id) . '" class="button view-button">View Details</a>';
+        echo '      <button class="button delete-button" data-item-id="' . esc_attr( $item->id ) . '">Delete</button>';
+        echo '    </div>';
         echo '  </div>';
         echo '</div>';
     }
     echo '</div>';
+    echo '</div>';
+
+    // Add some basic CSS to style the saved vehicles display
+    echo '<style>
+        .myddpc-saved-items-section {
+            padding: 20px;
+        }
+        .myddpc-saved-items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .myddpc-saved-vehicle-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+        .myddpc-saved-vehicle-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .vehicle-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .vehicle-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        .vehicle-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .vehicle-details {
+            margin-bottom: 15px;
+        }
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .detail-row .label {
+            font-weight: 600;
+            width: 80px;
+            color: #666;
+        }
+        .detail-row .value {
+            color: #333;
+        }
+        .vehicle-footer {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        .saved-date {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .vehicle-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s;
+        }
+        .view-button {
+            background-color: #007bff;
+            color: white;
+        }
+        .view-button:hover {
+            background-color: #0056b3;
+        }
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        .myddpc-empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .myddpc-empty-state p {
+            margin-bottom: 20px;
+            color: #666;
+        }
+    </style>';
 }
 
 // --- REGISTRATION SHORTCODE AND HANDLER ---
@@ -396,4 +540,29 @@ function myddpc_handle_login() {
             exit;
         }
     }
+}
+
+add_action('wp_ajax_myddpc_get_saved_searches', 'myddpc_get_saved_searches_handler');
+function myddpc_get_saved_searches_handler() {
+    // Verify nonce and user authentication
+    check_ajax_referer('myddpc_ajax_nonce', 'nonce');
+    if (!is_user_logged_in()) {
+        wp_send_json_error(array('message' => 'You must be logged in.'), 401);
+    }
+
+    global $wpdb;
+    $user_id = get_current_user_id();
+    $table_name = $wpdb->prefix . 'myddpc_saved_items';
+
+    // Query saved searches for the current user
+    $saved_searches = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, item_title, item_data FROM $table_name 
+        WHERE user_id = %d AND item_type = %s 
+        ORDER BY created_at DESC",
+        $user_id,
+        'discover_search'
+    ));
+
+    // Return the results
+    wp_send_json_success($saved_searches);
 } 

@@ -80,6 +80,14 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <span id="discover-total-count"></span>
             <div id="filter-tags"></div>
             <button id="reset-filters" type="button">Reset Filters</button>
+            <div class="myddpc-discover-actions">
+                <button id="save-current-search" class="myddpc-button myddpc-button-secondary" style="display: none;">
+                    <span class="dashicons dashicons-saved"></span> Save Current Search
+                </button>
+                <select id="load-saved-search" class="myddpc-select" style="display: none;">
+                    <option value="">--- Load Saved Search ---</option>
+                </select>
+            </div>
         </div>
         <table id="discover-table">
             <thead>
@@ -124,3 +132,21 @@ if ( ! defined( 'ABSPATH' ) ) exit;
         <button id="discover-save-vehicle">Save Vehicle</button>
     </div>
 </div>
+
+<!-- Custom Modal -->
+<div id="myddpc-custom-modal" class="hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+        <h3 class="modal-title"></h3>
+        <div class="modal-body">
+            <p class="modal-message"></p>
+            <input type="text" class="modal-input hidden" placeholder="Enter a name...">
+        </div>
+        <div class="modal-actions">
+            <button class="modal-button-confirm">Confirm</button>
+            <button class="modal-button-cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+</div> <!-- End of myddpc-discover-container -->

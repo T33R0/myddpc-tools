@@ -383,3 +383,122 @@ select[multiple][size="1"] {
 #reset-filters:hover {
   background: #d32f2f;
 }
+
+/* Custom Modal Styles */
+#myddpc-custom-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#myddpc-custom-modal.hidden {
+    display: none;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    position: relative;
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+}
+
+.modal-title {
+    margin: 0 0 16px 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.modal-body {
+    margin-bottom: 24px;
+}
+
+.modal-message {
+    margin: 0 0 16px 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    margin-top: 8px;
+}
+
+.modal-input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-button-confirm,
+.modal-button-cancel {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+.modal-button-confirm {
+    background-color: #007bff;
+    color: white;
+}
+
+.modal-button-confirm:hover {
+    background-color: #0056b3;
+}
+
+.modal-button-cancel {
+    background-color: #6c757d;
+    color: white;
+}
+
+.modal-button-cancel:hover {
+    background-color: #5a6268;
+}
+
+/* Animation for modal */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content {
+    animation: modalFadeIn 0.3s ease-out;
+}

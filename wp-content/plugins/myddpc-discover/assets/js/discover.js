@@ -531,6 +531,188 @@ document.addEventListener('DOMContentLoaded', () => {
         const sel = document.getElementById(id);
         if (sel) createCustomMultiSelect(sel);
     });
+
+    // --- Save Vehicle Button Handler ---
+    const saveBtn = document.getElementById('discover-save-vehicle');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async function() {
+            if (!myddpc_ajax_data.is_logged_in) {
+                showCustomModal({
+                    title: 'Login Required',
+                    message: 'Please log in to save vehicles.',
+                    onConfirm: () => {}
+                });
+                return;
+            }
+
+            showCustomModal({
+                title: 'Save Vehicle',
+                message: 'Enter a name for this vehicle:',
+                needsInput: true,
+                onConfirm: async (vehicleName) => {
+                    const vehicleData = {
+                        vehicle_id: document.getElementById('discover-detail-modal').getAttribute('data-vehicle-id'),
+                        year: document.getElementById('detail-year').textContent,
+                        make: document.getElementById('detail-make').textContent,
+                        model: document.getElementById('detail-model').textContent,
+                        trim: document.getElementById('detail-trim').textContent,
+                        engine: document.getElementById('detail-engine').textContent,
+                        cylinders: document.getElementById('detail-cylinders').textContent,
+                        drive: document.getElementById('detail-drive').textContent,
+                        transmission: document.getElementById('detail-transmission').textContent,
+                        body: document.getElementById('detail-body').textContent,
+                        classification: document.getElementById('detail-classification').textContent,
+                        platform: document.getElementById('detail-platform').textContent
+                    };
+
+                    const saveButton = this;
+                    saveButton.disabled = true;
+                    saveButton.textContent = 'Saving...';
+
+                    fetch(myddpc_ajax_data.ajax_url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            action: 'myddpc_save_item',
+                            nonce: myddpc_ajax_data.nonce,
+                            item_type: 'saved_vehicle',
+                            item_title: vehicleName,
+                            item_data: JSON.stringify(vehicleData)
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            saveButton.textContent = '✓ Saved';
+                            setTimeout(() => {
+                                saveButton.textContent = 'Save Vehicle';
+                                saveButton.disabled = false;
+                            }, 2000);
+                        } else if (data.data && data.data.error_code === 'limit_reached') {
+                            showCustomModal({
+                                title: 'Limit Reached',
+                                message: data.data.message || 'You have reached your limit of saved vehicles. Please remove one from your account page to save a new one.',
+                                onConfirm: () => {
+                                    saveButton.textContent = 'Save Vehicle';
+                                    saveButton.disabled = false;
+                                }
+                            });
+                        } else {
+                            showCustomModal({
+                                title: 'Error',
+                                message: data.data.message || 'Failed to save vehicle.',
+                                onConfirm: () => {
+                                    saveButton.textContent = 'Save Vehicle';
+                                    saveButton.disabled = false;
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving vehicle:', error);
+                        showCustomModal({
+                            title: 'Error',
+                            message: 'Failed to save vehicle. Please try again.',
+                            onConfirm: () => {
+                                saveButton.textContent = 'Save Vehicle';
+                                saveButton.disabled = false;
+                            }
+                        });
+                    });
+                }
+            });
+        });
+    }
+
+    // --- Save Current Search Button Handler ---
+    const saveSearchBtn = document.getElementById('save-current-search');
+    if (saveSearchBtn) {
+        saveSearchBtn.addEventListener('click', function() {
+            if (!myddpc_ajax_data.is_logged_in) {
+                showCustomModal({
+                    title: 'Login Required',
+                    message: 'Please log in to save searches.',
+                    onConfirm: () => {}
+                });
+                return;
+            }
+
+            showCustomModal({
+                title: 'Save Search',
+                message: 'Enter a name for this search:',
+                needsInput: true,
+                onConfirm: async (searchName) => {
+                    const savedFiltersObject = {};
+                    document.querySelectorAll('.myddpc-discover-filter').forEach(filter => {
+                        const id = filter.id;
+                        if (!id) return;
+
+                        if (filter.type === 'checkbox') {
+                            savedFiltersObject[id] = filter.checked;
+                        } else if (filter.tagName === 'SELECT') {
+                            if (filter.multiple) {
+                                savedFiltersObject[id] = Array.from(filter.selectedOptions).map(option => option.value);
+                            } else {
+                                savedFiltersObject[id] = filter.value;
+                            }
+                        } else {
+                            savedFiltersObject[id] = filter.value;
+                        }
+                    });
+
+                    fetch(myddpc_ajax_data.ajax_url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            action: 'myddpc_save_item',
+                            nonce: myddpc_ajax_data.nonce,
+                            item_type: 'discover_search',
+                            item_title: searchName,
+                            item_data: JSON.stringify(savedFiltersObject)
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const dropdown = document.getElementById('load-saved-search');
+                            const newOption = document.createElement('option');
+                            newOption.textContent = searchName;
+                            newOption.value = data.data.id;
+                            newOption.filterData = savedFiltersObject;
+                            dropdown.appendChild(newOption);
+                            
+                            showCustomModal({
+                                title: 'Success',
+                                message: 'Search saved successfully!',
+                                onConfirm: () => {}
+                            });
+                        } else {
+                            showCustomModal({
+                                title: 'Error',
+                                message: data.data.message || 'Failed to save search.',
+                                onConfirm: () => {}
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving search:', error);
+                        showCustomModal({
+                            title: 'Error',
+                            message: 'Failed to save search. Please try again.',
+                            onConfirm: () => {}
+                        });
+                    });
+                }
+            });
+        });
+    }
+
+    // Initialize saved searches dropdown
+    populateSavedSearchesDropdown();
 });
 
 function attachFilterListeners() {
@@ -677,4 +859,180 @@ function updateResultsTable(json) {
     renderTableRows(json.results);
     currentTotal = json.total;
     renderPagination(json.total, currentLimit, currentPage);
+}
+
+// Function to populate the saved searches dropdown
+function populateSavedSearchesDropdown() {
+    if (!myddpc_ajax_data.is_logged_in) return;
+
+    const dropdown = document.getElementById('load-saved-search');
+    if (!dropdown) return;
+
+    // Show the dropdown and save button for logged-in users
+    dropdown.style.display = 'inline-block';
+    document.getElementById('save-current-search').style.display = 'inline-block';
+
+    // Clear existing options except the first one
+    while (dropdown.options.length > 1) {
+        dropdown.remove(1);
+    }
+
+    // Fetch saved searches
+    fetch(myddpc_ajax_data.ajax_url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            action: 'myddpc_get_saved_searches',
+            nonce: myddpc_ajax_data.nonce
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.data) {
+            data.data.forEach(item => {
+                const option = document.createElement('option');
+                option.textContent = item.item_title;
+                option.value = item.id;
+                option.filterData = JSON.parse(item.item_data);
+                dropdown.appendChild(option);
+            });
+        }
+    })
+    .catch(error => console.error('Error loading saved searches:', error));
+}
+
+// Function to apply filters from saved search
+function applyFilters(filtersObject) {
+    // Reset all filters first
+    document.getElementById('reset-filters').click();
+
+    // Apply each filter value
+    Object.entries(filtersObject).forEach(([filterId, value]) => {
+        const element = document.getElementById(filterId);
+        if (!element) return;
+
+        if (element.type === 'checkbox') {
+            // Handle checkboxes
+            element.checked = value;
+        } else if (element.tagName === 'SELECT') {
+            if (element.classList.contains('enhanced-multi-select')) {
+                // Handle enhanced multi-selects
+                const customSelect = element.nextElementSibling;
+                if (customSelect && customSelect.classList.contains('custom-multi-select')) {
+                    // Get the instance of the enhanced select
+                    const enhancedSelect = customSelect.enhancedSelect;
+                    if (enhancedSelect && typeof enhancedSelect.setValue === 'function') {
+                        // Set the values using the enhancement library's API
+                        enhancedSelect.setValue(Array.isArray(value) ? value : [value]);
+                    }
+                }
+            } else if (element.multiple) {
+                // Handle standard multi-selects
+                Array.from(element.options).forEach(option => {
+                    option.selected = Array.isArray(value) ? value.includes(option.value) : value === option.value;
+                });
+            } else {
+                // Handle standard single-selects
+                element.value = value;
+            }
+        } else {
+            // Handle text inputs and other input types
+            element.value = value;
+        }
+    });
+
+    // Update all custom multi-select labels
+    updateAllCustomMultiSelectLabels();
+}
+
+// Update the load saved search handler
+document.getElementById('load-saved-search').addEventListener('change', function(e) {
+    const selectedOption = e.target.options[e.target.selectedIndex];
+    if (!selectedOption || !selectedOption.filterData) return;
+
+    // Apply the filters
+    applyFilters(selectedOption.filterData);
+
+    // Trigger the filter change to update results
+    handleFilterChange();
+});
+
+// Add click handler for table rows to open detail modal
+document.querySelector('#discover-table tbody').addEventListener('click', function(e) {
+    // Find the closest tr element
+    const row = e.target.closest('tr');
+    if (!row) return;
+
+    // Get the vehicle ID from the data attribute
+    const vehicleId = row.getAttribute('data-vehicle-id');
+    if (!vehicleId) return;
+
+    // Open the detail modal
+    renderDetailModal(vehicleId);
+});
+
+// Add close button handler for vehicle detail modal
+document.querySelector('#discover-detail-modal .modal-close').addEventListener('click', function() {
+    document.getElementById('discover-detail-modal').classList.add('hidden');
+});
+
+// Custom Modal Function
+function showCustomModal({ title, message, needsInput = false, onConfirm, onCancel }) {
+    const modal = document.getElementById('myddpc-custom-modal');
+    const modalTitle = modal.querySelector('.modal-title');
+    const modalMessage = modal.querySelector('.modal-message');
+    const modalInput = modal.querySelector('.modal-input');
+    const confirmButton = modal.querySelector('.modal-button-confirm');
+    const cancelButton = modal.querySelector('.modal-button-cancel');
+
+    // Set modal content
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    
+    // Handle input field visibility
+    if (needsInput) {
+        modalInput.classList.remove('hidden');
+        modalInput.value = '';
+        modalInput.focus();
+    } else {
+        modalInput.classList.add('hidden');
+    }
+
+    // Remove any existing event listeners
+    const newConfirmButton = confirmButton.cloneNode(true);
+    const newCancelButton = cancelButton.cloneNode(true);
+    confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
+    cancelButton.parentNode.replaceChild(newCancelButton, cancelButton);
+
+    // Add new event listeners
+    newConfirmButton.addEventListener('click', () => {
+        if (needsInput) {
+            const inputValue = modalInput.value.trim();
+            if (!inputValue) {
+                modalInput.focus();
+                return;
+            }
+            modal.classList.add('hidden');
+            if (onConfirm) {
+                onConfirm(inputValue);
+            }
+        } else {
+            modal.classList.add('hidden');
+            if (onConfirm) {
+                onConfirm(null);
+            }
+        }
+    });
+
+    newCancelButton.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        if (onCancel) {
+            onCancel();
+        }
+    });
+
+    // Show modal
+    modal.classList.remove('hidden');
 }
