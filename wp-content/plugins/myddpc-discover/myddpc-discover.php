@@ -1,25 +1,35 @@
 <?php
-/*
-Plugin Name:       MyDDPC Discover Tool
-Plugin URI:        https://myddpc.com
-Description:       Provides a "Discover" interface for filtering the vehicle database by technical attributes.
-Version:           0.1
-Author:            Rory Teehan
-Author URI:        https://myddpc.com
-License:           GPLv2 or later
-Text Domain:       myddpc-discover
-*/
+/**
+ * Plugin Name: MYDDPC Discover
+ * Description: Vehicle discovery and search functionality
+ * Version: 1.0.0
+ * Author: MYDDPC
+ */
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if (!defined('ABSPATH')) exit;
+
+// Ensure WordPress REST API is available
+if (!function_exists('rest_ensure_response')) {
+    require_once(ABSPATH . 'wp-includes/rest-api.php');
+}
+
+// Load plugin files
+require_once plugin_dir_path(__FILE__) . 'includes/class-discover-query.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-discover-rest.php';
+
+// Initialize REST API
+add_action('init', function() {
+    new Discover_REST();
+});
 
 // Activation check
-function myddpc_discover_activate() {
-    if ( version_compare( PHP_VERSION, '7.2', '<' ) ) {
-        deactivate_plugins( plugin_basename( __FILE__ ) );
-        wp_die( esc_html__( 'MyDDPC Discover Tool requires PHP 7.2 or higher.', 'myddpc-discover' ) );
+function myddpc_discover_activation_check() {
+    if (!is_plugin_active('myddpc-user-system/myddpc-user-system.php')) {
+        deactivate_plugins(plugin_basename(__FILE__));
+        wp_die(esc_html__('MYDDPC Discover requires the MYDDPC User System plugin to be active.', 'myddpc-discover'));
     }
 }
-register_activation_hook( __FILE__, 'myddpc_discover_activate' );
+register_activation_hook(__FILE__, 'myddpc_discover_activation_check');
 
 // Shortcode registration
 function myddpc_discover_shortcode( $atts ) {
@@ -62,6 +72,3 @@ function myddpc_discover_enqueue_assets() {
     }
 }
 add_action( 'wp_enqueue_scripts', 'myddpc_discover_enqueue_assets' );
-
-// REST endpoints are registered in includes/class-discover-rest.php
-require_once __DIR__ . '/includes/class-discover-rest.php';

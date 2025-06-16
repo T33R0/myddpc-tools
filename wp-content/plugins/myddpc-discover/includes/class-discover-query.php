@@ -149,11 +149,13 @@ class Discover_Query {
             'min' => (int) $this->wpdb->get_var("SELECT MIN(`Year`) FROM $t"),
             'max' => (int) $this->wpdb->get_var("SELECT MAX(`Year`) FROM $t"),
         ];
+        $out['make'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Make` FROM $t WHERE `Make` IS NOT NULL AND `Make` != '' ORDER BY `Make` ASC")));
         $out['drive_type'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Drive type` FROM $t WHERE `Drive type` IS NOT NULL AND `Drive type` != '' ORDER BY `Drive type` ASC")));
         $out['transmission'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Transmission` FROM $t WHERE `Transmission` IS NOT NULL AND `Transmission` != '' ORDER BY `Transmission` ASC")));
         $out['cylinders'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Cylinders` FROM $t WHERE `Cylinders` IS NOT NULL AND `Cylinders` != '' ORDER BY `Cylinders` ASC")));
         $out['body_type'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Body type` FROM $t WHERE `Body type` IS NOT NULL AND `Body type` != '' ORDER BY `Body type` ASC")));
         $out['country_of_origin'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Country of origin` FROM $t WHERE `Country of origin` IS NOT NULL AND `Country of origin` != '' ORDER BY `Country of origin` ASC")));
+        $out['fuel_type'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Fuel type` FROM $t WHERE `Fuel type` IS NOT NULL AND `Fuel type` != '' ORDER BY `Fuel type` ASC")));
         $out['engine_size'] = [
             'min' => (float) $this->wpdb->get_var("SELECT MIN(`Engine size (l)`) FROM $t"),
             'max' => (float) $this->wpdb->get_var("SELECT MAX(`Engine size (l)`) FROM $t"),
@@ -181,5 +183,23 @@ class Discover_Query {
         $count_sql = "SELECT COUNT(*) FROM {$this->table_name} $where_sql";
         $total = (int) $this->wpdb->get_var($this->wpdb->prepare($count_sql, $values));
         return [ 'results' => $results, 'total' => $total ];
+    }
+
+    /**
+     * Get a single vehicle by ID
+     *
+     * @param int $id The vehicle ID
+     * @return array|null The vehicle data or null if not found
+     */
+    public static function get_vehicle_by_id($id) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'vehicle_data';
+        
+        $sql = $wpdb->prepare(
+            "SELECT * FROM {$table_name} WHERE ID = %d LIMIT 1",
+            $id
+        );
+        
+        return $wpdb->get_row($sql, ARRAY_A);
     }
 }

@@ -6,7 +6,7 @@ let optionsData = null;
 // Fetch filter options from REST API
 async function fetchFilterOptions() {
     const res = await fetch(
-        myddpc_discover_data.root + myddpc_discover_data.routes.filters,
+        myddpc_discover_data.root + 'myddpc/v1/discover/filters',
         { headers: { 'X-WP-Nonce': myddpc_discover_data.nonce } }
     );
     if (!res.ok) throw new Error('Failed to fetch filter options');
@@ -323,38 +323,52 @@ function renderTableRows(results) {
 function renderDetailModal(vehicleId) {
     const modal = document.getElementById('discover-detail-modal');
     if (!modal) return;
-    // Fetch full vehicle details (simulate by finding in last results for now)
-    let vehicle = null;
-    // Try to find in last results
-    const tbody = document.querySelector('#discover-table tbody');
-    if (tbody) {
-        const rows = Array.from(tbody.children);
-        for (const tr of rows) {
-            if (tr.dataset.vehicleId == vehicleId) {
-                // Use the data from the row if available
-                // (In real use, fetch from API)
-                vehicle = tr;
-                break;
-            }
-        }
-    }
-    // For now, just use the last fetched row data if available
-    // (Replace with API fetch for full details if needed)
-    if (vehicle) {
-        document.getElementById('detail-year').textContent = vehicle.children[0].textContent;
-        document.getElementById('detail-make').textContent = vehicle.children[1].textContent;
-        document.getElementById('detail-model').textContent = vehicle.children[2].textContent;
-        document.getElementById('detail-trim').textContent = vehicle.children[3].textContent;
-        document.getElementById('detail-engine').textContent = vehicle.children[4].textContent;
-        document.getElementById('detail-cylinders').textContent = vehicle.children[5].textContent;
-        document.getElementById('detail-drive').textContent = vehicle.children[6].textContent;
-        document.getElementById('detail-transmission').textContent = vehicle.children[7].textContent;
-        document.getElementById('detail-body').textContent = vehicle.children[8].textContent;
-        document.getElementById('detail-classification').textContent = vehicle.children[9].textContent;
-        document.getElementById('detail-platform').textContent = vehicle.children[10].textContent;
-    }
-    modal.dataset.currentVehicle = vehicleId;
+
+    // Show loading state
     modal.classList.remove('hidden');
+    Object.values(modal.querySelectorAll('[id^="detail-"]')).forEach(el => {
+        el.textContent = 'Loading...';
+    });
+
+    // Fetch vehicle details from REST API
+    fetch(myddpc_discover_data.root + `myddpc/v1/vehicle/${vehicleId}`, {
+        headers: { 'X-WP-Nonce': myddpc_discover_data.nonce }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to fetch vehicle details');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (!data.success || !data.data) {
+            throw new Error(data.message || 'Failed to load vehicle details');
+        }
+
+        const vehicle = data.data;
+        
+        // Update modal content
+        document.getElementById('detail-year').textContent = vehicle.Year || '';
+        document.getElementById('detail-make').textContent = vehicle.Make || '';
+        document.getElementById('detail-model').textContent = vehicle.Model || '';
+        document.getElementById('detail-trim').textContent = vehicle.Trim || '';
+        document.getElementById('detail-engine').textContent = vehicle['Engine size (l)'] || '';
+        document.getElementById('detail-cylinders').textContent = vehicle.Cylinders || '';
+        document.getElementById('detail-drive').textContent = vehicle['Drive type'] || '';
+        document.getElementById('detail-transmission').textContent = vehicle.Transmission || '';
+        document.getElementById('detail-body').textContent = vehicle['Body type'] || '';
+        document.getElementById('detail-classification').textContent = vehicle['Car classification'] || '';
+        document.getElementById('detail-platform').textContent = vehicle['Platform code / generation number'] || '';
+
+        // Store vehicle ID for save functionality
+        modal.dataset.currentVehicle = vehicleId;
+    })
+    .catch(error => {
+        console.error('Error loading vehicle details:', error);
+        Object.values(modal.querySelectorAll('[id^="detail-"]')).forEach(el => {
+            el.textContent = 'Error loading data';
+        });
+    });
 }
 
 function createCustomMultiSelect(select) {
@@ -470,6 +484,13 @@ function updateAllCustomMultiSelectLabels() {
 // Event listeners
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Check for vehicle_id in URL
+    const params = new URLSearchParams(window.location.search);
+    const vehicleId = params.get('vehicle_id');
+    if (vehicleId) {
+        renderDetailModal(vehicleId);
+    }
+
     // Collapsible filter sections: collapse all by default
     const collapsibles = document.querySelectorAll('.collapsible');
     collapsibles.forEach((col) => {
@@ -746,7 +767,7 @@ function handleFilterChange() {
     fetchResults(filters, currentLimit, 0, currentSortBy, currentSortDir).then(updateResultsTable);
 }
 
-function resetFilters() {
+function resetFilters(triggerChange = true) {
     // Reset all selects to their first option
     document.querySelectorAll('#discover-filter-form select').forEach(sel => {
         if (sel.multiple) {
@@ -775,7 +796,9 @@ function resetFilters() {
     // Update custom multi-select button labels
     updateAllCustomMultiSelectLabels();
     // Refresh results
-    handleFilterChange();
+    if (triggerChange) {
+        handleFilterChange();
+    }
 }
 
 function renderFilterTags(filters) {
@@ -863,10 +886,14 @@ function updateResultsTable(json) {
 
 // Function to populate the saved searches dropdown
 function populateSavedSearchesDropdown() {
+    console.log('DEBUG: Populating saved searches...');
     if (!myddpc_ajax_data.is_logged_in) return;
 
     const dropdown = document.getElementById('load-saved-search');
-    if (!dropdown) return;
+    if (!dropdown) {
+        console.error('DEBUG: "load-saved-search" dropdown not found.');
+        return;
+    }
 
     // Show the dropdown and save button for logged-in users
     dropdown.style.display = 'inline-block';
@@ -891,50 +918,47 @@ function populateSavedSearchesDropdown() {
     .then(response => response.json())
     .then(data => {
         if (data.success && data.data) {
+            console.log('DEBUG: Saved searches received from server:', data.data);
             data.data.forEach(item => {
                 const option = document.createElement('option');
                 option.textContent = item.item_title;
                 option.value = item.id;
-                option.filterData = JSON.parse(item.item_data);
+                try {
+                    option.filterData = JSON.parse(item.item_data);
+                    console.log(`DEBUG: Attaching filterData for "${item.item_title}":`, option.filterData);
+                } catch (e) {
+                    console.error(`DEBUG: Failed to parse filterData for search "${item.item_title}"`, e);
+                    option.filterData = null;
+                }
                 dropdown.appendChild(option);
             });
         }
     })
-    .catch(error => console.error('Error loading saved searches:', error));
+    .catch(error => console.error('DEBUG: Error loading saved searches:', error));
 }
 
 // Function to apply filters from saved search
 function applyFilters(filtersObject) {
-    // Reset all filters first
-    document.getElementById('reset-filters').click();
-
+    console.log('DEBUG: Applying filters:', filtersObject);
     // Apply each filter value
     Object.entries(filtersObject).forEach(([filterId, value]) => {
         const element = document.getElementById(filterId);
-        if (!element) return;
+        if (!element) {
+            console.warn(`DEBUG: Filter element with ID "${filterId}" not found. Skipping.`);
+            return;
+        }
 
         if (element.type === 'checkbox') {
             // Handle checkboxes
             element.checked = value;
         } else if (element.tagName === 'SELECT') {
-            if (element.classList.contains('enhanced-multi-select')) {
-                // Handle enhanced multi-selects
-                const customSelect = element.nextElementSibling;
-                if (customSelect && customSelect.classList.contains('custom-multi-select')) {
-                    // Get the instance of the enhanced select
-                    const enhancedSelect = customSelect.enhancedSelect;
-                    if (enhancedSelect && typeof enhancedSelect.setValue === 'function') {
-                        // Set the values using the enhancement library's API
-                        enhancedSelect.setValue(Array.isArray(value) ? value : [value]);
-                    }
-                }
-            } else if (element.multiple) {
-                // Handle standard multi-selects
+            if (element.multiple) {
+                // Handle multi-selects
                 Array.from(element.options).forEach(option => {
                     option.selected = Array.isArray(value) ? value.includes(option.value) : value === option.value;
                 });
             } else {
-                // Handle standard single-selects
+                // Handle single-selects
                 element.value = value;
             }
         } else {
@@ -944,18 +968,38 @@ function applyFilters(filtersObject) {
     });
 
     // Update all custom multi-select labels
+    console.log('DEBUG: Updating all custom multi-select labels.');
     updateAllCustomMultiSelectLabels();
 }
 
 // Update the load saved search handler
 document.getElementById('load-saved-search').addEventListener('change', function(e) {
+    console.log('DEBUG: Saved search dropdown changed.');
     const selectedOption = e.target.options[e.target.selectedIndex];
-    if (!selectedOption || !selectedOption.filterData) return;
+    
+    if (!selectedOption || !selectedOption.value) {
+        console.log('DEBUG: Placeholder selected or no value. Aborting.');
+        return;
+    }
+    
+    console.log('DEBUG: Selected option value:', selectedOption.value);
+    console.log('DEBUG: Filter data from option:', selectedOption.filterData);
 
-    // Apply the filters
+    if (!selectedOption.filterData) {
+        console.error('DEBUG: No filterData found on the selected option.');
+        return;
+    }
+
+    // Reset all filters first, without triggering a data fetch
+    console.log('DEBUG: Resetting filters...');
+    resetFilters(false);
+
+    // Apply the saved filters
+    console.log('DEBUG: Applying saved filters...');
     applyFilters(selectedOption.filterData);
 
     // Trigger the filter change to update results
+    console.log('DEBUG: Fetching new results...');
     handleFilterChange();
 });
 

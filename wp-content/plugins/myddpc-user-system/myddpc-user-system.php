@@ -278,16 +278,16 @@ function myddpc_render_saved_items_view() {
     $table_name = $wpdb->prefix . 'myddpc_saved_items';
 
     // Only select saved_vehicle items
-    $saved_items = $wpdb->get_results( $wpdb->prepare(
+    $saved_items = $wpdb->get_results($wpdb->prepare(
         "SELECT id, item_type, item_title, item_data, created_at FROM $table_name WHERE user_id = %d AND item_type = %s ORDER BY created_at DESC",
         $user_id,
         'saved_vehicle'
-    ) );
+    ));
 
     echo '<div class="myddpc-saved-items-section">';
     echo '<h2>Your Saved Vehicles</h2>';
 
-    if ( empty( $saved_items ) ) {
+    if (empty($saved_items)) {
         echo '<div class="myddpc-empty-state">';
         echo '<p>You haven\'t saved any vehicles yet. Explore our tools to discover, analyze, and save vehicles that catch your eye!</p>';
         echo '<a href="/discover" class="button">Start Discovering</a>';
@@ -296,18 +296,18 @@ function myddpc_render_saved_items_view() {
     }
 
     echo '<div class="myddpc-saved-items-grid">';
-    foreach ( $saved_items as $item ) {
-        $vehicle = json_decode( $item->item_data, true );
+    foreach ($saved_items as $item) {
+        $vehicle = json_decode($item->item_data, true);
         $year = isset($vehicle['year']) ? $vehicle['year'] : '';
         $make = isset($vehicle['make']) ? $vehicle['make'] : '';
         $model = isset($vehicle['model']) ? $vehicle['model'] : '';
         $trim = isset($vehicle['trim']) ? $vehicle['trim'] : '';
         $vehicle_id = isset($vehicle['vehicle_id']) ? $vehicle['vehicle_id'] : '';
         
-        echo '<div class="myddpc-saved-vehicle-card" id="saved-item-' . esc_attr( $item->id ) . '">';
+        echo '<div class="myddpc-saved-vehicle-card" id="saved-item-' . esc_attr($item->id) . '">';
         echo '  <div class="vehicle-header">';
         echo '    <div class="vehicle-icon">🚗</div>';
-        echo '    <div class="vehicle-title">' . esc_html( $item->item_title ) . '</div>';
+        echo '    <div class="vehicle-title">' . esc_html($item->item_title) . '</div>';
         echo '  </div>';
         echo '  <div class="vehicle-details">';
         echo '    <div class="detail-row"><span class="label">Year:</span> <span class="value">' . esc_html($year) . '</span></div>';
@@ -318,10 +318,12 @@ function myddpc_render_saved_items_view() {
         }
         echo '  </div>';
         echo '  <div class="vehicle-footer">';
-        echo '    <div class="saved-date">Saved on ' . esc_html( date( "F j, Y", strtotime( $item->created_at ) ) ) . '</div>';
+        echo '    <div class="saved-date">Saved on ' . esc_html(date("F j, Y", strtotime($item->created_at))) . '</div>';
         echo '    <div class="vehicle-actions">';
-        echo '      <a href="/discover?vehicle_id=' . esc_attr($vehicle_id) . '" class="button view-button">View Details</a>';
-        echo '      <button class="button delete-button" data-item-id="' . esc_attr( $item->id ) . '">Delete</button>';
+        if ($vehicle_id) {
+            echo '      <a href="/discover/?vehicle_id=' . esc_attr($vehicle_id) . '" class="button view-button">View Details</a>';
+        }
+        echo '      <button class="button delete-button" data-item-id="' . esc_attr($item->id) . '">Delete</button>';
         echo '    </div>';
         echo '  </div>';
         echo '</div>';
