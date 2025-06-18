@@ -1,88 +1,158 @@
 // myddpc-ajax-handler.js
 // Handles AJAX for MyDDPC User System
 
-(function($) {
-    // Use jQuery's DOM-ready event to ensure the script runs after the page is fully loaded
-    $(function() {
+jQuery(document).ready(function($) {
+    // --- Saved Item Card Interactions ---
+    function setupCardEventHandlers() {
+        $('.saved-items-grid').on('click', '.edit-title-btn', function() {
+            var card = $(this).closest('.saved-item-card');
+            card.find('.card-title-container').hide();
+            card.find('.card-title-edit-container').show().find('.edit-title-input').focus();
+        });
 
-        // Handler for deleting a saved item
-        $(document).on('click', '.myddpc-saved-item-delete', function(e) {
-            e.preventDefault();
+        $('.saved-items-grid').on('click', '.cancel-edit-btn', function() {
+            var card = $(this).closest('.saved-item-card');
+            card.find('.card-title-edit-container').hide();
+            card.find('.card-title-container').show();
+        });
 
-            var btn = $(this);
-            var itemId = btn.data('item-id');
+        $('.saved-items-grid').on('click', '.save-title-btn', function() {
+            var card = $(this).closest('.saved-item-card');
+            var itemId = card.data('item-id');
+            var newTitle = card.find('.edit-title-input').val().trim();
+            var saveButton = $(this);
 
-            if (!confirm('Are you sure you want to delete this item?')) {
+            if (!newTitle) {
+                alert('Title cannot be empty.');
                 return;
             }
-            
-            btn.prop('disabled', true);
+
+            saveButton.text('Saving...').prop('disabled', true);
 
             $.ajax({
                 url: myddpc_ajax_data.ajax_url,
                 type: 'POST',
                 data: {
-                    action: 'myddpc_delete_item',
+                    action: 'myddpc_update_item_title',
                     nonce: myddpc_ajax_data.nonce,
-                    item_id: itemId
+                    item_id: itemId,
+                    new_title: newTitle
                 },
                 success: function(response) {
                     if (response.success) {
-                        // If successful, fade out and remove the item from the page
-                        $('#saved-item-' + itemId).fadeOut(300, function() { $(this).remove(); });
+                        card.find('.card-title').text(newTitle);
+                        card.find('.card-title-edit-container').hide();
+                        card.find('.card-title-container').show();
                     } else {
-                        // On failure, show an alert and re-enable the button
-                        alert(response.data && response.data.message ? response.data.message : 'Delete failed.');
-                        btn.prop('disabled', false);
+                        alert('Error: ' + (response.data.message || 'Could not update title.'));
                     }
                 },
                 error: function() {
-                    // On AJAX error, show a generic alert and re-enable the button
-                    alert('An error occurred while trying to delete the item.');
-                    btn.prop('disabled', false);
+                    alert('An unexpected error occurred. Please try again.');
+                },
+                complete: function() {
+                    saveButton.text('Save').prop('disabled', false);
                 }
             });
         });
 
-        // Handler for the account settings form submission
-        $('#myddpc-account-settings-form').on('submit', function(e) {
+        $('.saved-items-grid').on('click', '.delete-button', function() {
+            var card = $(this).closest('.saved-item-card');
+            var itemId = card.data('item-id');
+            var itemTitle = card.find('.card-title').text();
+
+            if (confirm('Are you sure you want to delete "' + itemTitle + '"?')) {
+                $.ajax({
+                    url: myddpc_ajax_data.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'myddpc_delete_item',
+                        nonce: myddpc_ajax_data.nonce,
+                        item_id: itemId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            card.fadeOut(400, function() {
+                                $(this).remove();
+                            });
+                        } else {
+                            alert('Error: ' + (response.data.message || 'Could not delete item.'));
+                        }
+                    },
+                    error: function() {
+                        alert('An unexpected error occurred. Please try again.');
+                    }
+                });
+            }
+        });
+        
+        // Handler for "Load Search" button
+        $('.saved-items-grid').on('click', '.load-search-button', function(e) {
             e.preventDefault();
+            const searchId = $(this).data('search-id');
+            if (!searchId) return;
 
-            var form = $(this);
-            var msg = $('#myddpc-account-settings-message').text('').removeClass('success error');
-            
-            $.ajax({
-                url: myddpc_ajax_data.ajax_url,
-                type: 'POST',
-                data: form.serialize() + '&action=myddpc_update_account_settings',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        var out = [];
-                        if (response.data.display_name) {
-                            out.push('Display name updated.');
-                        }
-                        // Handle password update status
-                        if (response.data.password === 'success') {
-                            out.push('Password updated.');
-                        } else if (response.data.password === 'mismatch') {
-                            out.push('New passwords do not match.');
-                        } else if (response.data.password === 'incorrect_current') {
-                            out.push('Current password is incorrect.');
-                        }
-                        // Display success message
-                        msg.text(out.join(' ')).addClass('success');
-                    } else {
-                        // Display error message
-                        msg.text(response.data && response.data.message ? response.data.message : 'Update failed.').addClass('error');
-                    }
-                },
-                error: function() {
-                    // Display a generic error message on AJAX failure
-                    msg.text('An unexpected error occurred.').addClass('error');
-                }
-            });
+            // This requires a corresponding function on the Discover page to handle this.
+            // For now, we'll just redirect. A more advanced implementation might use sessionStorage.
+            const discoverPageUrl = '/discover/'; // Adjust if URL is different
+            window.location.href = discoverPageUrl + '?load_search_id=' + searchId;
         });
+    }
 
+
+    // --- Account Settings Form ---
+    $('#myddpc-account-settings-form').on('submit', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var messageDiv = $('#myddpc-account-settings-message');
+        messageDiv.hide().removeClass('success error');
+
+        var formData = {
+            action: 'myddpc_update_account_settings',
+            nonce: form.find('#nonce').val(),
+            display_name: form.find('#display_name').val()
+        };
+        
+        // Only include password fields if they are filled out
+        var currentPassword = form.find('#current_password').val();
+        var newPassword = form.find('#new_password').val();
+        var confirmNewPassword = form.find('#confirm_new_password').val();
+
+        if (currentPassword && newPassword && confirmNewPassword) {
+            formData.current_password = currentPassword;
+            formData.new_password = newPassword;
+            formData.confirm_new_password = confirmNewPassword;
+        }
+
+
+        $.ajax({
+            url: myddpc_ajax_data.ajax_url,
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    let successMessage = 'Settings updated successfully.';
+                    if(response.data.password === 'success'){
+                         successMessage += ' Password has been changed.';
+                         form.find('input[type="password"]').val(''); // Clear fields
+                    }
+                    messageDiv.text(successMessage).addClass('success').show();
+                } else {
+                    let errorMessage = response.data.message || 'An error occurred.';
+                    if(response.data.password === 'mismatch'){
+                        errorMessage = 'New passwords do not match.';
+                    } else if (response.data.password === 'incorrect_current'){
+                        errorMessage = 'Your current password is not correct.';
+                    }
+                    messageDiv.text(errorMessage).addClass('error').show();
+                }
+            },
+            error: function() {
+                messageDiv.text('An unexpected error occurred.').addClass('error').show();
+            }
+        });
     });
-})(jQuery); 
+
+    // Initialize all event handlers
+    setupCardEventHandlers();
+}); 

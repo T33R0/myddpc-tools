@@ -77,17 +77,21 @@ if ( ! defined( 'ABSPATH' ) ) exit;
     <main id="discover-results">
         <div id="discover-controls"></div>
         <div id="filter-summary">
+            <div class="myddpc-discover-actions">
+                <div class="discover-actions-group">
+                    <?php if (is_user_logged_in()): ?>
+                        <select id="load-saved-search" class="myddpc-select">
+                            <option value="">--- Load Saved Search ---</option>
+                        </select>
+                        <button id="save-current-search" class="myddpc-button myddpc-button-secondary">
+                            <span class="dashicons dashicons-saved"></span> Save Current Search
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </div>
             <span id="discover-total-count"></span>
             <div id="filter-tags"></div>
             <button id="reset-filters" type="button">Reset Filters</button>
-            <div class="myddpc-discover-actions">
-                <button id="save-current-search" class="myddpc-button myddpc-button-secondary" style="display: none;">
-                    <span class="dashicons dashicons-saved"></span> Save Current Search
-                </button>
-                <select id="load-saved-search" class="myddpc-select" style="display: none;">
-                    <option value="">--- Load Saved Search ---</option>
-                </select>
-            </div>
         </div>
         <table id="discover-table">
             <thead>

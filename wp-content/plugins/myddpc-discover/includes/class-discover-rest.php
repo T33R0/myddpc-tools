@@ -29,7 +29,7 @@ class Discover_REST {
         ));
 
         // Register the vehicle details endpoint
-        register_rest_route('myddpc/v1', '/discover/vehicle/(?P<id>\\d+)', array(
+        register_rest_route('myddpc/v1', '/vehicle/(?P<id>\\d+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_vehicle_details'),
             'permission_callback' => '__return_true',
@@ -80,36 +80,16 @@ class Discover_REST {
     }
 
     public function get_vehicle_details($request) {
-        try {
-            $vehicle_id = absint($request['id']);
-            
-            if (!$vehicle_id) {
-                return new WP_REST_Response(array(
-                    'success' => false,
-                    'message' => 'Invalid vehicle ID'
-                ), 400);
-            }
-
-            $vehicle_data = Discover_Query::get_vehicle_by_id($vehicle_id);
-            
-            if (!$vehicle_data) {
-                return new WP_REST_Response(array(
-                    'success' => false,
-                    'message' => 'Vehicle not found'
-                ), 404);
-            }
-
-            return new WP_REST_Response(array(
-                'success' => true,
-                'data' => $vehicle_data
-            ), 200);
-        } catch (Exception $e) {
-            return new WP_REST_Response(array(
-                'success' => false,
-                'message' => 'Internal server error',
-                'error' => $e->getMessage()
-            ), 500);
+        $vehicle_id = (int) $request['id'];
+        if ($vehicle_id <= 0) {
+            return new WP_Error('rest_invalid_id', 'Invalid vehicle ID.', ['status' => 400]);
         }
+        $vehicle_data = Discover_Query::get_vehicle_by_id($vehicle_id);
+
+        if (empty($vehicle_data)) {
+            return new WP_Error('rest_not_found', 'Vehicle not found.', ['status' => 404]);
+        }
+        return new WP_REST_Response($vehicle_data, 200);
     }
 }
 

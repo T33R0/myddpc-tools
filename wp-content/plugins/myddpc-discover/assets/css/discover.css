@@ -502,3 +502,30 @@ select[multiple][size="1"] {
 .modal-content {
     animation: modalFadeIn 0.3s ease-out;
 }
+
+/* Sizing fixes */
+#load-saved-search,
+.custom-multiselect__button {
+    height: 32px;
+    min-height: 32px;
+    padding: 0.25rem 0.5rem;
+    line-height: 1; /* Helps vertical alignment */
+}
+
+#save-current-search {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.9rem;
+    height: 32px; /* Match height */
+}
+
+/* Layout fixes */
+.discover-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Default state for reset button */
+#reset-filters {
+    display: none;
+}

@@ -59,15 +59,12 @@ function myddpc_discover_enqueue_assets() {
         );
         wp_localize_script(
             'myddpc-discover-script',
-            'myddpc_discover_data',
-            array(
-                'root'   => esc_url_raw( rest_url() ),
-                'nonce'  => wp_create_nonce( 'wp_rest' ),
-                'routes' => array(
-                    'filters' => 'myddpc/v1/discover/filters',
-                    'results' => 'myddpc/v1/discover/results',
-                ),
-            )
+            'myddpc_discover_ajax_obj',
+            [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('myddpc_ajax_nonce'),
+                'is_logged_in' => is_user_logged_in()
+            ]
         );
     }
 }

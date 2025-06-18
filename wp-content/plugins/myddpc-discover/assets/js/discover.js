@@ -340,13 +340,11 @@ function renderDetailModal(vehicleId) {
         }
         return response.json();
     })
-    .then(data => {
-        if (!data.success || !data.data) {
-            throw new Error(data.message || 'Failed to load vehicle details');
+    .then(vehicle => {
+        console.log(vehicle); // Debugging output
+        if (!vehicle || vehicle.ID === undefined) {
+            throw new Error('Failed to load vehicle details');
         }
-
-        const vehicle = data.data;
-        
         // Update modal content
         document.getElementById('detail-year').textContent = vehicle.Year || '';
         document.getElementById('detail-make').textContent = vehicle.Make || '';
@@ -359,9 +357,8 @@ function renderDetailModal(vehicleId) {
         document.getElementById('detail-body').textContent = vehicle['Body type'] || '';
         document.getElementById('detail-classification').textContent = vehicle['Car classification'] || '';
         document.getElementById('detail-platform').textContent = vehicle['Platform code / generation number'] || '';
-
         // Store vehicle ID for save functionality
-        modal.dataset.currentVehicle = vehicleId;
+        modal.setAttribute('data-vehicle-id', vehicleId);
     })
     .catch(error => {
         console.error('Error loading vehicle details:', error);
@@ -557,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBtn = document.getElementById('discover-save-vehicle');
     if (saveBtn) {
         saveBtn.addEventListener('click', async function() {
-            if (!myddpc_ajax_data.is_logged_in) {
+            if (!myddpc_discover_ajax_obj.is_logged_in) {
                 showCustomModal({
                     title: 'Login Required',
                     message: 'Please log in to save vehicles.',
@@ -590,14 +587,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     saveButton.disabled = true;
                     saveButton.textContent = 'Saving...';
 
-                    fetch(myddpc_ajax_data.ajax_url, {
+                    fetch(myddpc_discover_ajax_obj.ajax_url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
                         body: new URLSearchParams({
                             action: 'myddpc_save_item',
-                            nonce: myddpc_ajax_data.nonce,
+                            nonce: myddpc_discover_ajax_obj.nonce,
                             item_type: 'saved_vehicle',
                             item_title: vehicleName,
                             item_data: JSON.stringify(vehicleData)
@@ -651,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveSearchBtn = document.getElementById('save-current-search');
     if (saveSearchBtn) {
         saveSearchBtn.addEventListener('click', function() {
-            if (!myddpc_ajax_data.is_logged_in) {
+            if (!myddpc_discover_ajax_obj.is_logged_in) {
                 showCustomModal({
                     title: 'Login Required',
                     message: 'Please log in to save searches.',
@@ -683,14 +680,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
 
-                    fetch(myddpc_ajax_data.ajax_url, {
+                    fetch(myddpc_discover_ajax_obj.ajax_url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
                         body: new URLSearchParams({
                             action: 'myddpc_save_item',
-                            nonce: myddpc_ajax_data.nonce,
+                            nonce: myddpc_discover_ajax_obj.nonce,
                             item_type: 'discover_search',
                             item_title: searchName,
                             item_data: JSON.stringify(savedFiltersObject)
@@ -699,13 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            const dropdown = document.getElementById('load-saved-search');
-                            const newOption = document.createElement('option');
-                            newOption.textContent = searchName;
-                            newOption.value = data.data.id;
-                            newOption.filterData = savedFiltersObject;
-                            dropdown.appendChild(newOption);
-                            
+                            populateSavedSearchesDropdown();
                             showCustomModal({
                                 title: 'Success',
                                 message: 'Search saved successfully!',
@@ -733,7 +724,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initialize saved searches dropdown
-    populateSavedSearchesDropdown();
+    if (myddpc_discover_ajax_obj.is_logged_in) {
+        const dropdown = document.getElementById('load-saved-search');
+        const saveBtn = document.getElementById('save-current-search');
+        if (dropdown) dropdown.style.display = 'inline-block';
+        if (saveBtn) saveBtn.style.display = 'inline-block';
+        populateSavedSearchesDropdown();
+    }
 });
 
 function attachFilterListeners() {
@@ -886,14 +883,10 @@ function updateResultsTable(json) {
 
 // Function to populate the saved searches dropdown
 function populateSavedSearchesDropdown() {
-    console.log('DEBUG: Populating saved searches...');
-    if (!myddpc_ajax_data.is_logged_in) return;
+    if (!myddpc_discover_ajax_obj.is_logged_in) return;
 
     const dropdown = document.getElementById('load-saved-search');
-    if (!dropdown) {
-        console.error('DEBUG: "load-saved-search" dropdown not found.');
-        return;
-    }
+    if (!dropdown) return;
 
     // Show the dropdown and save button for logged-in users
     dropdown.style.display = 'inline-block';
@@ -905,53 +898,57 @@ function populateSavedSearchesDropdown() {
     }
 
     // Fetch saved searches
-    fetch(myddpc_ajax_data.ajax_url, {
+    fetch(myddpc_discover_ajax_obj.ajax_url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
             action: 'myddpc_get_saved_searches',
-            nonce: myddpc_ajax_data.nonce
+            nonce: myddpc_discover_ajax_obj.nonce
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success && data.data) {
-            console.log('DEBUG: Saved searches received from server:', data.data);
-            data.data.forEach(item => {
+            data.data.forEach(search => {
                 const option = document.createElement('option');
-                option.textContent = item.item_title;
-                option.value = item.id;
-                try {
-                    option.filterData = JSON.parse(item.item_data);
-                    console.log(`DEBUG: Attaching filterData for "${item.item_title}":`, option.filterData);
-                } catch (e) {
-                    console.error(`DEBUG: Failed to parse filterData for search "${item.item_title}"`, e);
-                    option.filterData = null;
-                }
+                option.textContent = search.item_title;
+                option.value = search.id;
+                option.dataset.filterData = search.item_data;
                 dropdown.appendChild(option);
             });
         }
     })
-    .catch(error => console.error('DEBUG: Error loading saved searches:', error));
+    .catch(error => console.error('Error loading saved searches:', error));
 }
 
 // Function to apply filters from saved search
 function applyFilters(filtersObject) {
-    console.log('DEBUG: Applying filters:', filtersObject);
-    // Apply each filter value
-    Object.entries(filtersObject).forEach(([filterId, value]) => {
-        const element = document.getElementById(filterId);
-        if (!element) {
-            console.warn(`DEBUG: Filter element with ID "${filterId}" not found. Skipping.`);
-            return;
+    Object.entries(filtersObject).forEach(([key, value]) => {
+        // Handle drive_type checkboxes as a special case
+        if (key === 'drive_type' && Array.isArray(value)) {
+            // Uncheck all drive_type boxes first
+            document.querySelectorAll('input[name="drive_type[]"]').forEach(cb => cb.checked = false);
+            // Check the ones from the saved search data
+            value.forEach(driveValue => {
+                const checkbox = document.querySelector(`input[name="drive_type[]"][value="${driveValue}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            return; // Continue to the next filter
         }
 
-        if (element.type === 'checkbox') {
-            // Handle checkboxes
-            element.checked = value;
-        } else if (element.tagName === 'SELECT') {
+        // For all other filters, construct the element ID from the key
+        const elementId = 'filter-' + key.replace(/_/g, '-');
+        const element = document.getElementById(elementId);
+
+        if (!element) {
+            return; // Skip if element not found
+        }
+
+        if (element.tagName === 'SELECT') {
             if (element.multiple) {
                 // Handle multi-selects
                 Array.from(element.options).forEach(option => {
@@ -962,44 +959,30 @@ function applyFilters(filtersObject) {
                 element.value = value;
             }
         } else {
-            // Handle text inputs and other input types
+            // Handle other input types like text
             element.value = value;
         }
     });
 
-    // Update all custom multi-select labels
-    console.log('DEBUG: Updating all custom multi-select labels.');
+    // Update the UI for all custom multi-selects
     updateAllCustomMultiSelectLabels();
 }
 
 // Update the load saved search handler
 document.getElementById('load-saved-search').addEventListener('change', function(e) {
-    console.log('DEBUG: Saved search dropdown changed.');
     const selectedOption = e.target.options[e.target.selectedIndex];
     
-    if (!selectedOption || !selectedOption.value) {
-        console.log('DEBUG: Placeholder selected or no value. Aborting.');
-        return;
-    }
-    
-    console.log('DEBUG: Selected option value:', selectedOption.value);
-    console.log('DEBUG: Filter data from option:', selectedOption.filterData);
-
-    if (!selectedOption.filterData) {
-        console.error('DEBUG: No filterData found on the selected option.');
-        return;
+    if (!selectedOption || !selectedOption.value || !selectedOption.filterData) {
+        return; // Abort if placeholder or no data
     }
 
-    // Reset all filters first, without triggering a data fetch
-    console.log('DEBUG: Resetting filters...');
+    // 1. Reset filters without triggering a data fetch
     resetFilters(false);
 
-    // Apply the saved filters
-    console.log('DEBUG: Applying saved filters...');
+    // 2. Apply the filters from the saved search
     applyFilters(selectedOption.filterData);
 
-    // Trigger the filter change to update results
-    console.log('DEBUG: Fetching new results...');
+    // 3. Fetch new results with the applied filters
     handleFilterChange();
 });
 
