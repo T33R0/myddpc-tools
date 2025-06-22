@@ -562,14 +562,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 return;
             }
-
             showCustomModal({
                 title: 'Save Vehicle',
                 message: 'Enter a name for this vehicle:',
                 needsInput: true,
                 onConfirm: async (vehicleName) => {
                     const vehicleData = {
-                        vehicle_id: document.getElementById('discover-detail-modal').getAttribute('data-vehicle-id'),
+                        ID: document.getElementById('discover-detail-modal').getAttribute('data-vehicle-id'),
                         year: document.getElementById('detail-year').textContent,
                         make: document.getElementById('detail-make').textContent,
                         model: document.getElementById('detail-model').textContent,
@@ -582,11 +581,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         classification: document.getElementById('detail-classification').textContent,
                         platform: document.getElementById('detail-platform').textContent
                     };
-
                     const saveButton = this;
                     saveButton.disabled = true;
                     saveButton.textContent = 'Saving...';
-
                     fetch(myddpc_discover_ajax_obj.ajax_url, {
                         method: 'POST',
                         headers: {
@@ -608,19 +605,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 saveButton.textContent = 'Save Vehicle';
                                 saveButton.disabled = false;
                             }, 2000);
-                        } else if (data.data && data.data.error_code === 'limit_reached') {
+                        } else {
                             showCustomModal({
                                 title: 'Limit Reached',
                                 message: data.data.message || 'You have reached your limit of saved vehicles. Please remove one from your account page to save a new one.',
-                                onConfirm: () => {
-                                    saveButton.textContent = 'Save Vehicle';
-                                    saveButton.disabled = false;
-                                }
-                            });
-                        } else {
-                            showCustomModal({
-                                title: 'Error',
-                                message: data.data.message || 'Failed to save vehicle.',
                                 onConfirm: () => {
                                     saveButton.textContent = 'Save Vehicle';
                                     saveButton.disabled = false;
@@ -667,18 +655,41 @@ document.addEventListener('DOMContentLoaded', () => {
                         const id = filter.id;
                         if (!id) return;
 
+                        let value;
                         if (filter.type === 'checkbox') {
-                            savedFiltersObject[id] = filter.checked;
+                            value = filter.checked;
                         } else if (filter.tagName === 'SELECT') {
                             if (filter.multiple) {
-                                savedFiltersObject[id] = Array.from(filter.selectedOptions).map(option => option.value);
+                                value = Array.from(filter.selectedOptions).map(option => option.value);
                             } else {
-                                savedFiltersObject[id] = filter.value;
+                                value = filter.value;
                             }
                         } else {
-                            savedFiltersObject[id] = filter.value;
+                            value = filter.value;
+                        }
+
+                        // Only add if value is meaningful
+                        if (
+                            (Array.isArray(value) && value.length > 0) ||
+                            (typeof value === 'boolean' && value) ||
+                            (typeof value === 'string' && value.trim() !== '')
+                        ) {
+                            savedFiltersObject[id] = value;
                         }
                     });
+
+                    // Debug: show what will be saved
+                    console.log('Saving filters:', savedFiltersObject);
+
+                    // Check if any filters remain
+                    if (Object.keys(savedFiltersObject).length === 0) {
+                        showCustomModal({
+                            title: 'No Filters Selected',
+                            message: 'Search not saved, no filters selected.',
+                            onConfirm: () => {}
+                        });
+                        return;
+                    }
 
                     fetch(myddpc_discover_ajax_obj.ajax_url, {
                         method: 'POST',
@@ -925,64 +936,52 @@ function populateSavedSearchesDropdown() {
 
 // Function to apply filters from saved search
 function applyFilters(filtersObject) {
-    Object.entries(filtersObject).forEach(([key, value]) => {
-        // Handle drive_type checkboxes as a special case
-        if (key === 'drive_type' && Array.isArray(value)) {
-            // Uncheck all drive_type boxes first
-            document.querySelectorAll('input[name="drive_type[]"]').forEach(cb => cb.checked = false);
-            // Check the ones from the saved search data
-            value.forEach(driveValue => {
-                const checkbox = document.querySelector(`input[name="drive_type[]"][value="${driveValue}"]`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                }
-            });
-            return; // Continue to the next filter
-        }
+    console.log('Applying filters:', filtersObject); // Keep this for debugging
 
-        // For all other filters, construct the element ID from the key
-        const elementId = 'filter-' + key.replace(/_/g, '-');
-        const element = document.getElementById(elementId);
+    // Apply standard select values
+    if (filtersObject.hasOwnProperty('year_min')) {
+        document.getElementById('filter-year-min').value = filtersObject.year_min;
+    }
+    if (filtersObject.hasOwnProperty('year_max')) {
+        document.getElementById('filter-year-max').value = filtersObject.year_max;
+    }
 
-        if (!element) {
-            return; // Skip if element not found
-        }
+    // Apply Drivetrain checkboxes
+    if (filtersObject.hasOwnProperty('drive_type')) {
+        document.querySelectorAll('input[name="drive_type[]"]').forEach(cb => {
+            cb.checked = filtersObject.drive_type.includes(cb.value);
+        });
+    }
 
-        if (element.tagName === 'SELECT') {
-            if (element.multiple) {
-                // Handle multi-selects
-                Array.from(element.options).forEach(option => {
-                    option.selected = Array.isArray(value) ? value.includes(option.value) : value === option.value;
+    // List of all multi-select IDs
+    const multiSelects = [
+        'filter-make', 'filter-transmission', 'filter-cylinders',
+        'filter-body-type', 'filter-country-of-origin', 'filter-fuel-type'
+    ];
+
+    // Apply multi-select values
+    multiSelects.forEach(id => {
+        const key = id.replace('filter-', '').replace(/-/g, '_');
+        if (filtersObject.hasOwnProperty(key)) {
+            const selectElement = document.getElementById(id);
+            if (selectElement) {
+                const valuesToSet = Array.isArray(filtersObject[key]) ? filtersObject[key] : [filtersObject[key]];
+                Array.from(selectElement.options).forEach(opt => {
+                    opt.selected = valuesToSet.includes(opt.value);
                 });
-            } else {
-                // Handle single-selects
-                element.value = value;
             }
-        } else {
-            // Handle other input types like text
-            element.value = value;
         }
     });
-
-    // Update the UI for all custom multi-selects
-    updateAllCustomMultiSelectLabels();
 }
 
 // Update the load saved search handler
-document.getElementById('load-saved-search').addEventListener('change', function(e) {
-    const selectedOption = e.target.options[e.target.selectedIndex];
-    
-    if (!selectedOption || !selectedOption.value || !selectedOption.filterData) {
-        return; // Abort if placeholder or no data
-    }
-
-    // 1. Reset filters without triggering a data fetch
-    resetFilters(false);
-
-    // 2. Apply the filters from the saved search
-    applyFilters(selectedOption.filterData);
-
-    // 3. Fetch new results with the applied filters
+document.getElementById('load-saved-search').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    const filterData = selected && selected.dataset.filterData;
+    if (!filterData) return;
+    resetFilters();
+    applyFilters(JSON.parse(filterData));
+    updateAllCustomMultiSelectLabels();
     handleFilterChange();
 });
 

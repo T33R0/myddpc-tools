@@ -35,18 +35,18 @@ function myddpc_user_system_activate() {
 // Enqueue scripts and styles
 add_action( 'wp_enqueue_scripts', 'myddpc_user_system_enqueue_scripts' );
 function myddpc_user_system_enqueue_scripts() {
-    if ( is_page( 'my-account' ) || is_singular() && has_shortcode( get_post()->post_content, 'myddpc_account_view' ) ) {
+    if ( is_page( 'my-account' ) || ( is_singular() && has_shortcode( get_post()->post_content, 'myddpc_account_view' ) ) ) {
         wp_enqueue_style(
             'myddpc-user-system-css',
-            plugin_dir_url( __FILE__ ) . 'assets/css/myddpc-user-system.css',
+            plugin_dir_url(__FILE__) . 'assets/css/myddpc-user-system.css',
             [],
-            filemtime(plugin_dir_path( __FILE__ ) . 'assets/css/myddpc-user-system.css')
+            filemtime(plugin_dir_path(__FILE__) . 'assets/css/myddpc-user-system.css')
         );
         wp_enqueue_script(
             'myddpc-ajax-handler-js',
-            plugin_dir_url( __FILE__ ) . 'js/myddpc-ajax-handler.js',
+            plugin_dir_url(__FILE__) . 'js/myddpc-ajax-handler.js',
             ['jquery'],
-            filemtime(plugin_dir_path( __FILE__ ) . 'js/myddpc-ajax-handler.js'),
+            filemtime(plugin_dir_path(__FILE__) . 'js/myddpc-ajax-handler.js'),
             true
         );
         wp_localize_script('myddpc-ajax-handler-js', 'myddpc_ajax_data', [
@@ -75,7 +75,11 @@ function myddpc_ajax_save_item_handler() {
     $item_data_raw = $_POST['item_data'];
     $decoded_data = json_decode($item_data_raw, true);
     if (json_last_error() !== JSON_ERROR_NONE) {
-        wp_send_json_error(['message' => 'Invalid item data.'], 400);
+        wp_send_json_error([
+            'message' => 'Invalid item data.',
+            'raw' => $item_data_raw,
+            'decode_error' => json_last_error_msg()
+        ], 400);
     }
     $item_data = wp_json_encode($decoded_data);
 
@@ -202,8 +206,7 @@ function myddpc_render_saved_items_view() {
                     $item_data = json_decode($item->item_data, true);
                     $vehicle_id = isset($item_data['vehicle_id']) ? $item_data['vehicle_id'] : '';
                     $details_url = $vehicle_id ? add_query_arg('vehicle_id', $vehicle_id, $discover_page_url) : '#';
-                    // Update fallback image URL to be secure and dynamic
-                    $fallback_img = get_site_url(null, '/wp-content/plugins/myddpc-user-system/assets/images/fallback-image.png', 'https');
+                    $fallback_img = plugin_dir_url(__FILE__) . 'assets/images/fallback-logo.png';
                     $bg_image_url = !empty($item->image_url) ? esc_url($item->image_url) : $fallback_img;
                 ?>
                     <div class="saved-item-card vehicle-card" data-item-id="<?php echo esc_attr($item->id); ?>" data-item-type="saved_vehicle">
