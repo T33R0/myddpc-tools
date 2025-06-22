@@ -83,10 +83,34 @@ class Discover_Query {
         ];
         foreach ( $multi_select_columns as $filter_key => $column_name ) {
             if ( ! empty( $filters[ $filter_key ] ) && is_array( $filters[ $filter_key ] ) ) {
-                $placeholders = implode( ',', array_fill( 0, count( $filters[ $filter_key ] ), '%s' ) );
-                $where_clauses[] = "`$column_name` IN ($placeholders)";
-                foreach ( $filters[ $filter_key ] as $val ) {
-                    $values[] = is_numeric($val) ? (int)$val : (string)$val;
+                // Special handling for drive_type: match both abbreviations and spelled out values
+                if ($filter_key === 'drive_type') {
+                    $drive_map = [
+                        'AWD' => ['AWD', 'All Wheel Drive'],
+                        '4WD' => ['4WD', 'Four Wheel Drive', '4x4'],
+                        'FWD' => ['FWD', 'Front Wheel Drive'],
+                        'RWD' => ['RWD', 'Rear Wheel Drive']
+                    ];
+                    $all_vals = [];
+                    foreach ($filters[$filter_key] as $abbr) {
+                        if (isset($drive_map[$abbr])) {
+                            $all_vals = array_merge($all_vals, $drive_map[$abbr]);
+                        } else {
+                            $all_vals[] = $abbr;
+                        }
+                    }
+                    $all_vals = array_unique($all_vals);
+                    $placeholders = implode(',', array_fill(0, count($all_vals), '%s'));
+                    $where_clauses[] = "`$column_name` IN ($placeholders)";
+                    foreach ($all_vals as $val) {
+                        $values[] = $val;
+                    }
+                } else {
+                    $placeholders = implode(',', array_fill(0, count($filters[$filter_key]), '%s'));
+                    $where_clauses[] = "`$column_name` IN ($placeholders)";
+                    foreach ($filters[$filter_key] as $val) {
+                        $values[] = is_numeric($val) ? (int)$val : (string)$val;
+                    }
                 }
             }
         }
@@ -125,11 +149,13 @@ class Discover_Query {
             'min' => (int) $this->wpdb->get_var("SELECT MIN(`Year`) FROM $t"),
             'max' => (int) $this->wpdb->get_var("SELECT MAX(`Year`) FROM $t"),
         ];
+        $out['make'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Make` FROM $t WHERE `Make` IS NOT NULL AND `Make` != '' ORDER BY `Make` ASC")));
         $out['drive_type'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Drive type` FROM $t WHERE `Drive type` IS NOT NULL AND `Drive type` != '' ORDER BY `Drive type` ASC")));
         $out['transmission'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Transmission` FROM $t WHERE `Transmission` IS NOT NULL AND `Transmission` != '' ORDER BY `Transmission` ASC")));
         $out['cylinders'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Cylinders` FROM $t WHERE `Cylinders` IS NOT NULL AND `Cylinders` != '' ORDER BY `Cylinders` ASC")));
         $out['body_type'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Body type` FROM $t WHERE `Body type` IS NOT NULL AND `Body type` != '' ORDER BY `Body type` ASC")));
         $out['country_of_origin'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Country of origin` FROM $t WHERE `Country of origin` IS NOT NULL AND `Country of origin` != '' ORDER BY `Country of origin` ASC")));
+        $out['fuel_type'] = array_filter(array_map('sanitize_text_field', $this->wpdb->get_col("SELECT DISTINCT `Fuel type` FROM $t WHERE `Fuel type` IS NOT NULL AND `Fuel type` != '' ORDER BY `Fuel type` ASC")));
         $out['engine_size'] = [
             'min' => (float) $this->wpdb->get_var("SELECT MIN(`Engine size (l)`) FROM $t"),
             'max' => (float) $this->wpdb->get_var("SELECT MAX(`Engine size (l)`) FROM $t"),
@@ -138,12 +164,18 @@ class Discover_Query {
     }
 
     /**
-     * Get discover results with filters, limit, offset
+     * Get discover results with filters, limit, offset, sort_by, sort_dir
      */
-    public function get_discover_results( $filters, $limit = 50, $offset = 0 ) {
+    public function get_discover_results( $filters, $limit = 50, $offset = 0, $sort_by = 'Year', $sort_dir = 'desc' ) {
         list( $where_sql, $values ) = $this->build_where_clauses( $filters );
         $columns = array_map(function($c){ return "`$c`"; }, $this->select_columns);
-        $sql = "SELECT ".implode(',', $columns).", `ID` FROM {$this->table_name} $where_sql ORDER BY `Year` DESC, `Make` ASC LIMIT %d OFFSET %d";
+        // Sanitize sort_by
+        $allowed = array_combine($this->select_columns, $this->select_columns);
+        if (!isset($allowed[$sort_by])) {
+            $sort_by = 'Year';
+        }
+        $sort_dir = strtolower($sort_dir) === 'asc' ? 'ASC' : 'DESC';
+        $sql = "SELECT ".implode(',', $columns).", `ID` FROM {$this->table_name} $where_sql ORDER BY `$sort_by` $sort_dir, `Make` ASC LIMIT %d OFFSET %d";
         $values[] = (int) $limit;
         $values[] = (int) $offset;
         $results = $this->wpdb->get_results($this->wpdb->prepare($sql, $values), ARRAY_A);
@@ -151,5 +183,23 @@ class Discover_Query {
         $count_sql = "SELECT COUNT(*) FROM {$this->table_name} $where_sql";
         $total = (int) $this->wpdb->get_var($this->wpdb->prepare($count_sql, $values));
         return [ 'results' => $results, 'total' => $total ];
+    }
+
+    /**
+     * Get a single vehicle by ID
+     *
+     * @param int $id The vehicle ID
+     * @return array|null The vehicle data or null if not found
+     */
+    public static function get_vehicle_by_id($id) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'vehicle_data';
+        
+        $sql = $wpdb->prepare(
+            "SELECT * FROM {$table_name} WHERE ID = %d LIMIT 1",
+            $id
+        );
+        
+        return $wpdb->get_row($sql, ARRAY_A);
     }
 }

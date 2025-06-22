@@ -1,25 +1,35 @@
 <?php
-/*
-Plugin Name:       MyDDPC Discover Tool
-Plugin URI:        https://myddpc.com
-Description:       Provides a "Discover" interface for filtering the vehicle database by technical attributes.
-Version:           0.1
-Author:            Rory Teehan
-Author URI:        https://myddpc.com
-License:           GPLv2 or later
-Text Domain:       myddpc-discover
-*/
+/**
+ * Plugin Name: MYDDPC Discover
+ * Description: Vehicle discovery and search functionality
+ * Version: 1.0.0
+ * Author: MYDDPC
+ */
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if (!defined('ABSPATH')) exit;
+
+// Ensure WordPress REST API is available
+if (!function_exists('rest_ensure_response')) {
+    require_once(ABSPATH . 'wp-includes/rest-api.php');
+}
+
+// Load plugin files
+require_once plugin_dir_path(__FILE__) . 'includes/class-discover-query.php';
+require_once plugin_dir_path(__FILE__) . 'includes/class-discover-rest.php';
+
+// Initialize REST API
+add_action('init', function() {
+    new Discover_REST();
+});
 
 // Activation check
-function myddpc_discover_activate() {
-    if ( version_compare( PHP_VERSION, '7.2', '<' ) ) {
-        deactivate_plugins( plugin_basename( __FILE__ ) );
-        wp_die( esc_html__( 'MyDDPC Discover Tool requires PHP 7.2 or higher.', 'myddpc-discover' ) );
+function myddpc_discover_activation_check() {
+    if (!is_plugin_active('myddpc-user-system/myddpc-user-system.php')) {
+        deactivate_plugins(plugin_basename(__FILE__));
+        wp_die(esc_html__('MYDDPC Discover requires the MYDDPC User System plugin to be active.', 'myddpc-discover'));
     }
 }
-register_activation_hook( __FILE__, 'myddpc_discover_activate' );
+register_activation_hook(__FILE__, 'myddpc_discover_activation_check');
 
 // Shortcode registration
 function myddpc_discover_shortcode( $atts ) {
@@ -40,15 +50,6 @@ function myddpc_discover_enqueue_assets() {
             array(),
             '1.0.0'
         );
-        // Choices.js from CDN (enqueue only once)
-        if ( ! wp_style_is( 'choices-css', 'enqueued' ) ) {
-            wp_enqueue_style(
-                'choices-css',
-                'https://cdn.jsdelivr.net/npm/choices.js@9.1.1/public/assets/styles/choices.min.css',
-                [],
-                '9.1.1'
-            );
-        }
         wp_enqueue_script(
             'myddpc-discover-script',
             plugins_url( 'assets/js/discover.js', __FILE__ ),
@@ -56,30 +57,15 @@ function myddpc_discover_enqueue_assets() {
             '1.0.0',
             true
         );
-        if ( ! wp_script_is( 'choices-js', 'enqueued' ) ) {
-            wp_enqueue_script(
-                'choices-js',
-                'https://cdn.jsdelivr.net/npm/choices.js@9.1.1/public/assets/scripts/choices.min.js',
-                [],
-                '9.1.1',
-                true
-            );
-        }
         wp_localize_script(
             'myddpc-discover-script',
-            'myddpc_discover_data',
-            array(
-                'root'   => esc_url_raw( rest_url() ),
-                'nonce'  => wp_create_nonce( 'wp_rest' ),
-                'routes' => array(
-                    'filters' => 'myddpc/v1/discover/filters',
-                    'results' => 'myddpc/v1/discover/results',
-                ),
-            )
+            'myddpc_discover_ajax_obj',
+            [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('myddpc_ajax_nonce'),
+                'is_logged_in' => is_user_logged_in()
+            ]
         );
     }
 }
 add_action( 'wp_enqueue_scripts', 'myddpc_discover_enqueue_assets' );
-
-// REST endpoints are registered in includes/class-discover-rest.php
-require_once __DIR__ . '/includes/class-discover-rest.php';
