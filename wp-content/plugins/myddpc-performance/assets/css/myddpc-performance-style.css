@@ -1,4 +1,4 @@
-/* MyDDPC Dimensions Plugin - Unified Styles */
+/* MyDDPC Performance Plugin - Unified Styles */
 
 .myddpc-tool-app {
     max-width: 1000px;
@@ -9,7 +9,7 @@
     border-radius: 8px;
 }
 
-.myddpc-tool-app h2 {
+.myddpc-tool-app h2, .myddpc-tool-app h3 {
     text-align: center;
     margin-top: 0;
     margin-bottom: 25px;
@@ -68,7 +68,6 @@
 #h2h-results-wrapper {
     display: flex;
     gap: 20px;
-    min-height: 200px; /* Reserve space */
 }
 
 .results-column {
@@ -78,15 +77,26 @@
     background-color: #fff;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
+    min-height: 300px;
 }
 
-.results-column h4, .results-column h5 {
+.results-column h4, .results-column h5, .results-column h6 {
     margin: 0 0 15px 0;
     color: #333;
 }
 .results-column h5 {
     color: #666;
     font-weight: normal;
+    margin-bottom: 20px;
+}
+.results-column h6 {
+    font-size: 1em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-top: 20px;
+}
+.results-column h6:first-of-type {
+    margin-top: 0;
 }
 
 .results-column ul {
@@ -105,28 +115,15 @@
     color: #222;
 }
 
-#myddpc-diagrams-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
+#graph-wrapper {
     margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #e0e0e0;
-}
-
-.diagram-wrapper {
-    text-align: center;
-}
-
-.diagram-wrapper canvas {
+    padding: 20px;
     background-color: #fff;
-    border: 1px solid #ccc;
+    border: 1px solid #e0e0e0;
     border-radius: 4px;
 }
 
-.diagram-wrapper .diagram-caption {
-    margin-top: 8px;
-    font-size: 0.9em;
-    color: #666;
+#performance-graph-container {
+    min-height: 400px;
+    width: 100%;
 }
