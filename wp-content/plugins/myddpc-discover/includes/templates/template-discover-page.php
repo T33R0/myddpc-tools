@@ -8,24 +8,24 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <!-- Year (always visible, with labels) -->
             <div>
                 <label for="filter-year-min">Year (Min)</label>
-                <select id="filter-year-min" name="year_min"></select>
+                <select id="filter-year-min" name="year_min" class="myddpc-discover-filter"></select>
                 <label for="filter-year-max">Year (Max)</label>
-                <select id="filter-year-max" name="year_max"></select>
+                <select id="filter-year-max" name="year_max" class="myddpc-discover-filter"></select>
             </div>
             <!-- Make (always visible, with label) -->
             <div>
                 <label for="filter-make">Make</label>
-                <select id="filter-make" name="make[]" multiple class="multi-select-enhanced"></select>
+                <select id="filter-make" name="make[]" multiple class="multi-select-enhanced myddpc-discover-filter"></select>
             </div>
             <!-- Drivetrain (collapsible, collapsed by default) -->
             <div class="collapsible">
                 <div class="collapsible-header">Drivetrain</div>
                 <div class="collapsible-content">
                     <div id="filter-drive-type">
-                        <label><input type="checkbox" name="drive_type[]" value="AWD"> AWD</label>
-                        <label><input type="checkbox" name="drive_type[]" value="4WD"> 4WD</label>
-                        <label><input type="checkbox" name="drive_type[]" value="FWD"> FWD</label>
-                        <label><input type="checkbox" name="drive_type[]" value="RWD"> RWD</label>
+                        <label><input type="checkbox" name="drive_type[]" value="AWD" class="myddpc-discover-filter"> AWD</label>
+                        <label><input type="checkbox" name="drive_type[]" value="4WD" class="myddpc-discover-filter"> 4WD</label>
+                        <label><input type="checkbox" name="drive_type[]" value="FWD" class="myddpc-discover-filter"> FWD</label>
+                        <label><input type="checkbox" name="drive_type[]" value="RWD" class="myddpc-discover-filter"> RWD</label>
                     </div>
                 </div>
             </div>
@@ -33,35 +33,35 @@ if ( ! defined( 'ABSPATH' ) ) exit;
             <div class="collapsible">
                 <div class="collapsible-header">Transmission</div>
                 <div class="collapsible-content">
-                    <select id="filter-transmission" name="transmission[]" multiple class="multi-select-enhanced"></select>
+                    <select id="filter-transmission" name="transmission[]" multiple class="multi-select-enhanced myddpc-discover-filter"></select>
                 </div>
             </div>
             <!-- Cylinders (collapsible, collapsed by default) -->
             <div class="collapsible">
                 <div class="collapsible-header">Cylinders</div>
                 <div class="collapsible-content">
-                    <select id="filter-cylinders" name="cylinders[]" multiple class="multi-select-enhanced"></select>
+                    <select id="filter-cylinders" name="cylinders[]" multiple class="multi-select-enhanced myddpc-discover-filter"></select>
                 </div>
             </div>
             <!-- Body type (collapsible, collapsed by default) -->
             <div class="collapsible">
                 <div class="collapsible-header">Body type</div>
                 <div class="collapsible-content">
-                    <select id="filter-body-type" name="body_type[]" multiple class="multi-select-enhanced"></select>
+                    <select id="filter-body-type" name="body_type[]" multiple class="multi-select-enhanced myddpc-discover-filter"></select>
                 </div>
             </div>
             <!-- Country (collapsible, collapsed by default) -->
             <div class="collapsible">
                 <div class="collapsible-header">Country</div>
                 <div class="collapsible-content">
-                    <select id="filter-country-of-origin" name="country_of_origin[]" multiple class="multi-select-enhanced"></select>
+                    <select id="filter-country-of-origin" name="country_of_origin[]" multiple class="multi-select-enhanced myddpc-discover-filter"></select>
                 </div>
             </div>
             <!-- Fuel Type (collapsible, collapsed by default) -->
             <div class="collapsible">
                 <div class="collapsible-header">Fuel Type</div>
                 <div class="collapsible-content">
-                    <select id="filter-fuel-type" name="fuel_type[]" multiple class="multi-select-enhanced"></select>
+                    <select id="filter-fuel-type" name="fuel_type[]" multiple class="multi-select-enhanced myddpc-discover-filter"></select>
                 </div>
             </div>
             <label for="rows-per-page" style="margin-top:1rem;">Show:</label>

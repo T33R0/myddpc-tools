@@ -46,16 +46,29 @@ function myddpc_discover_enqueue_assets() {
     if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'myddpc_discover' ) ) {
         wp_enqueue_style(
             'myddpc-discover-style',
-            plugins_url( 'assets/css/discover.css', __FILE__ ),
+            plugin_dir_url(__FILE__) . 'assets/css/discover.css',
             array(),
             '1.0.0'
         );
         wp_enqueue_script(
             'myddpc-discover-script',
-            plugins_url( 'assets/js/discover.js', __FILE__ ),
-            array( 'jquery' ),
+            plugin_dir_url(__FILE__) . 'assets/js/discover.js',
+            ['jquery'],
             '1.0.0',
             true
+        );
+        wp_localize_script(
+            'myddpc-discover-script',
+            'myddpc_discover_data',
+            [
+                'root'  => esc_url_raw(rest_url()),
+                'nonce' => wp_create_nonce('wp_rest'),
+                'routes' => [
+                    'filters' => 'myddpc/v1/discover/filters',
+                    'results' => 'myddpc/v1/discover/results',
+                    'vehicle' => 'myddpc/v1/vehicle/'
+                ]
+            ]
         );
         wp_localize_script(
             'myddpc-discover-script',
@@ -68,4 +81,4 @@ function myddpc_discover_enqueue_assets() {
         );
     }
 }
-add_action( 'wp_enqueue_scripts', 'myddpc_discover_enqueue_assets' );
+add_action('wp_enqueue_scripts', 'myddpc_discover_enqueue_assets');
