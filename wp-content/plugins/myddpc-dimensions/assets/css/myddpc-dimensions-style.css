@@ -1,1 +1,103 @@
-/* MyDDPC Dimensions Plugin Styles */ 
+/* MyDDPC Dimensions Plugin Styles */
+
+#myddpc-dimensions-app {
+    /* Main container for the tool */
+    max-width: 900px;
+    margin: auto;
+}
+
+.myddpc-controls-area {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.vehicle-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.myddpc-select,
+.vehicle-controls button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.vehicle-controls button:disabled {
+    background-color: #f1f1f1;
+    cursor: not-allowed;
+}
+
+#add-comparison-btn {
+    align-self: flex-start;
+    cursor: pointer;
+    background-color: #f7f7f7;
+}
+
+/* Font Color & Result Styling */
+#myddpc-dimensions-app h2,
+#myddpc-dimensions-app h4,
+#myddpc-dimensions-app h5 {
+    color: #333; /* Darker color for headers */
+}
+
+#h2h-results-wrapper {
+    display: flex;
+    gap: 20px;
+}
+
+.results-column {
+    flex: 1;
+    min-width: 0;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.results-column ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.results-column li {
+    color: #454545; /* Darker color for dimension text */
+    margin-bottom: 0.5em;
+    font-size: 0.95em;
+}
+
+.results-column li strong {
+    color: #222; /* Even darker for the label */
+}
+
+/* Diagram Layout & Styling */
+#myddpc-diagrams-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.diagram-wrapper {
+    text-align: center;
+}
+
+.diagram-wrapper canvas {
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.diagram-wrapper .diagram-caption {
+    margin-top: 8px;
+    font-size: 0.9em;
+    color: #666;
+}
