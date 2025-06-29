@@ -81,9 +81,7 @@ const VehicleProvider = ({ children }) => {
 const useVehicles = () => useContext(VehicleContext);
 
 //================================================================================
-
 // 2. REUSABLE UI COMPONENTS
-
 //================================================================================
 
 const Icon = ({ name, className }) => <div className={`icon-placeholder ${className}`}>{name.charAt(0)}</div>;
