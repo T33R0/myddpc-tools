@@ -9,77 +9,85 @@ const Icon = ({ name, className }) => <div className={`icon-placeholder ${classN
 const VehicleContext = createContext();
 
 const VehicleProvider = ({ children }) => {
-  const [vehicles, setVehicles] = useState([]);
-  const [discoveryResults, setDiscoveryResults] = useState([]);
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [compareVehicles, setCompareVehicles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // This check prevents the app from crashing if the data object isn't ready yet.
-  const { rest_url, nonce } = window.myddpcAppData || {};
+    const [vehicles, setVehicles] = useState([]);
+    const [discoveryResults, setDiscoveryResults] = useState({ results: [], total: 0 });
+    const [selectedVehicle, setSelectedVehicle] = useState(null);
+    const [compareVehicles, setCompareVehicles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    // New state for the swap modal
+    const [isSwapModalOpen, setSwapModalOpen] = useState(false);
+    const [candidateVehicle, setCandidateVehicle] = useState(null);
+    
+    const { rest_url, nonce } = window.myddpcAppData || {};
 
-  const fetchGarageVehicles = () => {
-     // NOTE: We need a new REST endpoint to get user-specific garage vehicles.
-     // For now, this uses mock data for your Audi and BMW.
-     const mockVehicles = [
-        { id: 1, name: 'Daily Beast', year: 2014, make: 'Audi', model: 'S6', trim: 'Prestige', type: 'Daily Driver', mileage: 95420, lastService: '2024-05-15', nextService: '2024-08-15', totalInvested: 12500, modifications: 12, status: 'operational', buildProgress: 85, engine: '4.0L V8 Turbo', horsepower: 420, torque: 406, recentWork: [{ date: '2024-05-10', type: 'Performance', item: 'ECU Tune', cost: 1200, status: 'completed' }] },
-        { id: 2, name: 'Track Weapon', year: 1999, make: 'BMW', model: 'Z3 Coupe', trim: 'M-Sport', type: 'Project Car', mileage: 178500, lastService: '2024-06-20', nextService: '2024-09-20', totalInvested: 45200, modifications: 28, status: 'maintenance', buildProgress: 65, engine: '2.8L I6', horsepower: 193, torque: 206, recentWork: [{ date: '2024-06-20', type: 'Suspension', item: 'Coilover Install', cost: 2340, status: 'in-progress' }] }
-     ];
-    setVehicles(mockVehicles);
-  };
+    const fetchGarageVehicles = () => {
+        const mockVehicles = [
+            { ID: 1, name: 'Daily Beast', year: 2014, make: 'Audi', model: 'S6', trim: 'Prestige', type: 'Daily Driver', mileage: 95420, lastService: '2024-05-15', nextService: '2024-08-15', totalInvested: 12500, modifications: 12, status: 'operational', buildProgress: 85, engine: '4.0L V8 Turbo', horsepower: 420, torque: 406, recentWork: [{ date: '2024-05-10', type: 'Performance', item: 'ECU Tune', cost: 1200, status: 'completed' }] },
+            { ID: 2, name: 'Track Weapon', year: 1999, make: 'BMW', model: 'Z3 Coupe', trim: 'M-Sport', type: 'Project Car', mileage: 178500, lastService: '2024-06-20', nextService: '2024-09-20', totalInvested: 45200, modifications: 28, status: 'maintenance', buildProgress: 65, engine: '2.8L I6', horsepower: 193, torque: 206, recentWork: [{ date: '2024-06-20', type: 'Suspension', item: 'Coilover Install', cost: 2340, status: 'in-progress' }] }
+        ];
+        setVehicles(mockVehicles);
+    };
 
-  const fetchDiscoveryResults = (filters = {}) => {
-      if (!rest_url) return; // Don't fetch if WP data isn't available
-      setLoading(true);
-      fetch(`${rest_url}myddpc/v2/discover/results`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
-          body: JSON.stringify({ filters })
-      })
-      .then(res => res.ok ? res.json() : Promise.reject(`Error: ${res.statusText}`))
-      .then(data => {
-          // Ensure the response is always an array before setting state.
-          setDiscoveryResults(Array.isArray(data) ? data : []);
-      })
-      .catch(err => {
-        console.error("Failed to fetch discovery results:", err);
-        setDiscoveryResults([]); // Clear results on error to prevent crashes.
-      })
-      .finally(() => setLoading(false));
-  };
+    const fetchDiscoveryResults = (params = {}) => {
+        if (!rest_url) return;
+        setLoading(true);
+        const apiParams = { filters: params.filters || {}, sort_by: params.sort_by || 'Year', sort_dir: params.sort_dir || 'desc', limit: params.limit || 10, offset: params.offset || 0 };
+        fetch(`${rest_url}myddpc/v2/discover/results`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce }, body: JSON.stringify(apiParams) })
+            .then(res => res.ok ? res.json() : Promise.reject(`Error: ${res.statusText}`))
+            .then(data => setDiscoveryResults(data && Array.isArray(data.results) ? data : { results: [], total: 0 }))
+            .catch(err => console.error("Failed to fetch discovery results:", err))
+            .finally(() => setLoading(false));
+    };
 
-  useEffect(() => {
-    // Only run fetch calls if the rest_url is available.
-    if (rest_url) {
-        fetchGarageVehicles();
-        fetchDiscoveryResults(); // Initial fetch for the discover page
-    } else {
-        // If data isn't available after a short delay, stop loading.
-        setTimeout(() => setLoading(false), 1000);
+    useEffect(() => {
+        if (rest_url) {
+            fetchGarageVehicles();
+            fetchDiscoveryResults();
+        } else {
+            setTimeout(() => setLoading(false), 1000);
+        }
+    }, [rest_url]);
+
+    const addToCompare = (vehicle) => {
+        if (!compareVehicles.find(v => v.ID === vehicle.ID)) {
+            if (compareVehicles.length < 3) {
+                setCompareVehicles([...compareVehicles, vehicle]);
+            } else {
+                setCandidateVehicle(vehicle);
+                setSwapModalOpen(true);
+            }
+        }
+    };
+
+    const removeFromCompare = (vehicleId) => setCompareVehicles(compareVehicles.filter(v => v.ID !== vehicleId));
+    
+    const swapVehicleInCompare = (vehicleToReplaceId) => {
+        const newCompareList = compareVehicles.map(v => v.ID === vehicleToReplaceId ? candidateVehicle : v);
+        setCompareVehicles(newCompareList);
+        setSwapModalOpen(false);
+        setCandidateVehicle(null);
+    };
+
+    const cancelSwap = () => {
+        setSwapModalOpen(false);
+        setCandidateVehicle(null);
     }
-  }, [rest_url]);
 
-  const addToCompare = (vehicle) => {
-    if (compareVehicles.length < 3 && !compareVehicles.find(v => v.id === vehicle.id)) {
-      setCompareVehicles([...compareVehicles, vehicle]);
-    }
-  };
-  const removeFromCompare = (vehicleId) => setCompareVehicles(compareVehicles.filter(v => v.id !== vehicleId));
-  const clearCompare = () => setCompareVehicles([]);
+    const clearCompare = () => setCompareVehicles([]);
 
-  const value = {
-    vehicles, discoveryResults, selectedVehicle, setSelectedVehicle,
-    compareVehicles, addToCompare, removeFromCompare, clearCompare, loading,
-    fetchDiscoveryResults
-  };
+    const value = {
+        vehicles, discoveryResults, selectedVehicle, setSelectedVehicle,
+        compareVehicles, addToCompare, removeFromCompare, clearCompare, loading,
+        fetchDiscoveryResults, isSwapModalOpen, candidateVehicle, swapVehicleInCompare, cancelSwap
+    };
 
-  return <VehicleContext.Provider value={value}>{children}</VehicleContext.Provider>;
+    return <VehicleContext.Provider value={value}>{children}</VehicleContext.Provider>;
 };
 
 const useVehicles = () => useContext(VehicleContext);
 
 //================================================================================
-// 2. REUSABLE UI COMPONENTS (No changes)
+// 2. REUSABLE UI COMPONENTS
 //================================================================================
 const PageHeader = ({ title, subtitle }) => (
     <div className="flex items-center justify-between mb-8">
@@ -140,85 +148,439 @@ const VehicleCard = ({ vehicle, onClick }) => {
     );
 };
 
+const CompareTray = () => {
+    const { compareVehicles, removeFromCompare, clearCompare } = useVehicles();
+
+    if (compareVehicles.length === 0) {
+        return null; // Don't render anything if the tray is empty
+    }
+
+    return (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex-1 flex items-center gap-4">
+                        <h4 className="font-medium text-gray-800">Compare List:</h4>
+                        <div className="flex items-center gap-3">
+                            {compareVehicles.map(v => (
+                                <div key={v.ID} className="bg-gray-100 px-3 py-1 rounded-full flex items-center text-sm">
+                                    <span className="text-gray-700">{`${v.Year} ${v.Make} ${v.Model}`}</span>
+                                    <button onClick={() => removeFromCompare(v.ID)} className="ml-2 text-gray-500 hover:text-red-600">
+                                        <Icon name="X" className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <button onClick={clearCompare} className="text-sm font-medium text-red-600 hover:underline">Clear All</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const CompareSwapModal = () => {
+    const { isSwapModalOpen, compareVehicles, candidateVehicle, swapVehicleInCompare, cancelSwap } = useVehicles();
+    const modalNode = document.getElementById('modal-root');
+
+    if (!isSwapModalOpen || !modalNode) {
+        return null;
+    }
+
+    return ReactDOM.createPortal(
+        <div 
+            className="fixed inset-0 flex items-center justify-center"
+            style={{ 
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+                zIndex: 1000,
+                pointerEvents: 'auto' // Re-enable pointer events for the container
+            }}
+            onClick={cancelSwap} // Close modal if overlay is clicked
+        >
+            <div 
+                className="bg-white rounded-lg shadow-2xl p-8 max-w-lg w-full mx-4"
+                onClick={e => e.stopPropagation()} // Prevent clicks inside the modal from closing it
+            >
+                <h2 className="text-2xl font-light text-gray-900 mb-2">Comparison List Full</h2>
+                <p className="text-gray-600 mb-6">Select a vehicle to replace with the <span className="font-semibold">{`${candidateVehicle.Year} ${candidateVehicle.Make} ${candidateVehicle.Model}`}</span>.</p>
+                <div className="space-y-3 mb-8">
+                    {compareVehicles.map(vehicle => (
+                        <button 
+                            key={vehicle.ID} 
+                            onClick={() => swapVehicleInCompare(vehicle.ID)} 
+                            className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-red-50 hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-300 transition-all"
+                        >
+                            <p className="font-medium text-gray-800">{`${vehicle.Year} ${vehicle.Make} ${vehicle.Model}`}</p>
+                            <p className="text-sm text-gray-500">{`${vehicle['Horsepower (HP)']} HP • ${vehicle['Drive type']}`}</p>
+                        </button>
+                    ))}
+                </div>
+                <div className="text-right">
+                    <button onClick={cancelSwap} className="text-gray-600 font-medium hover:text-gray-900 px-4 py-2 rounded-lg">Cancel</button>
+                </div>
+            </div>
+        </div>,
+        modalNode
+    );
+};
+
 //================================================================================
 // 3. VIEW COMPONENTS
 //================================================================================
 const DiscoverView = ({ setActiveView }) => {
     const { discoveryResults, addToCompare, loading, fetchDiscoveryResults } = useVehicles();
     const [filters, setFilters] = useState({});
-    const [filterOptions, setFilterOptions] = useState({ makes: [], body_styles: [], drivetrains: [] });
+    const [filterOptions, setFilterOptions] = useState({});
+    const [sort, setSort] = useState({ by: 'Year', dir: 'desc' });
+    const [pagination, setPagination] = useState({ page: 1, limit: 10 });
     const { rest_url, nonce } = window.myddpcAppData || {};
 
     useEffect(() => {
         if (!rest_url) return;
         fetch(`${rest_url}myddpc/v2/discover/filters`, { headers: { 'X-WP-Nonce': nonce } })
             .then(res => res.json())
-            .then(data => {
-                // Ensure the data received is an object before setting state.
-                if (typeof data === 'object' && data !== null) {
-                    setFilterOptions(data);
-                }
-            })
+            .then(data => { if (typeof data === 'object' && data !== null) setFilterOptions(data); })
             .catch(err => console.error("Failed to fetch filter options:", err));
-    }, [rest_url]);
+    }, [rest_url, nonce]);
+    
+    const handleApply = () => {
+        const params = { filters, sort_by: sort.by, sort_dir: sort.dir, limit: pagination.limit, offset: (pagination.page - 1) * pagination.limit };
+        fetchDiscoveryResults(params);
+    };
     
     const handleFilterChange = (filterName, value) => setFilters(prev => ({ ...prev, [filterName]: value }));
-    const handleApplyFilters = () => fetchDiscoveryResults(filters);
-    
+    const handleSortChange = (field, value) => setSort(prev => ({ ...prev, [field]: value }));
+    const handlePageChange = (direction) => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page + direction) }));
+
+    useEffect(() => { handleApply(); }, [pagination.page, sort.by, sort.dir]);
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <PageHeader title="Vehicle Discovery" subtitle="Find and compare vehicles by specifications and features" />
+            
+            {/* **MOVED**: CompareTray is now here, directly below the header. */}
+            <div className="mb-8">
+                <CompareTray />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                {/* Filters Sidebar */}
                 <div className="lg:col-span-1">
                      <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-24">
                         <h3 className="text-lg font-medium text-gray-900 mb-6">Filters</h3>
                         <div className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Make</label>
-                                <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" onChange={(e) => handleFilterChange('make', e.target.value)}>
-                                    <option value="">All Makes</option>
-                                    {/* DEFENSIVE CODING: Check if filterOptions.makes is an array before mapping. */}
-                                    {Array.isArray(filterOptions?.makes) && filterOptions.makes.map(make => <option key={make} value={make}>{make}</option>)}
-                                </select>
-                            </div>
-                            <button onClick={handleApplyFilters} className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 font-medium">Apply Filters</button>
+                            {Object.keys(filterOptions).map(key => (
+                                <div key={key}>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">{key.replace(/_/g, ' ')}</label>
+                                    <select className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" onChange={(e) => handleFilterChange(key, e.target.value)}>
+                                        <option value="">All</option>
+                                        {Array.isArray(filterOptions[key]) && filterOptions[key].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                    </select>
+                                </div>
+                            ))}
+                            <button onClick={handleApply} className="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 font-medium">Apply Filters</button>
                         </div>
                     </div>
                 </div>
+                {/* Results Area */}
                 <div className="lg:col-span-3">
                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+                            <p className="text-gray-600">{`${discoveryResults.total || 0} vehicles found`}</p>
+                            <div className="flex items-center gap-2">
+                                <label className="text-sm font-medium">Sort by:</label>
+                                <select value={sort.by} onChange={(e) => handleSortChange('by', e.target.value)} className="rounded-lg border border-gray-300 px-2 py-1 text-sm">
+                                    <option value="Year">Year</option>
+                                    <option value="Horsepower (HP)">Horsepower</option>
+                                    <option value="Torque (ft-lbs)">Torque</option>
+                                    <option value="Curb weight (lbs)">Weight</option>
+                                </select>
+                                <select value={sort.dir} onChange={(e) => handleSortChange('dir', e.target.value)} className="rounded-lg border border-gray-300 px-2 py-1 text-sm">
+                                    <option value="desc">Descending</option>
+                                    <option value="asc">Ascending</option>
+                                </select>
+                            </div>
+                        </div>
                         {loading ? <p>Loading vehicle data...</p> : (
-                            <>
-                                <p className="text-gray-600 mb-6">{discoveryResults.length} vehicles found</p>
-                                <div className="space-y-4">
-                                    {/* DEFENSIVE CODING: Check if discoveryResults is an array. */}
-                                    {Array.isArray(discoveryResults) && discoveryResults.map((vehicle) => (
-                                        <div key={vehicle.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm">
-                                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
-                                                <div className="flex-1 mb-4 md:mb-0">
-                                                    <h4 className="text-lg font-medium text-gray-900 mb-2">{`${vehicle.Year} ${vehicle.Make} ${vehicle.Model} ${vehicle.Trim}`}</h4>
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm text-gray-600">
-                                                        <div><span className="font-medium">Engine:</span> {vehicle['Engine Type']}</div>
-                                                        <div><span className="font-medium">Power:</span> {vehicle['Horsepower (HP)']} HP</div>
-                                                        <div><span className="font-medium">Drive:</span> {vehicle.Drivetrain}</div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center space-x-3 w-full md:w-auto">
-                                                    <button onClick={() => addToCompare(vehicle)} className="flex-1 md:flex-initial px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Compare</button>
-                                                    <button className="flex-1 md:flex-initial px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700">Save</button>
+                            <div className="space-y-4">
+                                {Array.isArray(discoveryResults.results) && discoveryResults.results.map((vehicle) => (
+                                    <div key={vehicle.ID} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm">
+                                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+                                            <div className="flex-1 mb-4 md:mb-0">
+                                                <h4 className="text-lg font-medium text-gray-900 mb-2">{`${vehicle.Year} ${vehicle.Make} ${vehicle.Model} ${vehicle.Trim}`}</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm text-gray-600">
+                                                    <div><span className="font-medium">Engine:</span> {vehicle['Engine size (l)']}L {vehicle.Cylinders}-cyl</div>
+                                                    <div><span className="font-medium">Power:</span> {vehicle['Horsepower (HP)']} HP</div>
+                                                    <div><span className="font-medium">Drive:</span> {vehicle['Drive type']}</div>
+                                                    <div><span className="font-medium">Weight:</span> {vehicle['Curb weight (lbs)']} lbs</div>
                                                 </div>
                                             </div>
+                                            <div className="flex items-center space-x-3 w-full md:w-auto">
+                                                <button onClick={() => addToCompare(vehicle)} className="flex-1 md:flex-initial px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Compare</button>
+                                                <button className="flex-1 md:flex-initial px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700">Save</button>
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </>
+                                    </div>
+                                ))}
+                            </div>
                         )}
+                        <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
+                             <button onClick={() => handlePageChange(-1)} disabled={loading || pagination.page <= 1} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                            <span className="text-sm text-gray-600">Page {pagination.page} of {Math.ceil((discoveryResults.total || 0) / pagination.limit)}</span>
+                             <button onClick={() => handlePageChange(1)} disabled={loading || pagination.page * pagination.limit >= (discoveryResults.total || 0)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
    );
 };
+
+const DimensionsView = ({ setActiveView }) => {
+    const [vehicle, setVehicle] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [years, setYears] = useState([]);
+    const [makes, setMakes] = useState([]);
+    const [models, setModels] = useState([]);
+    const [trims, setTrims] = useState([]);
+    const [selection, setSelection] = useState({ year: '', make: '', model: '', trim: '' });
+    const { rest_url, nonce } = window.myddpcAppData || {};
+
+    const handleSelectionChange = (field, value) => {
+        setSelection(prev => {
+            const newSelection = { ...prev, [field]: value };
+            // Reset dependent fields when a parent field changes
+            if (field === 'year') {
+                newSelection.make = '';
+                newSelection.model = '';
+                newSelection.trim = '';
+                setMakes([]);
+                setModels([]);
+                setTrims([]);
+            }
+            if (field === 'make') {
+                newSelection.model = '';
+                newSelection.trim = '';
+                setModels([]);
+                setTrims([]);
+            }
+            if (field === 'model') {
+                newSelection.trim = '';
+                setTrims([]);
+            }
+            return newSelection;
+        });
+        setVehicle(null); // Clear previous results on any change
+    };
+
+    // Fetch initial years
+    useEffect(() => {
+        if (!rest_url) return;
+        setLoading(true);
+        fetch(`${rest_url}myddpc/v2/dimensions/years`, { headers: { 'X-WP-Nonce': nonce } })
+            .then(res => res.json()).then(setYears).finally(() => setLoading(false));
+    }, [rest_url, nonce]);
+
+    // Fetch makes when year changes
+    useEffect(() => {
+        if (selection.year && rest_url) {
+            setLoading(true);
+            fetch(`${rest_url}myddpc/v2/dimensions/makes?year=${selection.year}`, { headers: { 'X-WP-Nonce': nonce } })
+                .then(res => res.json()).then(setMakes).finally(() => setLoading(false));
+        }
+    }, [selection.year, rest_url, nonce]);
+
+    // Fetch models when make changes
+    useEffect(() => {
+        if (selection.year && selection.make && rest_url) {
+            setLoading(true);
+            fetch(`${rest_url}myddpc/v2/dimensions/models?year=${selection.year}&make=${selection.make}`, { headers: { 'X-WP-Nonce': nonce } })
+                .then(res => res.json()).then(setModels).finally(() => setLoading(false));
+        }
+    }, [selection.year, selection.make, rest_url, nonce]);
+
+    // Fetch trims when model changes
+    useEffect(() => {
+        if (selection.year && selection.make && selection.model && rest_url) {
+            setLoading(true);
+            fetch(`${rest_url}myddpc/v2/dimensions/trims?year=${selection.year}&make=${selection.make}&model=${selection.model}`, { headers: { 'X-WP-Nonce': nonce } })
+                .then(res => res.json()).then(setTrims).finally(() => setLoading(false));
+        }
+    }, [selection.year, selection.make, selection.model, rest_url, nonce]);
+
+    const handleFetchDimensions = () => {
+        const { year, make, model, trim } = selection;
+        if (year && make && model && trim && rest_url) {
+            setLoading(true);
+            fetch(`${rest_url}myddpc/v2/dimensions/vehicle?year=${year}&make=${make}&model=${model}&trim=${trim}`, { headers: { 'X-WP-Nonce': nonce } })
+                .then(res => res.json()).then(setVehicle).finally(() => setLoading(false));
+        }
+    };
+
+    const isFetchable = selection.year && selection.make && selection.model && selection.trim;
+
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <PageHeader title="Vehicle Dimensions" subtitle="Analyze vehicle size, fit, and spatial requirements" />
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                    {/* Year Dropdown */}
+                    <select value={selection.year} onChange={(e) => handleSelectionChange('year', e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                        <option value="">Select Year</option>
+                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                    {/* Make Dropdown */}
+                    <select value={selection.make} onChange={(e) => handleSelectionChange('make', e.target.value)} disabled={!selection.year || makes.length === 0} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100">
+                        <option value="">Select Make</option>
+                        {makes.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    {/* Model Dropdown */}
+                     <select value={selection.model} onChange={(e) => handleSelectionChange('model', e.target.value)} disabled={!selection.make || models.length === 0} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100">
+                        <option value="">Select Model</option>
+                        {models.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    {/* Trim Dropdown */}
+                    <select value={selection.trim} onChange={(e) => handleSelectionChange('trim', e.target.value)} disabled={!selection.model || trims.length === 0} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100">
+                        <option value="">Select Trim</option>
+                        {trims.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    {/* Fetch Button */}
+                    <button onClick={handleFetchDimensions} disabled={!isFetchable || loading} className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed">
+                        {loading ? 'Loading...' : 'Get Dimensions'}
+                    </button>
+                </div>
+            </div>
+
+            {vehicle && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">{`Dimensions for ${selection.year} ${selection.make} ${selection.model} (${selection.trim})`}</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {Object.entries(vehicle).map(([key, value]) => (
+                            <div key={key} className="bg-gray-50 p-3 rounded-lg">
+                                <p className="text-sm text-gray-600">{key}</p>
+                                <p className="text-lg font-medium text-gray-900">{value || 'N/A'}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const PerformanceView = ({ setActiveView }) => {
+    const [performanceData, setPerformanceData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [years, setYears] = useState([]);
+    const [makes, setMakes] = useState([]);
+    const [models, setModels] = useState([]);
+    const [trims, setTrims] = useState([]);
+    const [selection, setSelection] = useState({ year: '', make: '', model: '', trim: '' });
+    const { rest_url, nonce } = window.myddpcAppData || {};
+
+    const handleSelectionChange = (field, value) => {
+        setSelection(prev => {
+            const newSelection = { ...prev, [field]: value };
+            // Reset dependent fields
+            if (field === 'year') newSelection.make = newSelection.model = newSelection.trim = '';
+            if (field === 'make') newSelection.model = newSelection.trim = '';
+            if (field === 'model') newSelection.trim = '';
+            return newSelection;
+        });
+        setPerformanceData(null); // Clear previous results
+    };
+
+    // Fetch years, makes, models, trims (using the dimensions endpoints for selectors)
+    useEffect(() => {
+        if (!rest_url) return;
+        fetch(`${rest_url}myddpc/v2/dimensions/years`, { headers: { 'X-WP-Nonce': nonce } })
+            .then(res => res.json()).then(setYears);
+    }, [rest_url, nonce]);
+
+    useEffect(() => {
+        if (selection.year) {
+            fetch(`${rest_url}myddpc/v2/dimensions/makes?year=${selection.year}`, { headers: { 'X-WP-Nonce': nonce } })
+                .then(res => res.json()).then(setMakes);
+        }
+    }, [selection.year, rest_url, nonce]);
+
+    useEffect(() => {
+        if (selection.make) {
+            fetch(`${rest_url}myddpc/v2/dimensions/models?year=${selection.year}&make=${selection.make}`, { headers: { 'X-WP-Nonce': nonce } })
+                .then(res => res.json()).then(setModels);
+        }
+    }, [selection.make, rest_url, nonce]);
+
+    useEffect(() => {
+        if (selection.model) {
+            fetch(`${rest_url}myddpc/v2/dimensions/trims?year=${selection.year}&make=${selection.make}&model=${selection.model}`, { headers: { 'X-WP-Nonce': nonce } })
+                .then(res => res.json()).then(setTrims);
+        }
+    }, [selection.model, rest_url, nonce]);
+
+
+    const handleFetchPerformance = () => {
+        const { year, make, model, trim } = selection;
+        if (year && make && model && trim && rest_url) {
+            setLoading(true);
+            // **NOTE**: Calling the 'performance' endpoint
+            fetch(`${rest_url}myddpc/v2/performance/vehicle?year=${year}&make=${make}&model=${model}&trim=${trim}`, { headers: { 'X-WP-Nonce': nonce } })
+                .then(res => res.json())
+                .then(setPerformanceData)
+                .finally(() => setLoading(false));
+        }
+    };
+
+    const isFetchable = selection.year && selection.make && selection.model && selection.trim;
+
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <PageHeader title="Performance Analysis" subtitle="Analyze vehicle performance and efficiency metrics" />
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                    {/* Dropdowns */}
+                    <select value={selection.year} onChange={(e) => handleSelectionChange('year', e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                        <option value="">Select Year</option>
+                        {years.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                    <select value={selection.make} onChange={(e) => handleSelectionChange('make', e.target.value)} disabled={!selection.year} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100">
+                        <option value="">Select Make</option>
+                        {makes.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <select value={selection.model} onChange={(e) => handleSelectionChange('model', e.target.value)} disabled={!selection.make} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100">
+                        <option value="">Select Model</option>
+                        {models.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <select value={selection.trim} onChange={(e) => handleSelectionChange('trim', e.target.value)} disabled={!selection.model} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100">
+                        <option value="">Select Trim</option>
+                        {trims.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    {/* Fetch Button */}
+                    <button onClick={handleFetchPerformance} disabled={!isFetchable || loading} className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed">
+                        {loading ? 'Loading...' : 'Get Performance'}
+                    </button>
+                </div>
+            </div>
+
+            {performanceData && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">{`Performance Data for ${selection.year} ${selection.make} ${selection.model} (${selection.trim})`}</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {Object.entries(performanceData).map(([key, value]) => (
+                            <div key={key} className="bg-gray-50 p-3 rounded-lg">
+                                <p className="text-sm text-gray-600">{key}</p>
+                                <p className="text-lg font-medium text-gray-900">{value || 'N/A'}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 const CompareView = ({ setActiveView }) => {
     const { compareVehicles, removeFromCompare, clearCompare } = useVehicles();
@@ -233,6 +595,7 @@ const CompareView = ({ setActiveView }) => {
                 </div>
             );
         }
+        // **CORRECTED**: This component now uses the exact data keys from the database objects.
         return (
              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col">
                  <div className="p-6 border-b border-gray-100">
@@ -247,9 +610,12 @@ const CompareView = ({ setActiveView }) => {
                 <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center"><Icon name="Car" className="w-16 h-16 text-gray-400" /></div>
                 <div className="p-6 flex-grow">
                      <div className="space-y-3">
-                        <div className="flex justify-between"><span className="text-gray-600">Engine:</span><span className="font-medium text-right">{vehicle['Engine Type']}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-600">Engine:</span><span className="font-medium text-right">{vehicle['Engine size (l)']}L {vehicle.Cylinders}-cyl</span></div>
                         <div className="flex justify-between"><span className="text-gray-600">Power:</span><span className="font-medium">{`${vehicle['Horsepower (HP)']} HP`}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-600">Drive:</span><span className="font-medium">{vehicle.Drivetrain}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-600">Torque:</span><span className="font-medium">{`${vehicle['Torque (ft-lbs)']} ft-lbs`}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-600">Drive:</span><span className="font-medium">{vehicle['Drive type']}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-600">Weight:</span><span className="font-medium">{`${vehicle['Curb weight (lbs)']} lbs`}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-600">MPG:</span><span className="font-medium">{vehicle['EPA combined MPG']}</span></div>
                      </div>
                 </div>
             </div>
@@ -266,7 +632,7 @@ const CompareView = ({ setActiveView }) => {
                 {compareVehicles.length > 0 && <button onClick={clearCompare} className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">Clear All</button>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[0, 1, 2].map(slot => <CompareSlot key={slot} vehicle={compareVehicles[slot]} onRemove={() => removeFromCompare(compareVehicles[slot].id)} />)}
+                {[0, 1, 2].map(slot => <CompareSlot key={slot} vehicle={compareVehicles[slot]} onRemove={() => removeFromCompare(compareVehicles[slot].ID)} />)}
             </div>
         </div>
     );
@@ -331,6 +697,34 @@ const App = () => {
   const [garageView, setGarageView] = useState('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // **FINAL CORRECTION**: This effect now applies direct styles to the modal root
+  // to enforce its role as a centered overlay container.
+  useEffect(() => {
+    const modalRoot = document.createElement('div');
+    modalRoot.setAttribute('id', 'modal-root');
+    
+    // Apply styles to make it a full-screen, centered flex container
+    Object.assign(modalRoot.style, {
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        width: '100vw',
+        height: '100vh',
+        zIndex: '1000',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        // Initially hidden to prevent flash of empty div
+        pointerEvents: 'none'
+    });
+
+    document.body.appendChild(modalRoot);
+
+    return () => {
+      document.body.removeChild(modalRoot);
+    };
+  }, []);
+
   const navigationItems = [
     { id: 'discover', label: 'Discover', icon: 'Search' },
     { id: 'compare', label: 'Compare', icon: 'Car' },
@@ -349,8 +743,8 @@ const App = () => {
     switch (activeView) {
       case 'discover': return <DiscoverView setActiveView={setActiveView} />;
       case 'compare': return <CompareView setActiveView={setActiveView} />;
-      case 'performance': return <PlaceholderView title="Performance Analysis" subtitle="Analyze vehicle performance and efficiency metrics" iconName="BarChart3" />;
-      case 'dimensions': return <PlaceholderView title="Vehicle Dimensions" subtitle="Analyze vehicle size, fit, and spatial requirements" iconName="Ruler" />;
+      case 'performance': return <PerformanceView setActiveView={setActiveView} />;
+      case 'dimensions': return <DimensionsView setActiveView={setActiveView} />;
       case 'garage':
         return garageView === 'vehicle-detail'
           ? <VehicleDetailView setGarageView={setGarageView} />
@@ -361,6 +755,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+        <CompareSwapModal />
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
