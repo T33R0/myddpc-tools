@@ -87,7 +87,9 @@ const VehicleProvider = ({ children }) => {
 const useVehicles = () => useContext(VehicleContext);
 
 //================================================================================
+
 // 2. REUSABLE UI COMPONENTS
+
 //================================================================================
 const PageHeader = ({ title, subtitle }) => (
     <div className="flex items-center justify-between mb-8">
