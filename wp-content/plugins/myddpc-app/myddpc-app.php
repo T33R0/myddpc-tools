@@ -320,87 +320,91 @@ function myddpc_handle_user_login(WP_REST_Request $request) {
 
 // --- Garage & Build List Callbacks ---
 
-function myddpc_get_garage_vehicles_callback(WP_REST_Request $request) {
+function myddpc_get_garage_vehicles_callback() {
     global $wpdb;
     $user_id = get_current_user_id();
-    $garage_table = 'qfh_user_garage';
-    $vehicle_data_table = $wpdb->prefix . 'vehicle_data';
-    $builds_table = 'qfh_user_garage_builds';
-
-    // 1. Get all of the user's garage vehicles
-    $vehicles = $wpdb->get_results($wpdb->prepare(
-        "SELECT g.garage_id, g.nickname, v.* FROM $garage_table AS g
-         JOIN $vehicle_data_table AS v ON g.vehicle_data_id = v.ID
-         WHERE g.user_id = %d",
-        $user_id
-    ), ARRAY_A);
-
-    if (empty($vehicles)) {
-        return new WP_REST_Response([], 200);
+    if ($user_id == 0) {
+        return new WP_Error('not_logged_in', 'User is not logged in.', ['status' => 401]);
     }
 
-    // 2. Get all build jobs for all of the user's vehicles in a single query
-    $garage_ids = wp_list_pluck($vehicles, 'garage_id');
-    $placeholders = implode(',', array_fill(0, count($garage_ids), '%d'));
+    // First, let's try to determine which garage table actually exists
+    $possible_tables = [
+        'qfh_user_garage',
+        $wpdb->prefix . 'user_garage'
+    ];
     
-    $all_jobs = $wpdb->get_results($wpdb->prepare(
-        "SELECT garage_entry_id, status, installation_date, job_title, items_data FROM $builds_table WHERE garage_entry_id IN ($placeholders)",
-        $garage_ids
-    ), ARRAY_A);
-
-    // 3. Process the jobs and aggregate data for each vehicle
-    $build_data = [];
-    foreach ($all_jobs as $job) {
-        $garage_id = $job['garage_entry_id'];
-        if (!isset($build_data[$garage_id])) {
-            $build_data[$garage_id] = [
-                'modifications' => 0,
-                'total_investment' => 0,
-                'next_task' => null,
-                'next_task_date' => null,
-            ];
-        }
-
-        $build_data[$garage_id]['modifications']++;
-
-        // Calculate investment from completed tasks
-        if ($job['status'] === 'complete' && !empty($job['items_data'])) {
-            $items = json_decode($job['items_data'], true);
-            if (is_array($items)) {
-                foreach ($items as $item) {
-                    if (isset($item['cost']) && is_numeric($item['cost'])) {
-                        $build_data[$garage_id]['total_investment'] += floatval($item['cost']);
-                    }
-                }
-            }
-        }
-
-        // Determine the next upcoming task
-        if ($job['status'] === 'planned' && !empty($job['installation_date'])) {
-            $task_date = strtotime($job['installation_date']);
-            if ($task_date >= time()) { // If the task is today or in the future
-                if (is_null($build_data[$garage_id]['next_task_date']) || $task_date < $build_data[$garage_id]['next_task_date']) {
-                    $build_data[$garage_id]['next_task_date'] = $task_date;
-                    $build_data[$garage_id]['next_task'] = $job['job_title'];
-                }
-            }
+    $garage_table = null;
+    foreach ($possible_tables as $table) {
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") == $table) {
+            $garage_table = $table;
+            break;
         }
     }
-
-    // 4. Merge the calculated data back into the vehicle objects
-    foreach ($vehicles as &$vehicle) {
-        $garage_id = $vehicle['garage_id'];
-        $vehicle['name'] = $vehicle['nickname'];
-        $vehicle['modifications'] = isset($build_data[$garage_id]) ? $build_data[$garage_id]['modifications'] : 0;
-        $vehicle['totalInvested'] = isset($build_data[$garage_id]) ? $build_data[$garage_id]['total_investment'] : 0;
-        $vehicle['nextService'] = isset($build_data[$garage_id]) ? $build_data[$garage_id]['next_task'] : null;
-        $vehicle['nextServiceDate'] = isset($build_data[$garage_id]['next_task_date']) ? date('Y-m-d', $build_data[$garage_id]['next_task_date']) : null;
-        $vehicle['status'] = $vehicle['status'] ?? 'operational'; // Add default
-        $vehicle['buildProgress'] = $vehicle['buildProgress'] ?? 0; // Add default
-        $vehicle['type'] = $vehicle['type'] ?? 'Personal'; // Add default type
+    
+    if (!$garage_table) {
+        return new WP_Error('table_not_found', 'Garage table not found.', ['status' => 500]);
     }
 
-    return new WP_REST_Response($vehicles, 200);
+    $builds_table = 'qfh_user_garage_builds';
+    $vehicle_data_table = $wpdb->prefix . 'vehicle_data';
+
+    // Start with basic garage data first
+    $query = $wpdb->prepare("
+        SELECT
+            g.garage_id,
+            g.nickname AS name,
+            g.custom_image_url,
+            g.vehicle_data_id,
+            COALESCE(g.status, 'active') AS status,
+            COALESCE(g.vehicle_type, 'daily') AS type,
+            g.mileage,
+            v.Year,
+            v.Make,
+            v.Model,
+            v.Trim
+        FROM
+            {$garage_table} g
+        LEFT JOIN
+            {$vehicle_data_table} v ON g.vehicle_data_id = v.id
+        WHERE
+            g.user_id = %d
+    ", $user_id);
+
+    $results = $wpdb->get_results($query, ARRAY_A);
+
+    if ($wpdb->last_error) {
+        return new WP_Error('db_error', 'Database error: ' . $wpdb->last_error, ['status' => 500]);
+    }
+
+    // Now get build counts and investments for each vehicle
+    foreach ($results as &$vehicle) {
+        $garage_id = intval($vehicle['garage_id']);
+        
+        // Get modifications count
+        $modifications = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$builds_table} WHERE garage_entry_id = %d", 
+            $garage_id
+        ));
+        
+        // Get total investment (only from completed builds)
+        $investment = $wpdb->get_var($wpdb->prepare(
+            "SELECT SUM(CASE WHEN part_price IS NOT NULL AND part_price != '' AND part_price != '0' 
+             THEN CAST(part_price AS DECIMAL(10,2)) ELSE 0 END) 
+             FROM {$builds_table} WHERE garage_entry_id = %d AND status = 'complete'", 
+            $garage_id
+        ));
+        
+        // Process and clean up data
+        $vehicle['garage_id'] = $garage_id;
+        $vehicle['mileage'] = $vehicle['mileage'] ? intval($vehicle['mileage']) : null;
+        $vehicle['modifications'] = intval($modifications);
+        $vehicle['totalInvested'] = $investment ? floatval($investment) : 0;
+        
+        // Remove vehicle_data_id from output as it's internal
+        unset($vehicle['vehicle_data_id']);
+    }
+
+    return new WP_REST_Response($results, 200);
 }
 
 function myddpc_add_garage_vehicle_callback(WP_REST_Request $request) {
@@ -424,16 +428,53 @@ function myddpc_update_garage_vehicle_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
     $params = $request->get_json_params();
-    $table_name = 'qfh_user_garage'; // Use your existing table name
+    $table_name = 'qfh_user_garage';
 
-    if (empty($params['garage_id']) || empty($params['nickname'])) { return new WP_Error('bad_request', 'Garage ID and nickname are required.', ['status' => 400]); }
+    if (empty($params['garage_id'])) {
+        return new WP_Error('bad_request', 'Garage ID is required.', ['status' => 400]);
+    }
+
     $garage_id = absint($params['garage_id']);
-    $nickname = sanitize_text_field($params['nickname']);
-    $owner_id = $wpdb->get_var($wpdb->prepare("SELECT user_id FROM $table_name WHERE garage_id = %d", $garage_id));
-    if ($owner_id != $user_id) { return new WP_Error('permission_denied', 'You do not have permission to edit this vehicle.', ['status' => 403]); }
 
-    $result = $wpdb->update($table_name, ['nickname' => $nickname], ['garage_id' => $garage_id]);
-    if ($result === false) { return new WP_Error('db_error', 'Could not update vehicle nickname.', ['status' => 500]); }
+    // Verify ownership
+    $owner_id = $wpdb->get_var($wpdb->prepare("SELECT user_id FROM $table_name WHERE garage_id = %d", $garage_id));
+    if ($owner_id != $user_id) {
+        return new WP_Error('permission_denied', 'You do not have permission to edit this vehicle.', ['status' => 403]);
+    }
+
+    // Build dynamic update arrays
+    $update_data = [];
+    $update_format = [];
+
+    if (isset($params['nickname'])) {
+        $update_data['nickname'] = sanitize_text_field($params['nickname']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['status'])) {
+        $update_data['status'] = sanitize_text_field($params['status']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['type'])) {
+        // The column name is vehicle_type
+        $update_data['vehicle_type'] = sanitize_text_field($params['type']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['mileage'])) {
+        $update_data['mileage'] = absint($params['mileage']);
+        $update_format[] = '%d';
+    }
+
+    // Do not proceed if there's nothing to update
+    if (empty($update_data)) {
+        return new WP_Error('no_data', 'No data provided to update.', ['status' => 400]);
+    }
+
+    $result = $wpdb->update($table_name, $update_data, ['garage_id' => $garage_id], $update_format, ['%d']);
+
+    if ($result === false) {
+        return new WP_Error('db_error', 'Could not update vehicle information.', ['status' => 500]);
+    }
+
     return new WP_REST_Response(['success' => true, 'message' => 'Vehicle updated successfully.'], 200);
 }
 

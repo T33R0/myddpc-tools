@@ -623,7 +623,9 @@ const GarageMetrics = () => {
 const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
     const statusConfig = {
         operational: { label: 'Operational', classes: 'bg-green-100 text-green-800' },
-        maintenance: { label: 'In Service', classes: 'bg-amber-100 text-amber-800' },
+        maintenance: { label: 'In Service', classes: 'bg-yellow-100 text-yellow-800' },
+        stored: { label: 'Stored', classes: 'bg-blue-100 text-blue-800' },
+        project: { label: 'Project', classes: 'bg-purple-100 text-purple-800' },
         default: { label: 'Offline', classes: 'bg-gray-100 text-gray-800' }
     };
     const currentStatus = statusConfig[vehicle.status] || statusConfig.default;
@@ -632,41 +634,46 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
         if (value >= 1000) {
             return `$${(value / 1000).toFixed(1)}K`;
         }
-        return `$${value.toFixed(2)}`;
+        return `$${(value || 0).toFixed(2)}`;
     };
 
+    // UPDATED: Image URL logic with proper fallback
+    const imageUrl = vehicle.custom_image_url || vehicle.db_image_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='200' y='150' font-family='Arial,sans-serif' font-size='16' fill='%23374151' text-anchor='middle'%3E${vehicle.Year} ${vehicle.Make}%3C/text%3E%3C/svg%3E`;
+
     return (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 group flex flex-col">
-            <div onClick={onSelect} className="cursor-pointer p-6 border-b border-gray-100">
-                <div className="flex items-start justify-between">
-                    <div className="flex-1">
+        <div className="vehicle-card bg-white rounded-lg border flex flex-col" onClick={onSelect}>
+            {/* Top half with background image */}
+            <div className="relative">
+                <div className="vehicle-card-bg" style={{ backgroundImage: `url(${imageUrl})` }}></div>
+                <div className="vehicle-card-overlay"></div>
+                <div className="vehicle-card-header">
+                    <div>
                         <div className="flex items-center mb-2">
-                            <h3 className="text-xl font-medium text-gray-900 mr-3">{vehicle.name}</h3>
+                            <h3 className="text-xl font-medium text-white mr-3">{vehicle.name}</h3>
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${currentStatus.classes}`}>{currentStatus.label}</span>
                         </div>
-                        <p className="text-gray-600 font-medium">{vehicle.Year} {vehicle.Make} {vehicle.Model}</p>
-                        <p className="text-sm text-gray-500">{vehicle.Trim}</p>
+                        <p className="text-gray-200 font-medium">{vehicle.Year} {vehicle.Make} {vehicle.Model}</p>
+                        <p className="text-sm text-gray-300">{vehicle.Trim}</p>
                     </div>
                     <div className="text-right">
-                        <p className="text-sm text-gray-500 mb-1">Type</p>
-                        <p className="font-medium text-gray-900">{vehicle.type || 'N/A'}</p>
+                        <p className="text-sm text-gray-300 mb-1">Type</p>
+                        <p className="font-medium text-white">{vehicle.type || 'Personal'}</p>
                     </div>
                 </div>
             </div>
 
-            <div className="p-6 bg-gray-50 flex-grow">
+            {/* Bottom half with stats */}
+            <div className="vehicle-card-body">
                 <div className="grid grid-cols-2 gap-4">
-                    {/* Key Metrics */}
-                    <div className="col-span-2 sm:col-span-1 p-4 bg-white rounded-lg border">
+                    <div className="p-4 bg-white rounded-lg border">
                         <h4 className="text-sm font-medium text-gray-500 mb-3">Key Metrics</h4>
                         <div className="space-y-2 text-sm">
-                            <div className="flex justify-between"><span>Total Investment:</span> <span className="font-medium">{formatInvestment(vehicle.totalInvested || 0)}</span></div>
+                            <div className="flex justify-between"><span>Total Investment:</span> <span className="font-medium">{formatInvestment(vehicle.totalInvested)}</span></div>
                             <div className="flex justify-between"><span>Build Jobs:</span> <span className="font-medium">{vehicle.modifications}</span></div>
                             <div className="flex justify-between"><span>Mileage:</span> <span className="font-medium">{vehicle.mileage ? vehicle.mileage.toLocaleString() : 'N/A'}</span></div>
                         </div>
                     </div>
-                    {/* Next Task */}
-                    <div className="col-span-2 sm:col-span-1 p-4 bg-white rounded-lg border">
+                    <div className="p-4 bg-white rounded-lg border">
                         <h4 className="text-sm font-medium text-gray-500 mb-3">Next Up</h4>
                         {vehicle.nextService ? (
                             <div>
@@ -674,7 +681,7 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
                                 <p className="text-sm text-red-600">{vehicle.nextServiceDate}</p>
                             </div>
                         ) : (
-                            <p className="text-sm text-gray-500">No upcoming tasks planned.</p>
+                            <p className="text-sm text-gray-500">No upcoming tasks.</p>
                         )}
                     </div>
                 </div>
@@ -682,7 +689,7 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
 
             {vehicle.status === 'maintenance' && (
                 <div className="p-4 border-t border-gray-100">
-                    <button onClick={onWorkMode} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                    <button onClick={(e) => { e.stopPropagation(); onWorkMode(); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
                         <SmartphoneIcon className="w-4 h-4 mr-2" /> Mobile Work Mode
                     </button>
                 </div>
@@ -775,138 +782,302 @@ const MobileWorkInterface = ({ setGarageView }) => {
 const VehicleDetailView = ({ setGarageView }) => {
     const { selectedVehicle, fetchGarageVehicles } = useVehicles();
     const [buildList, setBuildList] = useState([]);
-    const [isEditingNickname, setIsEditingNickname] = useState(false);
-    const [nickname, setNickname] = useState(selectedVehicle?.name || '');
-    const [editingJob, setEditingJob] = useState(null); // State to hold the job being edited
+    const [editingJob, setEditingJob] = useState(null);
     const { rest_url, nonce } = window.myddpcAppData || {};
 
-    const fetchBuildList = useCallback(async () => {
-        if (!selectedVehicle) return;
-        try {
-            const response = await fetch(`${rest_url}myddpc/v2/garage/builds/${selectedVehicle.garage_id}`, { headers: { 'X-WP-Nonce': nonce } });
-            const data = await response.json();
-            setBuildList(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error(error);
+    // NEW: State to control the edit mode UI
+    const [isEditing, setIsEditing] = useState(false);
+    
+    const [vehicleInfo, setVehicleInfo] = useState({
+        nickname: '', status: 'operational', type: 'Personal', mileage: ''
+    });
+    // NEW: State for the image file to be uploaded
+    const [imageFile, setImageFile] = useState(null);
+
+    // Populates the form state when a vehicle is selected or edit mode is cancelled
+    const populateVehicleInfo = useCallback(() => {
+        if (selectedVehicle) {
+            setVehicleInfo({
+                nickname: selectedVehicle.name || '',
+                status: selectedVehicle.status || 'operational',
+                type: selectedVehicle.type || 'Personal',
+                mileage: selectedVehicle.mileage || '',
+                // Keep track of the current image to avoid losing it on cancel
+                custom_image_url: selectedVehicle.custom_image_url || '' 
+            });
         }
-    }, [selectedVehicle, rest_url, nonce]);
+    }, [selectedVehicle]);
+
+    // Function to fetch build list for the selected vehicle
+    const fetchBuildList = useCallback(async () => {
+        if (!selectedVehicle?.garage_id) return;
+        
+        try {
+            const response = await fetch(`${rest_url}myddpc/v2/garage/builds/${selectedVehicle.garage_id}`, {
+                headers: { 'X-WP-Nonce': nonce }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setBuildList(Array.isArray(data) ? data : []);
+            } else {
+                console.error('Failed to fetch build list:', data.message);
+                setBuildList([]);
+            }
+        } catch (error) {
+            console.error('Error fetching build list:', error);
+            setBuildList([]);
+        }
+    }, [selectedVehicle?.garage_id, rest_url, nonce]);
 
     useEffect(() => {
         if (selectedVehicle) {
-            setNickname(selectedVehicle.name);
             fetchBuildList();
+            populateVehicleInfo();
         }
-    }, [selectedVehicle, fetchBuildList]);
+    }, [selectedVehicle, populateVehicleInfo, fetchBuildList]);
+    
+    const handleInfoChange = (e) => {
+        const { name, value } = e.target;
+        setVehicleInfo(prev => ({ ...prev, [name]: value }));
+    };
 
-    if (!selectedVehicle) { return <div className="text-center p-8">No vehicle selected. Go back to the garage.</div>; }
+    // NEW: Handles file selection for the custom image
+    const handleImageFileChange = (e) => {
+        if (e.target.files[0]) {
+            setImageFile(e.target.files[0]);
+        }
+    };
 
-    const handleUpdateNickname = async () => {
+    // Main save function
+    const handleSave = async () => {
+        let updatedInfo = { ...vehicleInfo };
+
+        // Step 1: Upload image if a new one is selected
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append('file', imageFile);
+            formData.append('title', `${vehicleInfo.nickname || selectedVehicle.name} Custom Image`);
+
+            try {
+                const response = await fetch(`${rest_url}wp/v2/media`, {
+                    method: 'POST',
+                    headers: { 'X-WP-Nonce': nonce },
+                    body: formData,
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Failed to upload image.');
+                // Update the info payload with the new image URL
+                updatedInfo.custom_image_url = data.source_url;
+            } catch (error) {
+                console.error(error);
+                alert('Error uploading image: ' + error.message);
+                return; // Stop the save process if image upload fails
+            }
+        }
+
+        // Step 2: Update vehicle details
         try {
             const response = await fetch(`${rest_url}myddpc/v2/garage/vehicle/update`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
-                body: JSON.stringify({ garage_id: selectedVehicle.garage_id, nickname }),
+                body: JSON.stringify({
+                    garage_id: selectedVehicle.garage_id,
+                    ...updatedInfo
+                }),
             });
-            if (!response.ok) throw new Error('Failed to update nickname.');
-            await fetchGarageVehicles();
-            setIsEditingNickname(false);
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Failed to update vehicle.');
+            
+            alert('Vehicle information updated.');
+            await fetchGarageVehicles(); // Refresh the main list
+            setIsEditing(false); // Exit edit mode
+            setImageFile(null); // Clear the selected file
         } catch (error) {
             console.error(error);
-            alert('Error updating nickname.');
-        }
-    };
-
-    const handleDeleteVehicle = async () => {
-        if (window.confirm(`Are you sure you want to delete "${selectedVehicle.name}"? This action cannot be undone.`)) {
-            try {
-                const response = await fetch(`${rest_url}myddpc/v2/garage/vehicle/delete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
-                    body: JSON.stringify({ garage_id: selectedVehicle.garage_id }),
-                });
-                if (!response.ok) throw new Error('Failed to delete vehicle.');
-                await fetchGarageVehicles();
-                setGarageView('overview');
-            } catch (error) {
-                console.error(error);
-                alert('Error deleting vehicle.');
-            }
+            alert('Error updating vehicle: ' + error.message);
         }
     };
     
-    const handleSaveJob = async (jobData) => {
-        try {
-            const response = await fetch(`${rest_url}myddpc/v2/garage/builds/save`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
-                body: JSON.stringify({ garage_id: selectedVehicle.garage_id, ...jobData }),
-            });
-            if (!response.ok) throw new Error('Failed to save job.');
-            setEditingJob(null); // Close the form
-            fetchBuildList(); // Refresh the list
-        } catch (error) {
-            console.error(error);
-            alert('Error saving job.');
-        }
+    // NEW: Handler for the cancel button
+    const handleCancelEdit = () => {
+        populateVehicleInfo(); // Revert any changes
+        setIsEditing(false);
+        setImageFile(null);
     };
 
-    const handleDeleteJob = async (build_entry_id) => {
-        if (window.confirm('Are you sure you want to delete this build entry?')) {
-            try {
-                const response = await fetch(`${rest_url}myddpc/v2/garage/builds/delete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
-                    body: JSON.stringify({ build_entry_id }),
-                });
-                if (!response.ok) throw new Error('Failed to delete job.');
-                fetchBuildList(); // Refresh the list
-            } catch (error) {
-                console.error(error);
-                alert('Error deleting job.');
-            }
-        }
-    };
+    if (!selectedVehicle) { return <div className="text-center p-8">No vehicle selected.</div>; }
+
+    // Display component for static vehicle info
+    const StaticInfoDisplay = () => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div><p className="text-sm text-gray-500">Nickname</p><p>{vehicleInfo.nickname}</p></div>
+            <div><p className="text-sm text-gray-500">Mileage</p><p>{vehicleInfo.mileage ? Number(vehicleInfo.mileage).toLocaleString() : 'N/A'}</p></div>
+            <div><p className="text-sm text-gray-500">Status</p><p className="capitalize">{vehicleInfo.status}</p></div>
+            <div><p className="text-sm text-gray-500">Type</p><p>{vehicleInfo.type}</p></div>
+        </div>
+    );
+
+    // Form component for editing vehicle info
+    const EditableInfoForm = () => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Nickname</label>
+                <input type="text" name="nickname" value={vehicleInfo.nickname} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Mileage</label>
+                <input type="number" name="mileage" value={vehicleInfo.mileage} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Status</label>
+                <select name="status" value={vehicleInfo.status} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="operational">Operational</option>
+                    <option value="maintenance">In Service</option>
+                    <option value="project">Project</option>
+                    <option value="stored">Stored</option>
+                </select>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Type</label>
+                <select name="type" value={vehicleInfo.type} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option value="Personal">Personal</option>
+                    <option value="Daily">Daily</option>
+                    <option value="Track">Track</option>
+                    <option value="Show">Show</option>
+                </select>
+            </div>
+            <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">Custom Card Image</label>
+                <input type="file" accept="image/*" onChange={handleImageFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                {imageFile && <p className="text-xs text-gray-500 mt-1">New: {imageFile.name}</p>}
+            </div>
+        </div>
+    );
 
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <button onClick={() => setGarageView('overview')} className="mb-4 text-sm text-red-600 font-medium">← Back to Garage</button>
-            <div className="flex items-center justify-between mb-4">
-                {isEditingNickname ? (
-                    <input type="text" value={nickname} onChange={e => setNickname(e.target.value)} className="text-3xl font-light text-gray-900 border-b-2 border-gray-300 focus:border-red-500 outline-none" />
-                ) : (
-                    <h1 className="text-3xl font-light text-gray-900">{nickname}</h1>
-                )}
-                <div className="flex items-center gap-2">
-                    {isEditingNickname ? (
-                        <button onClick={handleUpdateNickname} className="text-sm bg-green-600 text-white px-3 py-1 rounded-md">Save</button>
-                    ) : (
-                        <button onClick={() => setIsEditingNickname(true)} className="p-2 text-gray-500 hover:text-gray-800"><Edit3Icon className="w-4 h-4" /></button>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Vehicle Details</h3>
+                    {!isEditing && (
+                        <button onClick={() => setIsEditing(true)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium">Edit</button>
                     )}
-                    <button onClick={handleDeleteVehicle} className="p-2 text-gray-500 hover:text-red-600"><Trash2Icon className="w-4 h-4" /></button>
                 </div>
+                
+                {isEditing ? <EditableInfoForm /> : <StaticInfoDisplay />}
+
+                {isEditing && (
+                    <div className="mt-6 flex justify-end gap-3">
+                        <button onClick={handleCancelEdit} className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg border border-gray-300 font-medium">Cancel</button>
+                        <button onClick={handleSave} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">Save Changes</button>
+                    </div>
+                )}
             </div>
-            <p className="text-gray-600 mb-8">{`${selectedVehicle.Year} ${selectedVehicle.Make} ${selectedVehicle.Model}`}</p>
             
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Build Planner</h3>
-                <BuildJobForm key={editingJob ? editingJob.build_entry_id : 'new'} job={editingJob} onSave={handleSaveJob} onCancel={() => setEditingJob(null)} />
-                <ul className="divide-y divide-gray-200 mt-4">
-                    {buildList.length > 0 ? buildList.map(job => (
-                        <li key={job.build_entry_id} className="py-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="font-medium">{job.job_title}</p>
-                                    <p className="text-sm text-gray-600">{job.job_type.replace('_', ' ')} - {new Date(job.installation_date || job.date_modified).toLocaleDateString()}</p>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Build Planner</h3>
+                    <button onClick={() => setEditingJob({})} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                        Add New Job
+                    </button>
+                </div>
+                
+                {editingJob && (
+                    <div className="mb-6">
+                        <BuildJobForm 
+                            job={editingJob} 
+                            onSave={async (jobData) => {
+                                try {
+                                    const response = await fetch(`${rest_url}myddpc/v2/garage/builds/save`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                                        body: JSON.stringify({ ...jobData, garage_id: selectedVehicle.garage_id }),
+                                    });
+                                    const data = await response.json();
+                                    if (!response.ok) throw new Error(data.message || 'Failed to save build job.');
+                                    
+                                    setEditingJob(null);
+                                    fetchBuildList();
+                                    alert('Build job saved successfully.');
+                                } catch (error) {
+                                    console.error(error);
+                                    alert('Error saving build job: ' + error.message);
+                                }
+                            }}
+                            onCancel={() => setEditingJob(null)}
+                        />
+                    </div>
+                )}
+                
+                <div className="space-y-4">
+                    {buildList.length > 0 ? (
+                        buildList.map((job) => (
+                            <div key={job.build_entry_id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-medium text-gray-900">{job.job_title}</h4>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setEditingJob(job)} className="text-blue-600 hover:text-blue-800 text-sm">
+                                            Edit
+                                        </button>
+                                        <button onClick={async () => {
+                                            if (confirm('Are you sure you want to delete this build job?')) {
+                                                try {
+                                                    const response = await fetch(`${rest_url}myddpc/v2/garage/builds/delete`, {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                                                        body: JSON.stringify({ build_entry_id: job.build_entry_id }),
+                                                    });
+                                                    const data = await response.json();
+                                                    if (!response.ok) throw new Error(data.message || 'Failed to delete build job.');
+                                                    
+                                                    fetchBuildList();
+                                                    alert('Build job deleted successfully.');
+                                                } catch (error) {
+                                                    console.error(error);
+                                                    alert('Error deleting build job: ' + error.message);
+                                                }
+                                            }
+                                        }} className="text-red-600 hover:text-red-800 text-sm">
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${job.status === 'complete' ? 'bg-green-100 text-green-800' : job.status === 'purchased' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>{job.status}</span>
-                                    <button onClick={() => setEditingJob(job)} className="p-2 text-gray-500 hover:text-gray-800"><Edit3Icon className="w-4 h-4" /></button>
-                                    <button onClick={() => handleDeleteJob(job.build_entry_id)} className="p-2 text-gray-500 hover:text-red-600"><Trash2Icon className="w-4 h-4" /></button>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                                    <div><span className="font-medium">Status:</span> <span className="capitalize">{job.status}</span></div>
+                                    <div><span className="font-medium">Type:</span> <span className="capitalize">{job.job_type?.replace('_', ' ')}</span></div>
+                                    <div><span className="font-medium">Method:</span> <span className="capitalize">{job.installation_method}</span></div>
+                                    <div><span className="font-medium">Date:</span> {job.installation_date || 'TBD'}</div>
                                 </div>
+                                {job.job_notes && (
+                                    <p className="text-sm text-gray-600 mb-3">{job.job_notes}</p>
+                                )}
+                                {job.items_data && Array.isArray(job.items_data) && job.items_data.length > 0 && (
+                                    <div className="border-t pt-3">
+                                        <h5 className="text-sm font-medium text-gray-700 mb-2">Parts & Costs:</h5>
+                                        <div className="space-y-1">
+                                            {job.items_data.map((item, index) => (
+                                                <div key={index} className="flex justify-between text-sm">
+                                                    <span>{item.name}</span>
+                                                    <span className="text-gray-600">
+                                                        {item.cost ? `$${parseFloat(item.cost).toFixed(2)}` : 'TBD'}
+                                                        {item.purpose && ` • ${item.purpose}`}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        </li>
-                    )) : <p className="text-gray-500 text-sm py-4">No build jobs planned yet. Add one above.</p>}
-                </ul>
+                        ))
+                    ) : (
+                        <div className="text-center py-8 text-gray-500">
+                            <WrenchIcon className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                            <p>No build jobs yet. Click "Add New Job" to get started!</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
