@@ -247,5 +247,119 @@
     background-color: #F9FAFB; /* --ddpc-gray-50 */
     flex-grow: 1;
 }
+
+/* Work Mode Button Styles */
+.work-mode-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 3;
+    color: #374151; /* --ddpc-gray-700 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.work-mode-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.work-mode-btn:active {
+    transform: scale(0.95);
+}
+  
+  
+/* --- Mobile Responsiveness Enhancements --- */
+
+/* Discover View Layout */
+@media (max-width: 1023px) { /* Corresponds to 'lg:' breakpoint */
+    #myddpc-react-root .discover-view-grid {
+        display: block; /* Stack grid items vertically */
+    }
+    #myddpc-react-root .discover-filters-column {
+        position: static;
+        margin-bottom: 2rem; /* Add space between filters and results */
+    }
+}
+
+/* Discover Results Card Layout */
+#myddpc-react-root .discover-result-item .details-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)); /* Default to 1 column on smallest screens */
+}
+
+@media (min-width: 540px) { /* A custom breakpoint for slightly larger mobile */
+    #myddpc-react-root .discover-result-item .details-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 columns for larger phones */
+    }
+}
+
+@media (min-width: 768px) { /* Corresponds to 'md:' breakpoint */
+     #myddpc-react-root .discover-result-item .details-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)); /* Back to 4 columns on tablets and up */
+    }
+}
+
+/* Compare View Button Group on Mobile */
+@media (max-width: 767px) {
+    #myddpc-react-root .compare-view-controls {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    #myddpc-react-root .compare-view-controls > div {
+        display: flex;
+        flex: 1;
+    }
+    #myddpc-react-root .compare-view-controls > div > button {
+        flex: 1;
+        justify-content: center;
+    }
+}
+  
+  
+/* --- Additional Mobile Layout Fixes --- */
+
+/* Discover Result Card on Mobile */
+@media (max-width: 767px) {
+    #myddpc-react-root .discover-result-item-content {
+        flex-direction: column; /* Stack info and buttons vertically */
+    }
+    #myddpc-react-root .discover-result-item-info {
+        margin-bottom: 1rem; /* Add space between info and buttons */
+    }
+    #myddpc-react-root .discover-result-item-buttons {
+        width: 100%; /* Make button container full width */
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    #myddpc-react-root .discover-result-item-buttons button {
+        flex-grow: 1; /* Allow buttons to share space */
+    }
+}
+
+/* Compare View Grid on Mobile */
+@media (max-width: 767px) {
+    #myddpc-react-root .compare-view-grid {
+        grid-template-columns: repeat(1, minmax(0, 1fr)); /* Force single column */
+    }
+    #myddpc-react-root .compare-view-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    #myddpc-react-root .compare-view-controls > .isolate {
+        display: flex;
+        width: 100%;
+    }
+     #myddpc-react-root .compare-view-controls > .isolate > button {
+        flex: 1;
+     }
+}
   
   

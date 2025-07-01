@@ -20,7 +20,20 @@ function myddpc_app_enqueue_assets() {
         wp_enqueue_style( 'myddpc-react-app-styles', $app_css_url, [], '2.3.0' );
     }
 }
+
+// Register the main React app script for use with shortcodes
+function myddpc_app_register_scripts() {
+    wp_register_script( 'react', 'https://unpkg.com/react@18/umd/react.production.min.js', [], '18.2.0', true );
+    wp_register_script( 'react-dom', 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js', ['react'], '18.2.0', true );
+    wp_register_script( 'babel-standalone', 'https://unpkg.com/@babel/standalone/babel.min.js', [], '7.24.7', true );
+    $app_css_url = plugin_dir_url( __FILE__ ) . 'assets/app.css';
+    wp_register_style( 'myddpc-react-app-styles', $app_css_url, [], '2.3.0' );
+    
+    // Create a dummy handle for the app script that includes inline JS
+    wp_register_script( 'myddpc-react-app', '', ['react', 'react-dom', 'babel-standalone'], '2.3.3', true );
+}
 add_action( 'wp_enqueue_scripts', 'myddpc_app_enqueue_assets', 999 );
+add_action( 'wp_enqueue_scripts', 'myddpc_app_register_scripts', 5 );
 
 function myddpc_app_print_inline_scripts() {
     if ( is_page_template( 'template-myddpc-app.php' ) ) {
@@ -455,7 +468,6 @@ function myddpc_update_garage_vehicle_callback(WP_REST_Request $request) {
         $update_format[] = '%s';
     }
     if (isset($params['type'])) {
-        // The column name is vehicle_type
         $update_data['vehicle_type'] = sanitize_text_field($params['type']);
         $update_format[] = '%s';
     }
@@ -463,8 +475,12 @@ function myddpc_update_garage_vehicle_callback(WP_REST_Request $request) {
         $update_data['mileage'] = absint($params['mileage']);
         $update_format[] = '%d';
     }
+    // ADDED: Handle custom_image_url update
+    if (isset($params['custom_image_url'])) {
+        $update_data['custom_image_url'] = esc_url_raw($params['custom_image_url']);
+        $update_format[] = '%s';
+    }
 
-    // Do not proceed if there's nothing to update
     if (empty($update_data)) {
         return new WP_Error('no_data', 'No data provided to update.', ['status' => 400]);
     }
@@ -649,3 +665,131 @@ function myddpc_get_garage_metrics_callback(WP_REST_Request $request) {
 
     return new WP_REST_Response($metrics, 200);
 }
+
+// --- MY ACCOUNT PAGE ---
+
+// 1. Shortcode to render the React app container
+function myddpc_account_app_shortcode() {
+    // Enqueue the main app script and styles
+    wp_enqueue_script('myddpc-react-app');
+    wp_enqueue_style('myddpc-react-app-styles');
+    // Add the inline script data
+    myddpc_add_inline_script_data();
+    // This is where our React app will mount
+    return '<div id="myddpc-account-app-container"></div>';
+}
+add_shortcode('myddpc_account_app', 'myddpc_account_app_shortcode');
+
+// Main app shortcode to render the main React app container
+function myddpc_main_app_shortcode() {
+    // Enqueue the main app script and styles
+    wp_enqueue_script('myddpc-react-app');
+    wp_enqueue_style('myddpc-react-app-styles');
+    // Add the inline script data
+    myddpc_add_inline_script_data();
+    // This is where our main React app will mount
+    return '<div id="myddpc-react-root"></div>';
+}
+add_shortcode('myddpc_main_app', 'myddpc_main_app_shortcode');
+
+// Helper function to add inline script data for shortcodes
+function myddpc_add_inline_script_data() {
+    static $script_added = false;
+    if ($script_added) return; // Only add once per page
+    
+    $app_js_path = plugin_dir_path( __FILE__ ) . 'assets/app.js';
+    if ( file_exists( $app_js_path ) ) {
+        $react_app_code = file_get_contents( $app_js_path );
+        $current_user = wp_get_current_user();
+        $user_data = null;
+        if ( $current_user->exists() ) {
+            $user_data = [ 'id' => $current_user->ID, 'username' => $current_user->user_login, 'displayName' => $current_user->display_name, 'email' => $current_user->user_email ];
+        }
+        $data_object_string = 'const myddpcAppData = ' . json_encode([ 'rest_url' => esc_url_raw( rest_url() ), 'nonce' => wp_create_nonce( 'wp_rest' ), 'is_logged_in' => is_user_logged_in(), 'current_user' => $user_data, 'logout_url' => wp_logout_url( home_url() ) ]);
+        
+        wp_add_inline_script('myddpc-react-app', $data_object_string . ';' . $react_app_code);
+        $script_added = true;
+    }
+}
+
+
+// 2. API endpoint to get current user data
+function myddpc_get_user_me_callback(WP_REST_Request $request) {
+    $user = wp_get_current_user();
+    if (!$user->exists()) {
+        return new WP_Error('not_logged_in', 'User is not authenticated.', ['status' => 401]);
+    }
+
+    $user_data = [
+        'username' => $user->user_login,
+        'email' => $user->user_email,
+        'location' => get_user_meta($user->ID, 'myddpc_location', true),
+        'avatar_url' => get_user_meta($user->ID, 'myddpc_avatar_url', true),
+    ];
+
+    return new WP_REST_Response($user_data, 200);
+}
+
+
+// 3. API endpoint to update user profile (location, avatar)
+function myddpc_update_user_profile_callback(WP_REST_Request $request) {
+    $user = wp_get_current_user();
+    if (!$user->exists()) {
+        return new WP_Error('not_logged_in', 'User is not authenticated.', ['status' => 401]);
+    }
+
+    $params = $request->get_json_params();
+
+    if (isset($params['location'])) {
+        update_user_meta($user->ID, 'myddpc_location', sanitize_text_field($params['location']));
+    }
+
+    if (isset($params['avatar_url'])) {
+        update_user_meta($user->ID, 'myddpc_avatar_url', esc_url_raw($params['avatar_url']));
+    }
+
+    return new WP_REST_Response(['success' => true, 'message' => 'Profile updated.'], 200);
+}
+
+
+// 4. API endpoint for changing password
+function myddpc_change_password_callback(WP_REST_Request $request) {
+    $user = wp_get_current_user();
+    if (!$user->exists()) {
+        return new WP_Error('not_logged_in', 'User is not authenticated.', ['status' => 401]);
+    }
+
+    $params = $request->get_json_params();
+    $current_password = $params['current_password'];
+    $new_password = $params['new_password'];
+
+    if (!wp_check_password($current_password, $user->user_pass, $user->ID)) {
+        return new WP_Error('wrong_password', 'Your current password does not match.', ['status' => 400]);
+    }
+
+    wp_set_password($new_password, $user->ID);
+
+    return new WP_REST_Response(['success' => true, 'message' => 'Password changed successfully.'], 200);
+}
+
+
+// 5. Register the new API routes
+add_action('rest_api_init', function () {
+    register_rest_route('myddpc/v2', '/user/me', [
+        'methods' => 'GET',
+        'callback' => 'myddpc_get_user_me_callback',
+        'permission_callback' => 'is_user_logged_in',
+    ]);
+
+    register_rest_route('myddpc/v2', '/user/profile', [
+        'methods' => 'POST',
+        'callback' => 'myddpc_update_user_profile_callback',
+        'permission_callback' => 'is_user_logged_in',
+    ]);
+
+    register_rest_route('myddpc/v2', '/user/password', [
+        'methods' => 'POST',
+        'callback' => 'myddpc_change_password_callback',
+        'permission_callback' => 'is_user_logged_in',
+    ]);
+});
