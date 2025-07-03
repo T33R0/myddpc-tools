@@ -1,4 +1,4 @@
-const { useState, useEffect, createContext, useContext, useCallback } = React;
+const { useState, useEffect, createContext, useContext, useCallback, useMemo } = React;
 
 //================================================================================
 // 1. CONTEXTS & PROVIDERS (Auth & Vehicles)
@@ -53,6 +53,59 @@ const AuthProvider = ({ children }) => {
 
 const useAuth = () => useContext(AuthContext);
 
+//--- Compare Context ---
+const CompareContext = createContext();
+
+const CompareProvider = ({ children }) => {
+    // Always initialize as 3 slots
+    const [compareVehicles, setCompareVehicles] = useState([null, null, null]);
+    const { rest_url, nonce } = window.myddpcAppData || {};
+
+    // Add vehicle to compare (fetch full details)
+    const addVehicleToCompare = useCallback(async (vehicleId, slotIndex) => {
+        if (!rest_url || !vehicleId) return;
+        try {
+            const response = await fetch(`${rest_url}myddpc/v2/discover/vehicle/${vehicleId}`, {
+                headers: { 'X-WP-Nonce': nonce }
+            });
+            if (!response.ok) throw new Error('Failed to fetch vehicle details');
+            const vehicleData = await response.json();
+            const newCompareVehicles = [...compareVehicles];
+            while (newCompareVehicles.length <= slotIndex) {
+                newCompareVehicles.push(null);
+            }
+            newCompareVehicles[slotIndex] = vehicleData;
+            setCompareVehicles(newCompareVehicles);
+        } catch (error) {
+            console.error('Error adding vehicle to compare:', error);
+        }
+    }, [rest_url, nonce, compareVehicles]);
+
+    // Add to first available slot
+    const addToCompare = async (vehicle) => {
+        if (!vehicle || !vehicle.ID) return;
+        // Prevent duplicates
+        if (compareVehicles.some(v => v && v.ID === vehicle.ID)) return;
+        // Find first empty slot
+        const slotIndex = compareVehicles.findIndex(v => !v);
+        if (slotIndex === -1) return; // All slots full
+        await addVehicleToCompare(vehicle.ID, slotIndex);
+    };
+    const removeFromCompare = (slotIndex) => {
+        const newCompareVehicles = [...compareVehicles];
+        newCompareVehicles[slotIndex] = null;
+        setCompareVehicles(newCompareVehicles);
+    };
+    const clearCompare = () => {
+        setCompareVehicles([null, null, null]);
+    };
+
+    const value = { compareVehicles, addVehicleToCompare, addToCompare, removeFromCompare, clearCompare };
+    return <CompareContext.Provider value={value}>{children}</CompareContext.Provider>;
+};
+
+const useCompare = () => useContext(CompareContext);
+
 //--- Vehicle Context ---
 const VehicleContext = createContext();
 
@@ -60,7 +113,6 @@ const VehicleProvider = ({ children }) => {
   const [vehicles, setVehicles] = useState([]);
   const [discoveryResults, setDiscoveryResults] = useState({ results: [], total: 0 });
   const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [compareVehicles, setCompareVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSwapModalOpen, setSwapModalOpen] = useState(false);
   const [candidateVehicle, setCandidateVehicle] = useState(null);
@@ -103,40 +155,65 @@ const VehicleProvider = ({ children }) => {
           .finally(() => setLoading(false));
   }, [rest_url, nonce]);
 
-
-
-  const addToCompare = (vehicle) => {
-      if (!compareVehicles.find(v => v.ID === vehicle.ID)) {
-          if (compareVehicles.length < 3) {
-              setCompareVehicles([...compareVehicles, vehicle]);
-          } else {
-              setCandidateVehicle(vehicle);
-              setSwapModalOpen(true);
-          }
-      }
-  };
-  const removeFromCompare = (vehicleId) => setCompareVehicles(compareVehicles.filter(v => v.ID !== vehicleId));
-  const swapVehicleInCompare = (vehicleToReplaceId) => {
-      const newCompareList = compareVehicles.map(v => v.ID === vehicleToReplaceId ? candidateVehicle : v);
-      setCompareVehicles(newCompareList);
-      setSwapModalOpen(false);
-      setCandidateVehicle(null);
-  };
-  const cancelSwap = () => {
-      setSwapModalOpen(false);
-      setCandidateVehicle(null);
-  }
-  const clearCompare = () => setCompareVehicles([]);
-
   const value = {
       vehicles, fetchGarageVehicles,
       discoveryResults, selectedVehicle, setSelectedVehicle,
-      compareVehicles, addToCompare, removeFromCompare, clearCompare, loading,
-      fetchDiscoveryResults, isSwapModalOpen, candidateVehicle, swapVehicleInCompare, cancelSwap
+      loading,
+      fetchDiscoveryResults, isSwapModalOpen, candidateVehicle
   };
 
   return <VehicleContext.Provider value={value}>{children}</VehicleContext.Provider>;
 };
+
+// --- NEW: User Lists Context for Garage & Saved Vehicles ---
+
+const UserListsContext = React.createContext();
+
+const UserListsProvider = ({ children, isAuthenticated }) => {
+    const { rest_url, nonce } = window.myddpcAppData || {};
+    const [garageVehicles, setGarageVehicles] = useState([]);
+    const [savedVehicles, setSavedVehicles] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchAllLists = useCallback(async () => {
+        if (!isAuthenticated) {
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
+        try {
+            // Fetch both lists in parallel
+            const [garageRes, savedRes] = await Promise.all([
+                fetch(`${rest_url}myddpc/v2/garage/vehicles`, { headers: { 'X-WP-Nonce': nonce } }),
+                fetch(`${rest_url}myddpc/v2/saved`, { headers: { 'X-WP-Nonce': nonce } })
+            ]);
+            const garageData = await garageRes.json();
+            const savedData = await savedRes.json();
+
+            if (garageRes.ok) setGarageVehicles(garageData);
+            if (savedRes.ok) setSavedVehicles(savedData);
+
+        } catch (error) {
+            console.error("Failed to fetch user lists:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [rest_url, nonce, isAuthenticated]);
+
+    useEffect(() => {
+        fetchAllLists();
+    }, [fetchAllLists]);
+
+    const value = { garageVehicles, savedVehicles, loading, refreshLists: fetchAllLists };
+
+    return (
+        <UserListsContext.Provider value={value}>
+            {children}
+        </UserListsContext.Provider>
+    );
+};
+
+const useUserLists = () => useContext(UserListsContext);
 
 const useVehicles = () => useContext(VehicleContext);
 
@@ -157,6 +234,22 @@ const Icon = ({ name, className }) => {
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18.4 10c-.4-.8-1.2-1.3-2.1-1.3H7.7c-.9 0-1.7.5-2.1 1.3L3.5 11.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2m14 0a2 2 0 1 1-4 0m4 0a2 2 0 1 0-4 0M9 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></svg>;
     case 'Settings':
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>;
+    case 'Fuel':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 19V7a4 4 0 014-4h7a4 4 0 014 4v6c0 1.105.895 2 2 2s2-.895 2-2V9a2 2 0 00-2-2m-2 0V5a2 2 0 00-2-2m-8 14V7"></path></svg>;
+    case 'Clipboard':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>;
+    case 'Wrench':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>;
+    case 'FileText':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" points="14,2 14,8 20,8"></polyline><line strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="16" y1="13" x2="8" y2="13"></line><line strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x1="16" y1="17" x2="8" y2="17"></line><polyline strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" points="10,9 9,9 8,9"></polyline></svg>;
+    case 'Bookmark':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg>;
+    case 'Columns':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M9 3v18M15 3v18"></path></svg>;
+    case 'Garage':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21V7l9-4 9 4v14H3z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 21v-6a1 1 0 011-1h10a1 1 0 011 1v6"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9h6"></path></svg>;
+    case 'LayoutGrid':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x="3" y="3" width="7" height="7"></rect><rect strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x="14" y="3" width="7" height="7"></rect><rect strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x="14" y="14" width="7" height="7"></rect><rect strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x="3" y="14" width="7" height="7"></rect></svg>;
     default:
       return <div className={`icon-placeholder ${className}`}>{name.charAt(0)}</div>;
   }
@@ -174,18 +267,18 @@ const Trash2Icon = ({ className }) => <svg className={className} xmlns="http://w
 const PageHeader = ({ title, subtitle, children }) => ( <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4"> <div> <h1 className="text-3xl font-light text-gray-900 mb-2">{title}</h1> <p className="text-gray-600">{subtitle}</p> </div> <div>{children}</div> </div> );
 
 const CompareTray = () => {
-    const { compareVehicles, removeFromCompare, clearCompare } = useVehicles();
-    if (compareVehicles.length === 0) return null;
+    const { compareVehicles, removeFromCompare, clearCompare } = useCompare();
+    if (!compareVehicles || !Array.isArray(compareVehicles) || compareVehicles.length === 0 || compareVehicles.every(v => !v)) return null;
     return (
         <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex-1 flex items-center gap-4">
                     <h4 className="font-medium text-gray-800">Compare List:</h4>
                     <div className="flex items-center gap-3">
-                        {compareVehicles.map(v => (
-                            <div key={v.ID} className="bg-gray-100 px-3 py-1 rounded-full flex items-center text-sm">
+                        {compareVehicles.map((v, i) => v && (
+                            <div key={v.ID || i} className="bg-gray-100 px-3 py-1 rounded-full flex items-center text-sm">
                                 <span className="text-gray-700">{`${v.Year} ${v.Make} ${v.Model}`}</span>
-                                <button onClick={() => removeFromCompare(v.ID)} className="ml-2 text-gray-500 hover:text-red-600"><Icon name="X" className="w-4 h-4" /></button>
+                                <button onClick={() => removeFromCompare(i)} className="ml-2 text-gray-500 hover:text-red-600"><Icon name="X" className="w-4 h-4" /></button>
                             </div>
                         ))}
                     </div>
@@ -347,19 +440,50 @@ const AddToGarageModal = ({ vehicle, isOpen, onClose, onSave }) => {
     );
 };
 
+const VehicleSelectModal = ({ isOpen, onClose, title, vehicles, onSelect }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[101] flex justify-center items-center">
+            <div className="bg-white rounded-lg shadow-xl m-4 w-full max-w-lg">
+                <div className="p-4 border-b">
+                    <h3 className="text-lg font-medium">{title}</h3>
+                </div>
+                <div className="p-4 max-h-[60vh] overflow-y-auto">
+                    {vehicles.length > 0 ? (
+                        <ul className="space-y-2">
+                            {vehicles.map(v => (
+                                <li key={v.garage_id || v.saved_id} onClick={() => onSelect(v)} className="p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
+                                    <p className="font-medium">{v.name || `${v.Year} ${v.Make} ${v.Model}`}</p>
+                                    <p className="text-sm text-gray-500">{v.Trim || ''}</p>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-gray-500 text-center py-4">No vehicles found in this list.</p>
+                    )}
+                </div>
+                <div className="p-4 border-t text-right">
+                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 //================================================================================
 // 3. CORE VIEW COMPONENTS
 //================================================================================
 
 const DiscoverView = ({ setActiveView, requireAuth }) => {
-    const { discoveryResults, addToCompare, loading, fetchDiscoveryResults, fetchGarageVehicles } = useVehicles();
+    const { discoveryResults, loading, fetchDiscoveryResults } = useVehicles();
+    const { savedVehicles, refreshLists } = useUserLists();
+    const { compareVehicles, addToCompare, removeFromCompare } = useCompare();
     const [filters, setFilters] = useState({});
     const [filterOptions, setFilterOptions] = useState({});
     const [sort, setSort] = useState({ by: 'Year', dir: 'desc' });
     const [pagination, setPagination] = useState({ page: 1, limit: 10 });
-    const [saveStatus, setSaveStatus] = useState({});
-    const [isAddToGarageModalOpen, setAddToGarageModalOpen] = useState(false);
-    const [vehicleToSave, setVehicleToSave] = useState(null);
+    const [vehicleToAddToGarage, setVehicleToAddToGarage] = useState(null);
     const { rest_url, nonce } = window.myddpcAppData || {};
 
     useEffect(() => { if (!rest_url) return; fetch(`${rest_url}myddpc/v2/discover/filters`, { headers: { 'X-WP-Nonce': nonce } }).then(res => res.json()).then(data => { if (typeof data === 'object' && data !== null) setFilterOptions(data); }).catch(err => console.error("Failed to fetch filter options:", err)); }, [rest_url, nonce]);
@@ -370,47 +494,48 @@ const DiscoverView = ({ setActiveView, requireAuth }) => {
     const handlePageChange = (direction) => setPagination(p => ({ ...p, page: Math.max(1, p.page + direction) }));
     const handleReset = () => { setFilters({}); setSort({ by: 'Year', dir: 'desc' }); setPagination({ page: 1, limit: 10 }); };
 
-    const promptToSaveVehicle = (vehicle) => {
-        requireAuth(() => {
-            setVehicleToSave(vehicle);
-            setAddToGarageModalOpen(true);
+    const isVehicleSaved = (vehicleId) => {
+        return savedVehicles.some(v => v.vehicle_id === vehicleId);
+    };
+    const isVehicleCompared = (vehicleId) => {
+        return compareVehicles.some(v => v && v.ID === vehicleId);
+    };
+
+    // NEW: Logic to save a vehicle
+    const handleSaveVehicle = async (vehicle) => {
+        requireAuth(async () => {
+            try {
+                const response = await fetch(`${rest_url}myddpc/v2/saved`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                    body: JSON.stringify({ vehicle_id: vehicle.ID }),
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Could not save vehicle.');
+                }
+                
+                await refreshLists(); // Refresh the saved vehicles list
+                
+                // Show success feedback - this will be automatically handled by the button state change
+            } catch (error) {
+                console.error('Error saving vehicle:', error);
+                alert(error.message);
+            }
         });
     };
-
-    const handleSaveVehicle = async (vehicle_id, nickname) => {
-        setSaveStatus(prev => ({ ...prev, [vehicle_id]: 'saving' }));
-        try {
-            const response = await fetch(`${rest_url}myddpc/v2/garage/add_vehicle`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
-                body: JSON.stringify({ vehicle_id, nickname }),
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to save vehicle.');
-            
-            setSaveStatus(prev => ({ ...prev, [vehicle_id]: 'saved' }));
-            fetchGarageVehicles();
-            setTimeout(() => setSaveStatus(p => ({ ...p, [vehicle_id]: null })), 2000);
-        } catch (error) {
-            console.error(error);
-            setSaveStatus(prev => ({ ...prev, [vehicle_id]: 'error' }));
-            throw error; // Re-throw to be caught by the modal
+    
+    // UPDATED: Button state logic now checks saved list
+    const getButtonState = (vehicle) => {
+        if (isVehicleSaved(vehicle.ID)) {
+            return { text: 'Saved', disabled: true, className: 'bg-green-600' };
         }
-    };
-
-    const getButtonState = (vehicleId) => {
-        const status = saveStatus[vehicleId];
-        switch (status) {
-            case 'saving': return { text: 'Saving...', disabled: true, className: 'bg-amber-500' };
-            case 'saved': return { text: 'Saved!', disabled: true, className: 'bg-green-500' };
-            case 'error': return { text: 'Error', disabled: false, className: 'bg-red-700' };
-            default: return { text: 'Save', disabled: false, className: 'bg-red-600 hover:bg-red-700' };
-        }
+        return { text: 'Save', disabled: false, className: 'bg-red-600 hover:bg-red-700', action: () => handleSaveVehicle(vehicle) };
     };
 
     return (
         <>
-            <AddToGarageModal vehicle={vehicleToSave} isOpen={isAddToGarageModalOpen} onClose={() => setAddToGarageModalOpen(false)} onSave={handleSaveVehicle} />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <PageHeader title="Vehicle Discovery" subtitle="Find and compare vehicles by specifications and features" />
                 <div className="mb-8"> <CompareTray /> </div>
@@ -457,7 +582,7 @@ const DiscoverView = ({ setActiveView, requireAuth }) => {
                             {loading ? <div className="text-center p-12">Loading results...</div> : (
                                 <div className="space-y-4">
                                     {Array.isArray(discoveryResults.results) && discoveryResults.results.map((vehicle) => {
-                                        const buttonState = getButtonState(vehicle.ID);
+                                        const buttonState = getButtonState(vehicle);
                                         return (
                                             <div key={vehicle.ID} className="discover-result-item border border-gray-200 rounded-lg p-4 hover:shadow-sm">
                                                 <div className="discover-result-item-content flex items-start justify-between">
@@ -471,8 +596,12 @@ const DiscoverView = ({ setActiveView, requireAuth }) => {
                                                         </div>
                                                     </div>
                                                     <div className="discover-result-item-buttons flex items-center space-x-3 ml-4">
-                                                        <button onClick={() => addToCompare(vehicle)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Compare</button>
-                                                        <button onClick={() => promptToSaveVehicle(vehicle)} disabled={buttonState.disabled} className={`px-4 py-2 text-sm text-white rounded-lg transition-colors ${buttonState.className}`}>
+                                                        {isVehicleCompared(vehicle.ID) ? (
+                                                            <span className="px-4 py-2 text-sm rounded-lg bg-green-100 text-green-700 border border-green-300">In Compare</span>
+                                                        ) : (
+                                                            <button onClick={() => addToCompare(vehicle)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Compare</button>
+                                                        )}
+                                                        <button onClick={buttonState.action} disabled={buttonState.disabled} className={`px-4 py-2 text-sm text-white rounded-lg transition-colors ${buttonState.className}`}>
                                                             {buttonState.text}
                                                         </button>
                                                     </div>
@@ -495,85 +624,495 @@ const DiscoverView = ({ setActiveView, requireAuth }) => {
    );
 };
 
-const CompareGeneral = ({ vehicle }) => (
-    <div className="p-6 flex-grow">
-        <div className="space-y-3">
-            <div className="flex justify-between"><span className="text-gray-600">Engine:</span><span className="font-medium text-right">{vehicle['Engine size (l)']}L {vehicle.Cylinders}-cyl</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Power:</span><span className="font-medium">{`${vehicle['Horsepower (HP)']} HP`}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Torque:</span><span className="font-medium">{`${vehicle['Torque (ft-lbs)']} ft-lbs`}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Drive:</span><span className="font-medium">{vehicle['Drive type']}</span></div>
-        </div>
-    </div>
-);
+// --- SAVED VEHICLES COMPONENT ---
 
-const ComparePerformance = ({ vehicle }) => (
-    <div className="p-6 flex-grow">
-        <div className="space-y-3">
-            <div className="flex justify-between"><span className="text-gray-600">Horsepower:</span><span className="font-medium">{`${vehicle['Horsepower (HP)']} HP`}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Torque:</span><span className="font-medium">{`${vehicle['Torque (ft-lbs)']} ft-lbs`}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Weight:</span><span className="font-medium">{`${vehicle['Curb weight (lbs)']} lbs`}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">MPG (Combined):</span><span className="font-medium">{vehicle['EPA combined MPG']}</span></div>
-        </div>
-    </div>
-);
+const SavedVehiclesView = ({ requireAuth, setVehicleToAddToGarage }) => {
+    const { rest_url, nonce } = window.myddpcAppData || {};
+    const [savedVehicles, setSavedVehicles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-const CompareDimensions = ({ vehicle }) => (
-    <div className="p-6 flex-grow">
-        <div className="space-y-3">
-            <div className="flex justify-between"><span className="text-gray-600">Length:</span><span className="font-medium">{`${vehicle['Length (in)']} in`}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Width:</span><span className="font-medium">{`${vehicle['Width (in)']} in`}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Height:</span><span className="font-medium">{`${vehicle['Height (in)']} in`}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Wheelbase:</span><span className="font-medium">{`${vehicle['Wheelbase (in)']} in`}</span></div>
-            <div className="flex justify-between"><span className="text-gray-600">Ground Clearance:</span><span className="font-medium">{`${vehicle['Ground clearance (in)']} in`}</span></div>
-        </div>
-    </div>
-);
+    const fetchSavedVehicles = useCallback(async () => {
+        try {
+            const response = await fetch(`${rest_url}myddpc/v2/saved`, {
+                headers: { 'X-WP-Nonce': nonce }
+            });
+            if (!response.ok) throw new Error('Failed to fetch saved vehicles.');
+            const data = await response.json();
+            setSavedVehicles(data);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [rest_url, nonce]);
 
-const CompareView = ({ setActiveView }) => {
-    const { compareVehicles, removeFromCompare, clearCompare } = useVehicles();
-    const [analysisType, setAnalysisType] = useState('General'); // 'General', 'Performance', 'Dimensions'
+    useEffect(() => {
+        requireAuth(() => {
+            fetchSavedVehicles();
+        });
+    }, [requireAuth, fetchSavedVehicles]);
 
-    const renderAnalysisComponent = (vehicle) => {
-        switch (analysisType) {
-            case 'Performance': return <ComparePerformance vehicle={vehicle} />;
-            case 'Dimensions': return <CompareDimensions vehicle={vehicle} />;
-            default: return <CompareGeneral vehicle={vehicle} />;
+    const handleRemove = async (savedId) => {
+        if (!window.confirm('Are you sure you want to remove this vehicle from your saved list?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`${rest_url}myddpc/v2/saved/${savedId}`, {
+                method: 'DELETE',
+                headers: { 'X-WP-Nonce': nonce }
+            });
+            if (!response.ok) throw new Error('Failed to remove vehicle.');
+            // Refresh list by filtering out the removed item
+            setSavedVehicles(prev => prev.filter(v => v.saved_id !== savedId));
+        } catch (err) {
+            alert(err.message);
         }
     };
     
-    const CompareSlot = ({ vehicle }) => {
-        if (!vehicle) {
-            return (<div className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50"> <Icon name="Car" className="w-16 h-16 text-gray-400 mb-4" /> <p className="text-gray-500 text-center mb-4">Add Vehicle</p> <button onClick={() => setActiveView('discover')} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Browse</button> </div>);
+    const handleAddToGarage = (vehicle) => {
+        // This vehicle object needs to match what the AddToGarageModal expects
+        const modalVehicle = {
+            ID: vehicle.vehicle_id, // The modal expects the vehicle ID as 'ID'
+            Year: vehicle.Year,
+            Make: vehicle.Make,
+            Model: vehicle.Model,
+            Trim: vehicle.Trim,
+        };
+        setVehicleToAddToGarage(modalVehicle);
+    };
+
+    if (loading) return <div className="text-center p-12">Loading your saved vehicles...</div>;
+    if (error) return <div className="text-center p-12 text-red-600">Error: {error}</div>;
+
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="mb-8">
+                <h1 className="text-3xl font-light text-gray-900 mb-2">My Saved Vehicles</h1>
+                <p className="text-gray-600">A list of vehicles you're keeping an eye on. Add them to your Garage to start tracking mods and maintenance.</p>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200">
+                <div className="overflow-x-auto">
+                    {savedVehicles.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Engine</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Power</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weight</th>
+                                    <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {savedVehicles.map((vehicle) => (
+                                    <tr key={vehicle.saved_id}>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-gray-900">{`${vehicle.Year} ${vehicle.Make} ${vehicle.Model}`}</div>
+                                            <div className="text-sm text-gray-500">{vehicle.Trim}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vehicle.engine_size}L</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vehicle.horsepower} HP</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vehicle.weight} lbs</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                            <button onClick={() => handleAddToGarage(vehicle)} className="text-red-600 hover:text-red-900">Add to Garage</button>
+                                            <button onClick={() => handleRemove(vehicle.saved_id)} className="text-gray-500 hover:text-gray-800">Remove</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="text-center p-12 text-gray-500">
+                            <p>You haven't saved any vehicles yet.</p>
+                            <p className="mt-2 text-sm">Use the Discover tool to find and save vehicles.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Helper function to determine if a stat is the winner
+const isWinningStat = (statWinners, key, value) => {
+    if (!statWinners || !statWinners[key]) return false;
+    return parseFloat(value) === statWinners[key];
+};
+
+const CompareGeneral = ({ vehicle, statWinners }) => (
+    <div className="p-6 flex-grow">
+        <div className="space-y-3">
+            <div className="flex justify-between">
+                <span className="text-gray-600">Engine:</span>
+                <span className="font-medium text-right">{vehicle['Engine size (l)']}L {vehicle.Cylinders}-cyl</span>
+            </div>
+            <div className="flex justify-between">
+                <span className="text-gray-600">Power:</span>
+                <span className={`font-medium ${isWinningStat(statWinners, 'Horsepower (HP)', vehicle['Horsepower (HP)']) ? 'text-green-600 font-bold' : ''}`}>
+                    {`${vehicle['Horsepower (HP)']} HP`}
+                </span>
+            </div>
+            <div className="flex justify-between">
+                <span className="text-gray-600">Torque:</span>
+                <span className={`font-medium ${isWinningStat(statWinners, 'Torque (ft-lbs)', vehicle['Torque (ft-lbs)']) ? 'text-green-600 font-bold' : ''}`}>
+                    {`${vehicle['Torque (ft-lbs)']} ft-lbs`}
+                </span>
+            </div>
+            <div className="flex justify-between">
+                <span className="text-gray-600">Drive:</span>
+                <span className="font-medium">{vehicle['Drive type']}</span>
+            </div>
+        </div>
+    </div>
+);
+
+const ComparePerformance = ({ vehicle, statWinners }) => {
+    const powerToWeight = parseFloat(vehicle['Horsepower (HP)']) / parseFloat(vehicle['Curb weight (lbs)']);
+    
+    return (
+        <div className="p-6 flex-grow">
+            <div className="space-y-3">
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Horsepower:</span>
+                    <span className={`font-medium ${isWinningStat(statWinners, 'Horsepower (HP)', vehicle['Horsepower (HP)']) ? 'text-green-600 font-bold' : ''}`}>
+                        {`${vehicle['Horsepower (HP)']} HP`}
+                    </span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Torque:</span>
+                    <span className={`font-medium ${isWinningStat(statWinners, 'Torque (ft-lbs)', vehicle['Torque (ft-lbs)']) ? 'text-green-600 font-bold' : ''}`}>
+                        {`${vehicle['Torque (ft-lbs)']} ft-lbs`}
+                    </span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Weight:</span>
+                    <span className={`font-medium ${isWinningStat(statWinners, 'Curb weight (lbs)', vehicle['Curb weight (lbs)']) ? 'text-green-600 font-bold' : ''}`}>
+                        {`${vehicle['Curb weight (lbs)']} lbs`}
+                    </span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Power-to-Weight:</span>
+                    <span className={`font-medium ${statWinners && statWinners['Power-to-Weight'] === powerToWeight ? 'text-green-600 font-bold' : ''}`}>
+                        {powerToWeight.toFixed(3)}
+                    </span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-gray-600">MPG (Combined):</span>
+                    <span className="font-medium">{vehicle['EPA combined MPG']}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const CompareDimensions = ({ vehicle, statWinners }) => (
+    <div className="p-6 flex-grow">
+        <div className="space-y-3">
+            <div className="flex justify-between">
+                <span className="text-gray-600">Length:</span>
+                <span className="font-medium">{`${vehicle['Length (in)']} in`}</span>
+            </div>
+            <div className="flex justify-between">
+                <span className="text-gray-600">Width:</span>
+                <span className="font-medium">{`${vehicle['Width (in)']} in`}</span>
+            </div>
+            <div className="flex justify-between">
+                <span className="text-gray-600">Height:</span>
+                <span className="font-medium">{`${vehicle['Height (in)']} in`}</span>
+            </div>
+            <div className="flex justify-between">
+                <span className="text-gray-600">Wheelbase:</span>
+                <span className="font-medium">{`${vehicle['Wheelbase (in)']} in`}</span>
+            </div>
+            <div className="flex justify-between">
+                <span className="text-gray-600">Ground Clearance:</span>
+                <span className="font-medium">{`${vehicle['Ground clearance (in)']} in`}</span>
+            </div>
+        </div>
+    </div>
+);
+
+const AddVehicleSlot = ({ onSelect, onBrowse }) => {
+    const { garageVehicles, savedVehicles } = useUserLists();
+    const { addVehicleToCompare, compareVehicles } = useCompare();
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalContent, setModalContent] = useState({ title: '', vehicles: [] });
+
+    const openModal = (type) => {
+        if (type === 'saved') {
+            setModalContent({ title: 'Select from Saved Vehicles', vehicles: savedVehicles });
+        } else if (type === 'garage') {
+            const formattedGarageVehicles = garageVehicles.map(v => ({...v, vehicle_id: v.vehicle_id_from_main_table}));
+            setModalContent({ title: 'Select from Your Garage', vehicles: formattedGarageVehicles });
         }
-        return (
-            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col">
-                <div className="p-6 border-b border-gray-100">
-                    <div className="flex items-start justify-between mb-4">
-                        <div> <h3 className="text-lg font-medium text-gray-900">{`${vehicle.Year} ${vehicle.Make}`}</h3> <p className="text-gray-600">{`${vehicle.Model} ${vehicle.Trim}`}</p> </div>
-                        <button onClick={() => removeFromCompare(vehicle.ID)} className="text-gray-400 hover:text-gray-600"><Icon name="X" className="w-5 h-5" /></button>
+        setModalOpen(true);
+    };
+
+    // Pass the handler as a prop to the modal
+    const handleSelect = (vehicle) => {
+        // Debug: log the vehicle object and ID used
+        console.log('Garage/Saved vehicle selected for compare:', vehicle);
+        let id = vehicle && (vehicle.ID || vehicle.vehicle_id || vehicle.vehicle_id_from_main_table);
+        if (id) {
+            const slotIndex = compareVehicles.findIndex(v => !v);
+            console.log('Adding to compare slot', slotIndex, 'with ID', id);
+            addVehicleToCompare(id, slotIndex);
+        } else {
+            console.warn('No valid ID found for selected vehicle:', vehicle);
+        }
+        setModalOpen(false);
+    };
+
+    return (
+        <>
+            <VehicleSelectModal 
+                isOpen={modalOpen} 
+                onClose={() => setModalOpen(false)}
+                title={modalContent.title}
+                vehicles={modalContent.vehicles}
+                onSelect={handleSelect}
+            />
+            <div className="h-full border-2 border-dashed border-gray-300 rounded-lg flex flex-col justify-center items-center p-6 space-y-3">
+                <p className="font-medium text-gray-700">Add a Vehicle</p>
+                <button onClick={onBrowse} className="w-full text-center py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Browse New</button>
+                <button onClick={() => openModal('saved')} className="w-full text-center py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">From Saved</button>
+                <button onClick={() => openModal('garage')} className="w-full text-center py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">From Garage</button>
+            </div>
+        </>
+    );
+};
+
+// A new helper component for rendering each stat row
+const StatRow = ({ label, value, unit, isBest, barPercent }) => {
+    // Always render the row, even if value is missing
+    const displayValue = (value === null || value === undefined || value === '') ? 'N/A' : value;
+    // Clamp barPercent between 0 and 100
+    const percent = Math.max(0, Math.min(barPercent || 0, 100));
+    return (
+        <div className={`py-2 stat-row${isBest ? ' is-best' : ''}`}>
+            <div className="flex justify-between items-baseline text-sm mb-1">
+                <span className="text-gray-600">{label}</span>
+                <span className={`font-medium transition-colors stat-value ${isBest ? 'text-green-600 font-bold' : 'text-gray-800'}`}>{displayValue} {unit}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5 relative overflow-hidden" style={{ minHeight: '6px' }}>
+                <div
+                    className="bg-red-500 h-1.5 rounded-full transition-all duration-300"
+                    style={{
+                        width: `${percent}%`,
+                        minWidth: percent > 0 ? 2 : 0,
+                        maxWidth: '100%',
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                    }}
+                ></div>
+            </div>
+        </div>
+    );
+};
+
+const CompareSlot = ({ vehicle, slotIndex, statWinners, analysisType }) => {
+    const { removeFromCompare } = useCompare();
+    
+    const pwr = useMemo(() => {
+        if (!vehicle || !vehicle['Horsepower (HP)'] || !vehicle['Curb weight (lbs)']) return null;
+        const hp = parseFloat(vehicle['Horsepower (HP)']);
+        const weight = parseFloat(vehicle['Curb weight (lbs)']);
+        if (isNaN(hp) || isNaN(weight) || weight === 0) return null;
+        const ratio = hp / weight;
+        return ratio.toFixed(3); // HP per lb
+    }, [vehicle]);
+
+    const getStatProps = (key, preference = 'max') => {
+        const value = vehicle[key];
+        const winner = statWinners ? statWinners[key] : null;
+        if (value === null || value === undefined || value === '' || winner === null || winner === undefined) return { value, isBest: false, barPercent: 0 };
+        
+        const numericValue = parseFloat(value);
+        const numericWinner = parseFloat(winner);
+        if (isNaN(numericValue) || isNaN(numericWinner)) return { value, isBest: false, barPercent: 0 };
+        const isBest = numericValue === numericWinner;
+        let barPercent = (numericValue / numericWinner) * 100;
+        
+        // For stats where lower is better, invert the bar logic
+        if (preference === 'min' && numericValue !== 0) {
+            barPercent = (numericWinner / numericValue) * 100;
+        }
+        // Clamp barPercent between 0 and 100
+        barPercent = Math.max(0, Math.min(barPercent, 100));
+        return { value, isBest, barPercent };
+    };
+
+    const renderStats = () => {
+        switch (analysisType) {
+            case 'Performance': {
+                const pwrValue = pwr !== null ? parseFloat(pwr) : null;
+                const pwrWinner = statWinners ? statWinners['Power-to-Weight'] : null;
+                return (
+                    <>
+                        <StatRow label="Horsepower" unit="HP" {...getStatProps('Horsepower (HP)')} />
+                        <StatRow label="Torque" unit="ft-lbs" {...getStatProps('Torque (ft-lbs)')} />
+                        <StatRow label="0-60 mph" unit="sec" {...getStatProps('0-60 mph', 'min')} />
+                        <StatRow label="Curb Weight" unit="lbs" {...getStatProps('Curb weight (lbs)', 'min')} />
+                        <StatRow label="Power-to-Weight" unit="hp/lb" 
+                            value={pwr}
+                            isBest={pwrValue !== null && pwrWinner !== null && pwrValue === pwrWinner}
+                            barPercent={pwrValue !== null && pwrWinner !== null && pwrWinner !== 0 ? (pwrValue / pwrWinner) * 100 : 0}
+                        />
+                    </>
+                );
+            }
+            case 'Dimensions':
+                 return (
+                    <>
+                        <StatRow label="Length" unit="in" value={vehicle['Length (in)']} barPercent={0}/>
+                        <StatRow label="Width" unit="in" value={vehicle['Width (in)']} barPercent={0}/>
+                        <StatRow label="Height" unit="in" value={vehicle['Height (in)']} barPercent={0}/>
+                        <StatRow label="Wheelbase" unit="in" value={vehicle['Wheelbase (in)']} barPercent={0}/>
+                        <StatRow label="Ground Clearance" unit="in" value={vehicle['Ground clearance (in)']} barPercent={0}/>
+                    </>
+                );
+            default: // General
+                return (
+                    <>
+                        <StatRow label="Engine" value={vehicle['Engine size (l)'] ? `${vehicle['Engine size (l)']}L ${vehicle.Cylinders || ''}-cyl` : null} barPercent={0} />
+                        <StatRow label="Drive Type" value={vehicle['Drive type']} barPercent={0} />
+                        <StatRow label="MPG (Combined)" value={vehicle['EPA combined MPG']} unit="mpg" barPercent={0} />
+                        <StatRow label="Doors" value={vehicle['Doors']} barPercent={0} />
+                        <StatRow label="Body Style" value={vehicle['Body type']} barPercent={0} />
+                    </>
+                );
+        }
+    };
+
+    // --- VehicleCard visual shell ---
+    const imageUrl = vehicle.custom_image_url || vehicle.db_image_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='200' y='150' font-family='Arial,sans-serif' font-size='16' fill='%23374151' text-anchor='middle'%3E${vehicle.Year || ''} ${vehicle.Make || ''}%3C/text%3E%3C/svg%3E`;
+    const statusConfig = {
+        operational: { label: 'Operational', classes: 'bg-green-100 text-green-800' },
+        maintenance: { label: 'In Service', classes: 'bg-yellow-100 text-yellow-800' },
+        stored: { label: 'Stored', classes: 'bg-blue-100 text-blue-800' },
+        project: { label: 'Project', classes: 'bg-purple-100 text-purple-800' }
+        // No default/unknown
+    };
+    const currentStatus = statusConfig[vehicle.status];
+
+    return (
+        <div className="vehicle-card bg-white rounded-lg border h-full flex flex-col overflow-hidden relative">
+            {/* Remove icon in top right of card (over image area) */}
+            <span
+                onClick={() => removeFromCompare(slotIndex)}
+                className="absolute top-2 right-2 cursor-pointer text-gray-300 hover:text-red-600"
+                style={{ zIndex: 10, right: '0.5rem' }}
+                title="Remove from compare"
+            >
+                <Icon name="X" className="w-4 h-4" />
+            </span>
+            {/* Card header with image and overlay */}
+            <div className="relative">
+                <div className="vehicle-card-bg" style={{ backgroundImage: `url(${imageUrl})`, height: '120px' }}></div>
+                <div className="vehicle-card-overlay" style={{ height: '120px' }}></div>
+                <div className="vehicle-card-header" style={{ height: '120px', padding: '1rem' }}>
+                    <div>
+                        <div className="flex items-center mb-2">
+                            <h4 className="text-lg font-medium text-white mr-3 truncate">{`${vehicle.Year || ''} ${vehicle.Make || ''} ${vehicle.Model || ''}`}</h4>
+                            {currentStatus && (
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${currentStatus.classes}`}>{currentStatus.label}</span>
+                            )}
+                        </div>
+                        <p className="text-gray-200 font-medium truncate" style={{ marginTop: '-0.25rem' }}>{vehicle.Trim || ''}</p>
                     </div>
                 </div>
-                <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center"><Icon name="Car" className="w-16 h-16 text-gray-400" /></div>
-                {renderAnalysisComponent(vehicle)}
             </div>
-        );
-    };
+            {/* Stat comparison content */}
+            <div className="p-4 flex-grow">
+                <div className="divide-y divide-gray-200">
+                    {renderStats()}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const CompareView = ({ setActiveView }) => {
+    const { compareVehicles, addVehicleToCompare } = useCompare();
+    const [analysisType, setAnalysisType] = useState('General');
+
+    // --- FIXED: statWinners calculation ---
+    const statWinners = useMemo(() => {
+        const loadedVehicles = compareVehicles.filter(v => v);
+        if (loadedVehicles.length < 1) return {};
+
+        // Helper to get the best value for a stat
+        const getBest = (key, preference = 'max') => {
+            const values = loadedVehicles
+                .map(v => {
+                    // Defensive: handle numbers as strings with commas
+                    let val = v[key];
+                    if (typeof val === 'string') val = val.replace(/,/g, '');
+                    const num = parseFloat(val);
+                    return isNaN(num) ? null : num;
+                })
+                .filter(v => v !== null);
+            if (values.length === 0) return null;
+            return preference === 'max' ? Math.max(...values) : Math.min(...values);
+        };
+
+        // Power-to-weight
+        const pwrValues = loadedVehicles
+            .map(v => {
+                let hp = v['Horsepower (HP)'];
+                let weight = v['Curb weight (lbs)'];
+                if (typeof hp === 'string') hp = hp.replace(/,/g, '');
+                if (typeof weight === 'string') weight = weight.replace(/,/g, '');
+                hp = parseFloat(hp);
+                weight = parseFloat(weight);
+                if (isNaN(hp) || isNaN(weight) || weight === 0) return null;
+                return hp / weight;
+            })
+            .filter(v => v !== null);
+
+        return {
+            'Horsepower (HP)': getBest('Horsepower (HP)'),
+            'Torque (ft-lbs)': getBest('Torque (ft-lbs)'),
+            'Curb weight (lbs)': getBest('Curb weight (lbs)', 'min'),
+            '0-60 mph': getBest('0-60 mph', 'min'),
+            'Power-to-Weight': pwrValues.length > 0 ? Math.max(...pwrValues) : null,
+        };
+    }, [compareVehicles]);
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-                <div> <h1 className="text-3xl font-light text-gray-900 mb-2">Vehicle Comparison</h1> <p className="text-gray-600">Side-by-side vehicle analysis</p> </div>
+                <PageHeader title="Vehicle Comparison" subtitle="Side-by-side vehicle analysis" />
                 <div className="compare-view-controls flex items-center gap-2">
                     <div className="isolate inline-flex rounded-md shadow-sm">
-                        <button onClick={() => setAnalysisType('General')} className={`relative inline-flex items-center rounded-l-md px-3 py-2 text-sm font-semibold ${analysisType === 'General' ? 'bg-red-600 text-white z-10' : 'bg-white text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'}`}>General</button>
-                        <button onClick={() => setAnalysisType('Performance')} className={`relative -ml-px inline-flex items-center px-3 py-2 text-sm font-semibold ${analysisType === 'Performance' ? 'bg-red-600 text-white z-10' : 'bg-white text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'}`}>Performance</button>
-                        <button onClick={() => setAnalysisType('Dimensions')} className={`relative -ml-px inline-flex items-center rounded-r-md px-3 py-2 text-sm font-semibold ${analysisType === 'Dimensions' ? 'bg-red-600 text-white z-10' : 'bg-white text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'}`}>Dimensions</button>
+                        {['General', 'Performance', 'Dimensions'].map(type => (
+                             <button key={type} onClick={() => setAnalysisType(type)} className={`relative inline-flex items-center first:rounded-l-md last:rounded-r-md px-3 py-2 text-sm font-semibold -ml-px ${analysisType === type ? 'bg-red-600 text-white z-10' : 'bg-white text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'}`}>{type}</button>
+                        ))}
                     </div>
-                    {compareVehicles.length > 0 && <button onClick={clearCompare} className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 ml-4">Clear</button>}
                 </div>
             </div>
-            <div className="compare-view-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[0, 1, 2].map(slot => <CompareSlot key={slot} vehicle={compareVehicles[slot]} />)}
+            <div className="compare-view-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                {compareVehicles.map((vehicle, index) => (
+                    <div key={index} className="h-full">
+                        {vehicle ? (
+                            <CompareSlot 
+                                vehicle={vehicle} 
+                                slotIndex={index} 
+                                statWinners={statWinners}
+                                analysisType={analysisType}
+                            />
+                        ) : (
+                            <AddVehicleSlot 
+                                onSelect={(vehicleId) => addVehicleToCompare(vehicleId, index)}
+                                onBrowse={() => setActiveView('discover')}
+                            />
+                        )}
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -669,10 +1208,7 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
                 
                 {/* NEW: Mobile Work Mode Button */}
                 <button onClick={handleWorkModeClick} className="work-mode-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 8h-2a2 2 0 0 0-2-2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z"/>
-                        <path d="M8 8H6a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2Z"/>
-                    </svg>
+                    <SmartphoneIcon className="w-5 h-5" />
                 </button>
 
                 <div className="vehicle-card-header">
@@ -757,12 +1293,13 @@ const GarageOverview = ({ setActiveView, setGarageView, requireAuth }) => {
 
 const MobileWorkInterface = ({ setGarageView }) => {
     const { selectedVehicle } = useVehicles();
-    const [mobileWorkView, setMobileWorkView] = useState('scanner');
-    const workTabs = [
-        { id: 'scanner', label: 'Scanner', Icon: SmartphoneIcon },
-        { id: 'checklist', label: 'Checklist', Icon: CheckCircleIcon },
-        { id: 'photos', label: 'Photos', Icon: CameraIcon },
-        { id: 'notes', label: 'Notes', Icon: Edit3Icon },
+    const [mobileWorkView, setMobileWorkView] = useState('tasks');
+    // UPDATED: Removed 'Scanner' from the actions array
+    const workModeActions = [
+        { id: 'tasks', label: 'Tasks', icon: 'Clipboard' },
+        { id: 'build', label: 'Build', icon: 'Wrench' },
+        { id: 'notes', label: 'Notes', icon: 'FileText' },
+        { id: 'fuel', label: 'Fuel', icon: 'Fuel' }
     ];
 
     return (
@@ -778,28 +1315,28 @@ const MobileWorkInterface = ({ setGarageView }) => {
             </div>
             <div className="bg-white border-b border-gray-200 sticky top-[61px] z-10">
                 <div className="flex">
-                    {workTabs.map((tab) => (
-                        <button key={tab.id} onClick={() => setMobileWorkView(tab.id)} className={`flex-1 py-3 px-2 text-center transition-colors ${mobileWorkView === tab.id ? 'border-b-2 border-red-600 text-red-600 bg-red-50' : 'text-gray-600'}`}>
-                            <tab.Icon className="w-5 h-5 mx-auto mb-1" />
-                            <span className="text-xs font-medium">{tab.label}</span>
+                    {workModeActions.map((action) => (
+                        <button key={action.id} onClick={() => setMobileWorkView(action.id)} className={`flex-1 py-3 px-2 text-center transition-colors ${mobileWorkView === action.id ? 'border-b-2 border-red-600 text-red-600 bg-red-50' : 'text-gray-600'}`}>
+                            <Icon name={action.icon} className="w-5 h-5 mx-auto mb-1" />
+                            <span className="text-xs font-medium">{action.label}</span>
                         </button>
                     ))}
                 </div>
             </div>
             <div className="p-4">
-                {mobileWorkView === 'scanner' && (
+                {mobileWorkView === 'tasks' && (
                     <div className="space-y-4">
                         <div className="bg-white rounded-lg border border-gray-200 p-4">
                              <div className="bg-gray-50 rounded-lg p-8 text-center mb-4">
-                                <CameraIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                                <p className="text-sm text-gray-600">Scan part QR code to verify</p>
-                                <button className="mt-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm">Open Camera</button>
+                                <Icon name="Clipboard" className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                                <p className="text-sm text-gray-600">Task management feature</p>
+                                <button className="mt-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm">View Tasks</button>
                             </div>
                         </div>
                     </div>
                 )}
-                 {mobileWorkView === 'checklist' && <div className="text-center p-8 bg-white rounded-lg">Checklist feature coming soon.</div>}
-                 {mobileWorkView === 'photos' && <div className="text-center p-8 bg-white rounded-lg">Photo log feature coming soon.</div>}
+                 {mobileWorkView === 'build' && <div className="text-center p-8 bg-white rounded-lg">Build feature coming soon.</div>}
+                 {mobileWorkView === 'fuel' && <div className="text-center p-8 bg-white rounded-lg">Fuel tracking feature coming soon.</div>}
                  {mobileWorkView === 'notes' && <div className="text-center p-8 bg-white rounded-lg">Notes feature coming soon.</div>}
             </div>
         </div>
@@ -1329,7 +1866,7 @@ const MyAccount = () => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+        <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
             {feedback.message && (
                 <div className={`p-4 rounded-md ${feedback.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                     {feedback.message}
@@ -1337,17 +1874,17 @@ const MyAccount = () => {
             )}
             
             {/* --- Profile Section --- */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
                 <h2 className="text-xl font-medium text-gray-900 mb-6">My Profile</h2>
-                <div className="flex items-start space-x-6">
-                    <div className="flex flex-col items-center">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-6 space-y-4 sm:space-y-0">
+                    <div className="flex flex-col items-center sm:items-start">
                         <img 
-                            src={userData.avatar_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%23f3f4f6'/%3E%3Ctext x='48' y='48' font-family='Arial,sans-serif' font-size='32' fill='%23374151' text-anchor='middle' dominant-baseline='central'%3E${userData.username ? userData.username.charAt(0).toUpperCase() : 'U'}%3C/text%3E%3C/svg%3E`} 
+                            src={userData.avatar_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f3f4f6'/%3E%3Ctext x='32' y='32' font-family='Arial,sans-serif' font-size='20' fill='%23374151' text-anchor='middle' dominant-baseline='central'%3E${userData.username ? userData.username.charAt(0).toUpperCase() : 'U'}%3C/text%3E%3C/svg%3E`} 
                             alt="Avatar" 
-                            className="w-24 h-24 rounded-full object-cover mb-2"
+                            className="w-16 h-16 rounded-full object-cover mb-2 flex-shrink-0"
                         />
                         <input type="file" accept="image/*" onChange={handleAvatarFileChange} id="avatar-upload" className="hidden"/>
-                        <label htmlFor="avatar-upload" className="cursor-pointer text-sm text-red-600 hover:text-red-800 font-medium">
+                        <label htmlFor="avatar-upload" className="cursor-pointer text-sm text-red-600 hover:text-red-800 font-medium text-center">
                             {avatarFile ? 'File Selected' : 'Set Avatar'}
                         </label>
                     </div>
@@ -1362,13 +1899,13 @@ const MyAccount = () => {
                         </div>
                     </div>
                 </div>
-                <div className="mt-6 text-right">
-                    <button onClick={handleProfileSave} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">Save Profile</button>
+                <div className="mt-6 text-center sm:text-right">
+                    <button onClick={handleProfileSave} className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">Save Profile</button>
                 </div>
             </div>
 
             {/* --- Password Section --- */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
                  <h2 className="text-xl font-medium text-gray-900 mb-6">Change Password</h2>
                  <form onSubmit={handlePasswordSave} className="space-y-4">
                     <div>
@@ -1383,16 +1920,16 @@ const MyAccount = () => {
                         <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
                         <input type="password" name="confirm_password" value={passwordData.confirm_password} onChange={handlePasswordChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required/>
                     </div>
-                    <div className="text-right">
-                        <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">Update Password</button>
+                    <div className="text-center sm:text-right">
+                        <button type="submit" className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">Update Password</button>
                     </div>
                  </form>
             </div>
 
             {/* --- Settings Section --- */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
                 <h2 className="text-xl font-medium text-gray-900 mb-6">Settings</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button disabled className="w-full text-left p-4 bg-gray-100 rounded-lg text-gray-400 cursor-not-allowed">
                         <p className="font-medium">Theme</p>
                         <p className="text-sm">Customize app appearance (coming soon)</p>
@@ -1416,205 +1953,207 @@ const MyAccountView = () => {
 // 4. MAIN APP COMPONENT & LAYOUT
 //================================================================================
 const App = () => {
-  const [activeView, setActiveView] = useState('garage');
-  const [garageView, setGarageView] = useState('overview');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isAuthModalOpen, setAuthModalOpen] = useState(false);
-  
-  const { isAuthenticated, user, logout } = useAuth();
-  const { fetchGarageVehicles } = useVehicles();
-
-  // Enhanced history management
-  useEffect(() => {
-    const handlePopState = (event) => {
-      if (event.state) {
-        // Restore both activeView and garageView from history state
-        setActiveView(event.state.activeView || 'garage');
-        setGarageView(event.state.garageView || 'overview');
-      } else {
-        // Default state when no history state exists
-        setActiveView('garage');
-        setGarageView('overview');
-      }
-    };
-
-    // Set the initial state when the app loads
-    window.history.replaceState({ 
-      activeView: activeView, 
-      garageView: garageView 
-    }, '');
-
-    // Add the event listener for popstate events
-    window.addEventListener('popstate', handlePopState);
-
-    // Cleanup: remove the event listener when the component unmounts
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, []); // Empty array ensures this runs only on mount and unmount
-
-  // Function to update browser history when navigation occurs
-  const updateHistory = (newActiveView, newGarageView = 'overview') => {
-    const state = { 
-      activeView: newActiveView, 
-      garageView: newGarageView 
-    };
+    const [activeView, setActiveView] = useState('garage');
+    const [garageView, setGarageView] = useState('overview');
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // This state is crucial
+    const [isAuthModalOpen, setAuthModalOpen] = useState(false);
+    const [vehicleToAddToGarage, setVehicleToAddToGarage] = useState(null);
     
-    // Create a descriptive title for the history entry
-    let title = '';
-    if (newActiveView === 'garage') {
-      if (newGarageView === 'vehicle-detail') {
-        title = 'Vehicle Details - MyDDPC Garage';
-      } else if (newGarageView === 'mobile-work') {
-        title = 'Work Mode - MyDDPC Garage';
-      } else {
-        title = 'Garage Overview - MyDDPC';
-      }
-    } else if (newActiveView === 'discover') {
-      title = 'Discover Vehicles - MyDDPC';
-    } else if (newActiveView === 'compare') {
-      title = 'Compare Vehicles - MyDDPC';
-    } else if (newActiveView === 'account') {
-      title = 'My Account - MyDDPC';
-    }
-    
-    // Push new state to browser history
-    window.history.pushState(state, title);
-  };
+    const { isAuthenticated, user, logout } = useAuth();
+    const { fetchGarageVehicles } = useVehicles();
 
-  // Enhanced setActiveView that updates history
-  const navigateToView = (viewId, garageViewId = 'overview') => {
-    setActiveView(viewId);
-    if (viewId === 'garage') {
-      setGarageView(garageViewId);
-    }
-    updateHistory(viewId, garageViewId);
-  };
+    // Enhanced history management
+    useEffect(() => {
+        const handlePopState = (event) => {
+            if (event.state) {
+                // Restore both activeView and garageView from history state
+                setActiveView(event.state.activeView || 'garage');
+                setGarageView(event.state.garageView || 'overview');
+            } else {
+                // Default state when no history state exists
+                setActiveView('garage');
+                setGarageView('overview');
+            }
+        };
 
-  // Enhanced setGarageView that updates history
-  const navigateToGarageView = (garageViewId) => {
-    setGarageView(garageViewId);
-    updateHistory('garage', garageViewId);
-  };
+        // Set the initial state when the app loads
+        window.history.replaceState({ 
+            activeView: activeView, 
+            garageView: garageView 
+        }, '');
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchGarageVehicles();
-    }
-  }, [isAuthenticated, fetchGarageVehicles]);
+        // Add the event listener for popstate events
+        window.addEventListener('popstate', handlePopState);
 
-  const requireAuth = (callback) => {
-      if (isAuthenticated) {
-          if (callback) callback();
-      } else {
-          setAuthModalOpen(true);
-      }
-  };
+        // Cleanup: remove the event listener when the component unmounts
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, []); // Empty array ensures this runs only on mount and unmount
 
-  const navigationItems = [
-    { id: 'discover', label: 'Discover', icon: 'Search' },
-    { id: 'compare', label: 'Compare', icon: 'Car' },
-    { id: 'garage', label: 'Garage', icon: 'Settings', requiresAuth: true },
-  ];
-
-  const handleNavClick = (viewId) => {
-      const navItem = navigationItems.find(item => item.id === viewId);
-      if (navItem && navItem.requiresAuth) {
-          requireAuth(() => navigateToView(viewId));
-      } else {
-          navigateToView(viewId);
-      }
-      setMobileMenuOpen(false);
-  }
-  
-  const renderView = () => {
-    switch (activeView) {
-      case 'discover': return <DiscoverView setActiveView={navigateToView} requireAuth={requireAuth} />;
-      case 'compare': return <CompareView setActiveView={navigateToView} />;
-      case 'garage':
-        switch(garageView) {
-            case 'overview': return <GarageOverview setActiveView={navigateToView} setGarageView={navigateToGarageView} requireAuth={requireAuth} />;
-            case 'vehicle-detail': return <VehicleDetailView setGarageView={navigateToGarageView} />;
-            case 'mobile-work': return <MobileWorkInterface setGarageView={navigateToGarageView} />;
-            default: return <GarageOverview setGarageView={navigateToGarageView} requireAuth={requireAuth} />;
+    // Function to update browser history when navigation occurs
+    const updateHistory = (newActiveView, newGarageView = 'overview') => {
+        const state = { 
+            activeView: newActiveView, 
+            garageView: newGarageView 
+        };
+        
+        // Create a descriptive title for the history entry
+        let title = '';
+        if (newActiveView === 'garage') {
+            if (newGarageView === 'vehicle-detail') {
+                title = 'Vehicle Details - MyDDPC Garage';
+            } else if (newGarageView === 'mobile-work') {
+                title = 'Work Mode - MyDDPC Garage';
+            } else {
+                title = 'Garage Overview - MyDDPC';
+            }
+        } else if (newActiveView === 'discover') {
+            title = 'Discover Vehicles - MyDDPC';
+        } else if (newActiveView === 'compare') {
+            title = 'Compare Vehicles - MyDDPC';
+        } else if (newActiveView === 'account') {
+            title = 'My Account - MyDDPC';
         }
-      case 'account': return <MyAccountView />;
-      default: return <GarageOverview setGarageView={navigateToGarageView} requireAuth={requireAuth} />;
-    }
-  };
+        
+        // Push new state to browser history
+        window.history.pushState(state, title);
+    };
 
-  const UserProfile = () => {
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    if (!user) return null;
+    // Enhanced setActiveView that updates history
+    const navigateToView = (viewId, garageViewId = 'overview') => {
+        setActiveView(viewId);
+        if (viewId === 'garage') {
+            setGarageView(garageViewId);
+        }
+        updateHistory(viewId, garageViewId);
+    };
+
+    // Enhanced setGarageView that updates history
+    const navigateToGarageView = (garageViewId) => {
+        setGarageView(garageViewId);
+        updateHistory('garage', garageViewId);
+    };
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchGarageVehicles();
+        }
+    }, [isAuthenticated, fetchGarageVehicles]);
+
+    const requireAuth = (callback) => {
+        if (isAuthenticated) {
+            if (callback) callback();
+        } else {
+            setAuthModalOpen(true);
+        }
+    };
+
+    const navigationItems = [
+        { id: 'discover', label: 'Discover', icon: 'Search' },
+        { id: 'compare', label: 'Compare', icon: 'Columns' },
+        { id: 'saved', label: 'Saved Vehicles', icon: 'Bookmark', auth: true },
+        { id: 'garage', label: 'Garage', icon: 'Garage', auth: true },
+    ];
+
+    const handleNavClick = (viewId) => {
+        if (navigationItems.find(item => item.id === viewId)?.auth) {
+            requireAuth(() => {
+                setActiveView(viewId);
+                setMobileMenuOpen(false); // Close menu on navigation
+            });
+        } else {
+            setActiveView(viewId);
+            setMobileMenuOpen(false); // Close menu on navigation
+        }
+    };
+    
+
+
+    const UserProfile = () => {
+        const [dropdownOpen, setDropdownOpen] = useState(false);
+        if (!user) return null;
+        return (
+            <div className="relative">
+                <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"><Icon name={user.displayName} className="w-4 h-4 text-gray-600" /></div>
+                    <span className="text-sm font-medium text-gray-700 hidden sm:block">{user.displayName}</span>
+                </div>
+                {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" onMouseLeave={() => setDropdownOpen(false)}>
+                        <button onClick={() => { navigateToView('account'); setDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Account</button>
+                        <button onClick={logout} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
-      <div className="relative">
-        <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
-          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"><Icon name={user.displayName} className="w-4 h-4 text-gray-600" /></div>
-          <span className="text-sm font-medium text-gray-700 hidden sm:block">{user.displayName}</span>
-        </div>
-        {dropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" onMouseLeave={() => setDropdownOpen(false)}>
-            <button onClick={() => { navigateToView('account'); setDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Account</button>
-            <button onClick={logout} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</button>
-          </div>
-        )}
-      </div>
-    );
-  };
+        <div id="myddpc-react-root" className="flex flex-col min-h-screen">
+            <AuthModal isOpen={isAuthModalOpen} onClose={() => setAuthModalOpen(false)} />
+            
+            {/* UPDATED: Connect the modal to the new state */}
+            <AddToGarageModal 
+                isOpen={!!vehicleToAddToGarage} 
+                onClose={() => setVehicleToAddToGarage(null)}
+                vehicle={vehicleToAddToGarage}
+            />
+            
+            <CompareSwapModal />
+            
+            <UserListsProvider isAuthenticated={isAuthenticated}>
+                <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center h-16 justify-between">
+                        {/* Left: Logo */}
+                        <div className="flex-shrink-0 flex items-center" style={{ minWidth: 0 }}>
+                            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => handleNavClick('garage')}>
+                                <img src="http://myddpc.com/wp-content/uploads/2025/03/cropped-cropped-cropped-Wordpress-Transparent-1.png" alt="MyDDPC Logo" className="h-8 w-auto" />
+                            </div>
+                        </div>
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-        <AuthModal isOpen={isAuthModalOpen} onClose={() => setAuthModalOpen(false)} />
-        <CompareSwapModal />
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center h-16">
-                    {/* Left: Logo */}
-                    <div className="flex items-center min-w-0 flex-1 md:flex-initial">
-                        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveView('garage')}>
-                            <img src="http://myddpc.com/wp-content/uploads/2025/03/cropped-cropped-cropped-Wordpress-Transparent-1.png" alt="MyDDPC Logo" className="h-8 w-auto" />
+                        {/* Center: Navigation (always visible, responsive) */}
+                        <nav className="flex-1 flex justify-center items-center">
+                            <div className="flex items-center space-x-1">
+                                {navigationItems.map(item => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => handleNavClick(item.id)}
+                                        className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === item.id ? 'bg-red-50 text-red-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'} nav-btn`}
+                                    >
+                                        <Icon name={item.icon} className="w-5 h-5 mr-2 nav-btn-icon" />
+                                        <span className="nav-btn-label">{item.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </nav>
+
+                        {/* Right: User Profile */}
+                        <div className="flex items-center justify-end space-x-2 flex-shrink-0">
+                            {isAuthenticated ? <UserProfile /> : (
+                                <button onClick={() => setAuthModalOpen(true)} className="text-sm font-medium text-gray-600 hover:text-gray-900 flex-shrink-0">Login</button>
+                            )}
                         </div>
                     </div>
-
-                    {/* Center: Desktop Navigation */}
-                    <div className="hidden md:flex md:items-center md:justify-center flex-1">
-                        <nav className="flex items-center space-x-1">
-                            {navigationItems.map(item => ( 
-                                <button key={item.id} onClick={() => handleNavClick(item.id)} className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === item.id ? 'bg-red-50 text-red-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
-                                    <Icon name={item.icon} className="w-4 h-4 mr-2" /> {item.label}
-                                </button> 
-                            ))}
-                        </nav>
-                    </div>
-
-                    {/* Right: User Profile & Mobile Menu Button */}
-                    <div className="flex items-center justify-end space-x-2 min-w-0 flex-1 md:flex-initial">
-                        {isAuthenticated ? <UserProfile /> : ( <button onClick={() => setAuthModalOpen(true)} className="text-sm font-medium text-gray-600 hover:text-gray-900 flex-shrink-0">Login</button> )}
-                        
-                        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                            <Icon name={mobileMenuOpen ? 'X' : 'Menu'} className="w-6 h-6" />
-                        </button>
-                    </div>
                 </div>
-            </div>
-
-            {/* Mobile Menu Dropdown */}
-            {mobileMenuOpen && (
-                <div className="md:hidden border-t border-gray-200 bg-white">
-                    <div className="px-2 py-3 space-y-1">
-                        {navigationItems.map(item => (
-                            <button key={item.id} onClick={() => handleNavClick(item.id)} className={`w-full flex items-center px-3 py-3 rounded-lg text-base font-medium ${activeView === item.id ? 'bg-red-50 text-red-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                <Icon name={item.icon} className="w-6 h-6 mr-3" />
-                                {item.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </header>
-        <main>{renderView()}</main>
-    </div>
-  );
+                </header>
+                <main className="flex-grow bg-gray-50">
+                    {activeView === 'discover' && <DiscoverView setActiveView={navigateToView} requireAuth={requireAuth} />}
+                    {activeView === 'saved' && <SavedVehiclesView requireAuth={requireAuth} setVehicleToAddToGarage={setVehicleToAddToGarage} />}
+                    {activeView === 'compare' && <CompareView setActiveView={navigateToView} />}
+                    {activeView === 'garage' && (
+                        <>
+                            {garageView === 'overview' && <GarageOverview setActiveView={navigateToView} setGarageView={navigateToGarageView} requireAuth={requireAuth} />}
+                            {garageView === 'vehicle-detail' && <VehicleDetailView setGarageView={navigateToGarageView} />}
+                            {garageView === 'mobile-work' && <MobileWorkInterface setGarageView={navigateToGarageView} />}
+                        </>
+                    )}
+                    {activeView === 'account' && <MyAccountView />}
+                </main>
+            </UserListsProvider>
+        </div>
+    );
 };
 
 //================================================================================
@@ -1628,9 +2167,11 @@ if (garageContainer) {
     root.render(
         <React.StrictMode>
             <AuthProvider>
-                <VehicleProvider>
-                    <App />
-                </VehicleProvider>
+                <CompareProvider>
+                    <VehicleProvider>
+                        <App />
+                    </VehicleProvider>
+                </CompareProvider>
             </AuthProvider>
         </React.StrictMode>
     );

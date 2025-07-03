@@ -147,6 +147,10 @@
   #myddpc-react-root .max-w-4xl { max-width: 56rem; }
   #myddpc-react-root .divide-y > :not([hidden]) ~ :not([hidden]) { border-top-width: 1px; border-color: var(--ddpc-gray-200); }
   #myddpc-react-root .h-96 { height: 24rem; }
+
+  /* --- Custom Compare Bar Colors --- */
+  #myddpc-react-root .bg-red-500 { background-color: #ef4444 !important; }
+  #myddpc-react-root .h-1.5 { height: 6px !important; }
   
   /* Mobile responsive */
   @media (min-width: 768px) {
@@ -360,6 +364,29 @@
      #myddpc-react-root .compare-view-controls > .isolate > button {
         flex: 1;
      }
+}
+  
+  
+/* --- Compare Tool Enhancements --- */
+
+/* No specific CSS needed if using Tailwind classes like 'text-green-600'. 
+   If you want a background highlight, you could add this: */
+
+.stat-row.is-best .stat-value {
+    color: #059669; /* Or your preferred highlight color */
+    font-weight: 600;
+}
+  
+  
+/* --- Responsive Nav Button Styles for Header --- */
+#myddpc-react-root .nav-btn-label { display: inline; }
+#myddpc-react-root .nav-btn-icon { margin-right: 0.5rem; }
+#myddpc-react-root .nav-btn { padding-left: 1rem; padding-right: 1rem; }
+
+@media (max-width: 767px) {
+  #myddpc-react-root .nav-btn-label { display: none !important; }
+  #myddpc-react-root .nav-btn-icon { margin-right: 0 !important; }
+  #myddpc-react-root .nav-btn { padding-left: 0.5rem !important; padding-right: 0.5rem !important; min-width: 40px; justify-content: center; }
 }
   
   
