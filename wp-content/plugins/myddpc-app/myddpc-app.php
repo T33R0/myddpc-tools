@@ -101,6 +101,11 @@ function myddpc_app_register_rest_routes() {
     register_rest_route($namespace, '/garage/builds/update', [ 'methods' => 'POST', 'callback' => 'myddpc_save_build_job_callback', 'permission_callback' => 'is_user_logged_in' ]);
     register_rest_route($namespace, '/garage/builds/delete', [ 'methods' => 'POST', 'callback' => 'myddpc_delete_build_job_callback', 'permission_callback' => 'is_user_logged_in' ]);
     register_rest_route($namespace, '/garage/metrics', [ 'methods' => 'GET', 'callback' => 'myddpc_get_garage_metrics_callback', 'permission_callback' => 'is_user_logged_in' ]);
+    
+    // --- Saved Vehicles Endpoints ---
+    register_rest_route($namespace, '/saved', [ 'methods' => 'GET', 'callback' => 'myddpc_get_saved_vehicles_callback', 'permission_callback' => 'is_user_logged_in' ]);
+    register_rest_route($namespace, '/saved', [ 'methods' => 'POST', 'callback' => 'myddpc_add_to_saved_vehicles_callback', 'permission_callback' => 'is_user_logged_in' ]);
+    register_rest_route($namespace, '/saved/(?P<id>\d+)', [ 'methods' => 'DELETE', 'callback' => 'myddpc_remove_from_saved_vehicles_callback', 'permission_callback' => 'is_user_logged_in' ]);
 }
 add_action( 'rest_api_init', 'myddpc_app_register_rest_routes' );
 
@@ -157,6 +162,49 @@ function myddpc_create_garage_table_if_not_exists() {
         
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
+    }
+}
+
+// Ensure saved vehicles table exists and has correct structure
+function myddpc_create_saved_vehicles_table_if_not_exists() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'user_saved_vehicles';
+    
+    if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        $sql = "CREATE TABLE $table_name (
+            saved_id mediumint(9) NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) unsigned NOT NULL,
+            vehicle_id bigint(20) unsigned NOT NULL,
+            date_added datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (saved_id),
+            KEY user_id (user_id),
+            KEY vehicle_id (vehicle_id),
+            UNIQUE KEY unique_user_vehicle (user_id, vehicle_id)
+        ) $charset_collate;";
+        
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+    } else {
+        // Table exists, check if vehicle_id column needs to be updated
+        $column_type = $wpdb->get_var("SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '$table_name' AND COLUMN_NAME = 'vehicle_id' AND TABLE_SCHEMA = DATABASE()");
+        
+        if ($column_type === 'mediumint') {
+            // Need to update the column type
+            error_log('DEBUG: Updating vehicle_id column from mediumint to bigint');
+            
+            // Drop the unique constraint first
+            $wpdb->query("ALTER TABLE $table_name DROP INDEX unique_user_vehicle");
+            
+            // Modify the column
+            $wpdb->query("ALTER TABLE $table_name MODIFY COLUMN vehicle_id bigint(20) unsigned NOT NULL");
+            
+            // Recreate the unique constraint
+            $wpdb->query("ALTER TABLE $table_name ADD UNIQUE KEY unique_user_vehicle (user_id, vehicle_id)");
+            
+            error_log('DEBUG: vehicle_id column updated to bigint');
+        }
     }
 }
 
@@ -666,6 +714,105 @@ function myddpc_get_garage_metrics_callback(WP_REST_Request $request) {
     return new WP_REST_Response($metrics, 200);
 }
 
+// --- SAVED VEHICLES API ---
+
+function myddpc_get_saved_vehicles_callback(WP_REST_Request $request) {
+    global $wpdb;
+    $user_id = get_current_user_id();
+    $saved_table = $wpdb->prefix . 'user_saved_vehicles';
+    $vehicle_table = $wpdb->prefix . 'vehicle_data';
+
+    $results = $wpdb->get_results($wpdb->prepare("
+        SELECT
+            s.saved_id,
+            v.ID as vehicle_id,
+            v.Year, v.Make, v.Model, v.Trim,
+            v.`Engine size (l)` as engine_size,
+            v.`Horsepower (HP)` as horsepower,
+            v.`Curb weight (lbs)` as weight,
+            s.date_added
+        FROM {$saved_table} s
+        JOIN {$vehicle_table} v ON s.vehicle_id = v.ID
+        WHERE s.user_id = %d
+        ORDER BY s.date_added DESC
+    ", $user_id), ARRAY_A);
+
+    return new WP_REST_Response($results, 200);
+}
+
+function myddpc_add_to_saved_vehicles_callback(WP_REST_Request $request) {
+    global $wpdb;
+    
+    $user_id = get_current_user_id();
+    
+    if (!$user_id) {
+        return new WP_Error('not_logged_in', 'User must be logged in.', ['status' => 401]);
+    }
+    
+    // Get JSON params for POST requests
+    $params = $request->get_json_params();
+    $vehicle_id = isset($params['vehicle_id']) ? $params['vehicle_id'] : null;
+    
+    if (empty($vehicle_id)) {
+        return new WP_Error('bad_request', 'Vehicle ID is required.', ['status' => 400]);
+    }
+
+    // Ensure table exists and has correct structure
+    myddpc_create_saved_vehicles_table_if_not_exists();
+    
+    $table_name = $wpdb->prefix . 'user_saved_vehicles';
+    
+    // Check if vehicle is already saved
+    $existing = $wpdb->get_var($wpdb->prepare(
+        "SELECT saved_id FROM $table_name WHERE user_id = %d AND vehicle_id = %d",
+        $user_id, $vehicle_id
+    ));
+    
+    if ($existing) {
+        return new WP_Error('already_saved', 'Vehicle already saved.', ['status' => 409]);
+    }
+    
+    $result = $wpdb->insert(
+        $table_name,
+        ['user_id' => $user_id, 'vehicle_id' => $vehicle_id],
+        ['%d', '%d']
+    );
+
+    if ($result === false) {
+        return new WP_Error('insert_failed', 'Could not save vehicle: ' . $wpdb->last_error, ['status' => 500]);
+    }
+
+    return new WP_REST_Response(['success' => true, 'message' => 'Vehicle saved.'], 201);
+}
+
+function myddpc_remove_from_saved_vehicles_callback(WP_REST_Request $request) {
+    global $wpdb;
+    $user_id = get_current_user_id();
+    $saved_id = $request->get_param('id');
+     if (empty($saved_id)) {
+        return new WP_Error('bad_request', 'Saved ID is required.', ['status' => 400]);
+    }
+
+    $table_name = $wpdb->prefix . 'user_saved_vehicles';
+
+    // Security check: ensure the user owns this saved vehicle entry before deleting
+    $owner_check = $wpdb->get_var($wpdb->prepare(
+        "SELECT user_id FROM $table_name WHERE saved_id = %d", absint($saved_id)
+    ));
+
+    if ($owner_check != $user_id) {
+        return new WP_Error('permission_denied', 'You do not have permission to remove this item.', ['status' => 403]);
+    }
+
+    $result = $wpdb->delete($table_name, ['saved_id' => absint($saved_id)], ['%d']);
+
+    if ($result === false) {
+        return new WP_Error('delete_failed', 'Failed to remove vehicle.', ['status' => 500]);
+    }
+
+    return new WP_REST_Response(['success' => true, 'message' => 'Vehicle removed from saved list.'], 200);
+}
+
 // --- MY ACCOUNT PAGE ---
 
 // 1. Shortcode to render the React app container
@@ -792,4 +939,10 @@ add_action('rest_api_init', function () {
         'callback' => 'myddpc_change_password_callback',
         'permission_callback' => 'is_user_logged_in',
     ]);
+
+
 });
+
+// Ensure all required tables are created on plugin activation and init
+register_activation_hook(__FILE__, 'myddpc_create_saved_vehicles_table_if_not_exists');
+add_action('init', 'myddpc_create_saved_vehicles_table_if_not_exists');
