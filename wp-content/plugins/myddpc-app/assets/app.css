@@ -345,6 +345,7 @@
     }
     #myddpc-react-root .discover-result-item-buttons button {
         flex-grow: 1; /* Allow buttons to share space */
+        cursor: pointer;
     }
 }
 

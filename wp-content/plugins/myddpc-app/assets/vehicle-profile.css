@@ -1,0 +1,366 @@
+/*
+ * MyDDPC Vehicle Profile Styles
+ * --------------------------------------------------
+ */
+
+/* --- App Container & Preloader --- */
+.myddpc-app-container {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    color: #333;
+    line-height: 1.6;
+}
+
+#myddpc-preloader {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.myddpc-spinner {
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- Profile Header --- */
+.profile-header.new-dashboard-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 30px;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e1e1e1;
+    align-items: flex-start;
+}
+
+.profile-header-image {
+    flex: 0 0 70%;
+    max-width: 70%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-header-image img {
+    width: 100%;
+    max-width: 480px;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    background: #eee;
+}
+
+.profile-header-info {
+    flex: 0 0 30%;
+    max-width: 30%;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    justify-content: flex-start;
+}
+
+.profile-header-info h1 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    font-size: 2.1em;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.profile-header-info .trim-description {
+    margin-top: 0;
+    font-size: 1.1em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.key-specs-visuals {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.key-specs {
+    display: flex;
+    gap: 12px;
+}
+
+.spec-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid #e5e5e5;
+    min-width: 90px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.spec-item svg {
+    width: 24px;
+    height: 24px;
+    color: #3498db;
+    flex-shrink: 0;
+}
+
+.spec-item-text strong {
+    display: block;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.spec-item-text span {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.drivetrain-info {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.drivetrain-item {
+    background: #f5f5f5;
+    border-radius: 5px;
+    padding: 7px 12px;
+    font-size: 1em;
+    color: #333;
+    border: 1px solid #e5e5e5;
+}
+
+.price-range {
+    font-size: 1.1em;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.color-swatches h4 {
+    margin-bottom: 6px;
+    font-size: 1em;
+    color: #333;
+}
+
+.swatch-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.15s;
+}
+.color-swatch:hover { transform: scale(1.12); }
+
+.color-swatch .swatch-tooltip {
+    visibility: hidden;
+    width: 120px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.95em;
+}
+.color-swatch:hover .swatch-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* --- Pros & Cons --- */
+.pros-cons-section.two-column-pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.pros, .cons {
+    padding: 20px;
+    border-radius: 8px;
+    min-height: 120px;
+}
+
+.pros {
+    background: #e8f5e9;
+    border-left: 5px solid #4caf50;
+}
+
+.cons {
+    background: #ffebee;
+    border-left: 5px solid #f44336;
+}
+
+.pros h3, .cons h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+    font-size: 1.1em;
+}
+
+.pros h3 svg { color: #4caf50; }
+.cons h3 svg { color: #f44336; }
+
+/* --- Tabs --- */
+.profile-tabs {
+    margin-top: 40px;
+}
+
+.tab-headers {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.tab-link {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 1em;
+    position: relative;
+    color: #555;
+    transition: color 0.3s;
+}
+
+.tab-link.active {
+    font-weight: 600;
+    color: #3498db;
+}
+
+.tab-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: #3498db;
+}
+
+.tab-content {
+    display: none;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    animation: fadeIn 0.5s;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.blueprint-graphic-placeholder {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.blueprint-graphic-placeholder svg {
+    max-width: 220px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 8px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* --- Tab Content Tables --- */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+.spec-table th {
+    background: #f7f7f7;
+    padding: 12px;
+    text-align: left;
+    font-size: 1.1em;
+    border-bottom: 2px solid #e1e1e1;
+}
+
+.spec-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e1e1e1;
+}
+
+.spec-table tr:last-child td {
+    border-bottom: none;
+}
+
+.spec-table td:first-child {
+    font-weight: 600;
+    width: 40%;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 1100px) {
+    .profile-header.new-dashboard-layout {
+        flex-direction: column;
+        gap: 18px;
+    }
+    .profile-header-image, .profile-header-info {
+        max-width: 100%;
+        flex: 1 1 100%;
+    }
+}
+@media (max-width: 900px) {
+    .profile-header.new-dashboard-layout {
+        flex-direction: column;
+    }
+    .pros-cons-section.two-column-pros-cons {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 600px) {
+    .profile-header-info h1 {
+        font-size: 1.3em;
+    }
+    .tab-headers {
+        flex-direction: column;
+    }
+    .tab-link {
+        width: 100%;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .tab-link.active::after {
+        width: 4px;
+        height: 100%;
+        top: 0;
+        left: -2px;
+    }
+}
