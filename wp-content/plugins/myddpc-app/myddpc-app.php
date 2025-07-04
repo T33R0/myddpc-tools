@@ -384,13 +384,37 @@ function myddpc_handle_user_login(WP_REST_Request $request) {
     ], 200);
 }
 
+// === GARAGE LIMITS & PERMISSIONS ===
+function myddpc_get_user_garage_limit_and_permission($user_id = null) {
+    if (!$user_id) $user_id = get_current_user_id();
+    $user = get_userdata($user_id);
+    if (!$user) return ['limit' => 0, 'can_use' => false, 'role' => null];
+    $roles = (array) $user->roles;
+    if (in_array('administrator', $roles) || in_array('keymaster', $roles)) {
+        return ['limit' => -1, 'can_use' => true, 'role' => 'admin']; // unlimited
+    }
+    if (in_array('member', $roles)) {
+        return ['limit' => 2, 'can_use' => true, 'role' => 'member'];
+    }
+    // All other signed-in users
+    return ['limit' => 0, 'can_use' => false, 'role' => $roles ? $roles[0] : null];
+}
+
 // --- Garage & Build List Callbacks ---
 
 function myddpc_get_garage_vehicles_callback() {
     global $wpdb;
     $user_id = get_current_user_id();
-    if ($user_id == 0) {
-        return new WP_Error('not_logged_in', 'User is not logged in.', ['status' => 401]);
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_REST_Response([
+            'error' => 'not_allowed',
+            'message' => 'You do not have permission to use the garage.',
+            'garage_limit' => $perm['limit'],
+            'garage_count' => 0,
+            'can_add_more' => false,
+            'vehicles' => [],
+        ], 200);
     }
 
     // First, let's try to determine which garage table actually exists
@@ -477,33 +501,69 @@ function myddpc_get_garage_vehicles_callback() {
         $vehicle['modifications'] = intval($modifications);
         $vehicle['totalInvested'] = $investment ? floatval($investment) : 0;
         
+        // Add vehicle_id for frontend image lookup
+        $vehicle['vehicle_id'] = $vehicle['vehicle_data_id'];
         // Remove vehicle_data_id from output as it's internal
         unset($vehicle['vehicle_data_id']);
     }
 
-    return new WP_REST_Response($results, 200);
+    $garage_count = count($results);
+    $can_add_more = ($perm['limit'] === -1) ? true : ($garage_count < $perm['limit']);
+    return new WP_REST_Response([
+        'garage_limit' => $perm['limit'],
+        'garage_count' => $garage_count,
+        'can_add_more' => $can_add_more,
+        'role' => $perm['role'],
+        'vehicles' => $results,
+    ], 200);
 }
 
 function myddpc_add_garage_vehicle_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
-    $table_name = 'qfh_user_garage'; // Use your existing table name
-
-    if (empty($params['vehicle_id']) || empty($params['nickname'])) { return new WP_Error('bad_request', 'Vehicle ID and nickname are required.', ['status' => 400]); }
+    $table_name = 'qfh_user_garage';
+    if (empty($params['vehicle_id']) || empty($params['nickname'])) {
+        return new WP_Error('bad_request', 'Vehicle ID and nickname are required.', ['status' => 400]);
+    }
     $vehicle_data_id = absint($params['vehicle_id']);
     $nickname = sanitize_text_field($params['nickname']);
+    // ENFORCE: Only allow adding from saved list
+    $saved_table = $wpdb->prefix . 'user_saved_vehicles';
+    $is_saved = $wpdb->get_var($wpdb->prepare(
+        "SELECT saved_id FROM $saved_table WHERE user_id = %d AND vehicle_id = %d",
+        $user_id, $vehicle_data_id
+    ));
+    if (!$is_saved) {
+        return new WP_Error('not_saved', 'You can only add vehicles from your saved list.', ['status' => 403]);
+    }
+    // ENFORCE: Limit for members
+    $garage_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE user_id = %d", $user_id));
+    if ($perm['limit'] !== -1 && $garage_count >= $perm['limit']) {
+        return new WP_Error('limit_reached', 'You have reached your garage limit.', ['status' => 403]);
+    }
     $existing = $wpdb->get_var($wpdb->prepare( "SELECT garage_id FROM $table_name WHERE user_id = %d AND vehicle_data_id = %d", $user_id, $vehicle_data_id ));
-    if ($existing) { return new WP_Error('vehicle_exists', 'This vehicle is already in your garage.', ['status' => 409]); }
-    
+    if ($existing) {
+        return new WP_Error('vehicle_exists', 'This vehicle is already in your garage.', ['status' => 409]);
+    }
     $result = $wpdb->insert($table_name, [ 'user_id' => $user_id, 'vehicle_data_id' => $vehicle_data_id, 'nickname' => $nickname, 'date_added' => current_time('mysql'), ]);
-    if ($result === false) { return new WP_Error('db_error', 'Could not add vehicle to garage.', ['status' => 500]); }
+    if ($result === false) {
+        return new WP_Error('db_error', 'Could not add vehicle to garage.', ['status' => 500]);
+    }
     return new WP_REST_Response(['success' => true, 'message' => 'Vehicle added to garage.', 'garage_id' => $wpdb->insert_id], 201);
 }
 
 function myddpc_update_garage_vehicle_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
     $table_name = 'qfh_user_garage';
 
@@ -561,6 +621,10 @@ function myddpc_update_garage_vehicle_callback(WP_REST_Request $request) {
 function myddpc_delete_garage_vehicle_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
     $garage_table = 'qfh_user_garage'; // Use your existing table name
     $builds_table = 'qfh_user_garage_builds'; // Use your existing table name
@@ -580,6 +644,10 @@ function myddpc_delete_garage_vehicle_callback(WP_REST_Request $request) {
 function myddpc_get_build_list_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $garage_id = absint($request['garage_id']);
     $garage_table = 'qfh_user_garage'; // Use your existing table name
     $builds_table = 'qfh_user_garage_builds'; // Use your existing table name
@@ -599,6 +667,10 @@ function myddpc_get_build_list_callback(WP_REST_Request $request) {
 function myddpc_save_build_job_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
     $builds_table = 'qfh_user_garage_builds'; // Use your existing table name
 
@@ -653,6 +725,10 @@ function myddpc_save_build_job_callback(WP_REST_Request $request) {
 function myddpc_delete_build_job_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
     $builds_table = 'qfh_user_garage_builds'; // Use your existing table name
 

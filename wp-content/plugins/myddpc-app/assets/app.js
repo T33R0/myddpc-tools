@@ -62,8 +62,18 @@ const CompareProvider = ({ children }) => {
     const { rest_url, nonce } = window.myddpcAppData || {};
 
     // Add vehicle to compare (fetch full details)
-    const addVehicleToCompare = useCallback(async (vehicleId, slotIndex) => {
-        if (!rest_url || !vehicleId) return;
+    const addVehicleToCompare = useCallback(async (vehicleOrId, slotIndex) => {
+        if (!rest_url || !vehicleOrId) return;
+        let vehicleId = vehicleOrId;
+        let custom_image_url = null;
+        let garage_nickname = null;
+        // If passed a garage vehicle object, extract ID and custom fields
+        if (typeof vehicleOrId === 'object' && vehicleOrId !== null) {
+            vehicleId = vehicleOrId.vehicle_id || vehicleOrId.ID;
+            custom_image_url = vehicleOrId.custom_image_url || null;
+            garage_nickname = vehicleOrId.garage_nickname || vehicleOrId.name || null;
+        }
+        if (!vehicleId) return;
         try {
             const response = await fetch(`${rest_url}myddpc/v2/discover/vehicle/${vehicleId}`, {
                 headers: { 'X-WP-Nonce': nonce }
@@ -77,6 +87,9 @@ const CompareProvider = ({ children }) => {
             }
             vehicleData.at_a_glance = vehicleData.at_a_glance || {};
             vehicleData.at_a_glance.hero_image = heroImage;
+            // Merge custom image and nickname if present
+            if (custom_image_url) vehicleData.custom_image_url = custom_image_url;
+            if (garage_nickname) vehicleData.garage_nickname = garage_nickname;
             const newCompareVehicles = [...compareVehicles];
             while (newCompareVehicles.length <= slotIndex) {
                 newCompareVehicles.push(null);
@@ -127,29 +140,56 @@ const VehicleProvider = ({ children }) => {
   const { rest_url, nonce } = window.myddpcAppData || {};
 
   const fetchGarageVehicles = useCallback(async () => {
-      if (!rest_url || !window.myddpcAppData.is_logged_in) {
-          setVehicles([]);
-          return;
-      };
-      try {
-          const response = await fetch(`${rest_url}myddpc/v2/garage/vehicles`, { method: 'GET', headers: { 'X-WP-Nonce': nonce } });
-          if (!response.ok) throw new Error('Failed to fetch garage vehicles.');
-          const data = await response.json();
-          // Add mock data for UI development until backend is ready
-          const processedData = data.map(v => ({
-              ...v,
-              status: v.status || 'operational',
-              buildProgress: v.buildProgress || Math.floor(Math.random() * 50) + 25,
-              nextService: v.nextService || '2024-09-15',
-              totalInvested: v.totalInvested || 0,
-              modifications: v.modifications || 0,
-          }));
-          setVehicles(processedData);
-      } catch (err) {
-          console.error(err);
-          setVehicles([]);
-      }
-  }, [rest_url, nonce]);
+    if (!rest_url || !window.myddpcAppData.is_logged_in) {
+        setVehicles([]);
+        return;
+    };
+    try {
+        const response = await fetch(`${rest_url}myddpc/v2/garage/vehicles`, { method: 'GET', headers: { 'X-WP-Nonce': nonce } });
+        if (!response.ok) throw new Error('Failed to fetch garage vehicles.');
+        const data = await response.json();
+        // Defensive: ensure vehicles is always an array
+        const vehiclesArr = Array.isArray(data.vehicles) ? data.vehicles : [];
+        // Fetch full vehicle data for those missing a custom image
+        const augmentedVehicles = await Promise.all(vehiclesArr.map(async v => {
+            if (v.custom_image_url && v.custom_image_url.trim() !== '') return v;
+            const id = v.vehicle_id || v.vehicle_data_id;
+            if (!id) {
+                console.warn('No vehicle_id for garage vehicle:', v);
+                return v;
+            }
+            // Fetch full data
+            try {
+                const fullRes = await fetch(`${rest_url}myddpc/v2/vehicle/full_data?id=${id}`, { headers: { 'X-WP-Nonce': nonce } });
+                if (!fullRes.ok) return v;
+                const fullData = await fullRes.json();
+                // Merge image fields
+                let hero_image = fullData?.at_a_glance?.hero_image || '';
+                let image_url = fullData?.ImageURL || '';
+                return {
+                    ...v,
+                    at_a_glance: fullData?.at_a_glance,
+                    hero_image,
+                    ImageURL: image_url,
+                };
+            } catch (e) {
+                return v;
+            }
+        }));
+        const processedData = augmentedVehicles.map(v => ({
+            ...v,
+            status: v.status || 'operational',
+            buildProgress: v.buildProgress || Math.floor(Math.random() * 50) + 25,
+            nextService: v.nextService || '2024-09-15',
+            totalInvested: v.totalInvested || 0,
+            modifications: v.modifications || 0,
+        }));
+        setVehicles(processedData);
+    } catch (err) {
+        console.error(err);
+        setVehicles([]);
+    }
+}, [rest_url, nonce]);
 
   const fetchDiscoveryResults = useCallback((params = {}) => {
       if (!rest_url) return;
@@ -419,7 +459,7 @@ const AddToGarageModal = ({ vehicle, isOpen, onClose, onSave, loading }) => {
         setError('');
         try {
             await onSave(vehicle.ID, nickname);
-            onClose();
+            onClose(); // Only close modal, no notification
         } catch (err) {
             setError(err.message);
         }
@@ -481,6 +521,12 @@ const VehicleSelectModal = ({ isOpen, onClose, title, vehicles, onSelect }) => {
 //================================================================================
 
 const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFromView }) => {
+    const { isAuthenticated } = useAuth();
+    React.useEffect(() => {
+        if (isAuthenticated) {
+            setActiveView('garage');
+        }
+    }, [isAuthenticated, setActiveView]);
     const { discoveryResults, loading, fetchDiscoveryResults } = useVehicles();
     const { savedVehicles, refreshLists } = useUserLists();
     const { compareVehicles, addToCompare, removeFromCompare } = useCompare();
@@ -589,37 +635,18 @@ const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFrom
                                     {Array.isArray(discoveryResults.results) && discoveryResults.results.map((vehicle) => {
                                         const buttonState = getButtonState(vehicle);
                                         return (
-                                            <div key={vehicle.ID} className="discover-result-item border border-gray-200 rounded-lg p-4 hover:shadow-sm">
-                                                <div className="discover-result-item-content flex items-start justify-between">
-                                                    <div className="discover-result-item-info flex-1">
-                                                        <h4 className="text-lg font-medium text-gray-900 mb-2">{`${vehicle.Year} ${vehicle.Make} ${vehicle.Model} ${vehicle.Trim}`}</h4>
-                                                         <div className="details-grid grid gap-x-4 gap-y-2 text-sm text-gray-600">
-                                                            <div><span className="font-medium">Engine:</span> {vehicle['Engine size (l)']}L {vehicle.Cylinders}-cyl</div>
-                                                            <div><span className="font-medium">Power:</span> {vehicle['Horsepower (HP)']} HP</div>
-                                                            <div><span className="font-medium">Drive:</span> {vehicle['Drive type']}</div>
-                                                            <div><span className="font-medium">Weight:</span> {vehicle['Curb weight (lbs)']} lbs</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="discover-result-item-buttons flex items-center space-x-3 ml-4">
-                                                        {/* Details icon button */}
-                                                        <button onClick={() => { setVehicleProfileId(vehicle.ID); setActiveView('vehicle-profile'); setFromView('discover'); }} className="p-2 rounded-full text-gray-400 hover:text-blue-600 bg-white bg-opacity-80 shadow" title="View Details">
-                                                            <Icon name="FileText" className="w-5 h-5" />
-                                                        </button>
-                                                        {isVehicleCompared(vehicle.ID) ? (
-                                                            <span className="p-2 rounded-full bg-green-100 text-green-700 border border-green-300" title="In Compare">
-                                                                <Icon name="Columns" className="w-5 h-5" />
-                                                            </span>
-                                                        ) : (
-                                                            <button onClick={() => addToCompare(vehicle)} className="p-2 rounded-full text-gray-400 hover:text-red-600 bg-white bg-opacity-80 shadow" title="Compare">
-                                                                <Icon name="Columns" className="w-5 h-5" />
-                                                            </button>
-                                                        )}
-                                                        <button onClick={buttonState.action} disabled={buttonState.disabled} className={`p-2 rounded-full text-gray-400 hover:text-green-600 bg-white bg-opacity-80 shadow ${buttonState.disabled ? 'opacity-50 cursor-not-allowed' : ''}`} title={buttonState.disabled ? 'Saved' : 'Save'}>
-                                                            <Icon name="Bookmark" className="w-5 h-5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <VehicleRow
+                                                key={vehicle.ID}
+                                                vehicle={vehicle}
+                                                onRowClick={() => { setVehicleProfileId(vehicle.ID); setActiveView('vehicle-profile'); setFromView('discover'); }}
+                                                actionButtons={[
+                                                    <button key="details" onClick={e => { e.stopPropagation(); setVehicleProfileId(vehicle.ID); setActiveView('vehicle-profile'); setFromView('discover'); }} className="p-2 rounded-full text-gray-400 hover:text-blue-600 bg-white bg-opacity-80 shadow" title="View Details"><Icon name="FileText" className="w-5 h-5" /></button>,
+                                                    isVehicleCompared(vehicle.ID)
+                                                        ? <span key="compared" className="p-2 rounded-full bg-green-100 text-green-700 border border-green-300" title="In Compare"><Icon name="Columns" className="w-5 h-5" /></span>
+                                                        : <button key="compare" onClick={e => { e.stopPropagation(); addToCompare(vehicle); }} className="p-2 rounded-full text-gray-400 hover:text-red-600 bg-white bg-opacity-80 shadow" title="Compare"><Icon name="Columns" className="w-5 h-5" /></button>,
+                                                    <button key="save" onClick={e => { e.stopPropagation(); buttonState.action(); }} disabled={buttonState.disabled} className={`p-2 rounded-full text-gray-400 hover:text-green-600 bg-white bg-opacity-80 shadow ${buttonState.disabled ? 'opacity-50 cursor-not-allowed' : ''}`} title={buttonState.disabled ? 'Saved' : 'Save'}><Icon name="Bookmark" className="w-5 h-5" /></button>
+                                                ]}
+                                            />
                                         );
                                     })}
                                 </div>
@@ -710,38 +737,21 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
                     savedVehicles.map((vehicle) => {
                         const garageVehicle = findGarageVehicle(vehicle.vehicle_id);
                         return (
-                            <div 
-                                key={vehicle.saved_id} 
-                                className="discover-result-item border border-gray-200 rounded-lg p-4 hover:shadow-sm hover:border-red-300 transition-all cursor-pointer"
-                                onClick={() => {
+                            <VehicleRow
+                                key={vehicle.saved_id}
+                                vehicle={vehicle}
+                                onRowClick={() => {
                                     setVehicleProfileId(vehicle.vehicle_id);
                                     setActiveView('vehicle-profile');
                                     setFromView('saved');
                                     if (setSelectedVehicle) setSelectedVehicle(vehicle);
                                 }}
-                            >
-                                <div className="discover-result-item-content flex items-start justify-between">
-                                    <div className="discover-result-item-info flex-1">
-                                        <h4 className="text-lg font-medium text-gray-900 mb-2">{`${vehicle.Year} ${vehicle.Make} ${vehicle.Model} ${vehicle.Trim}`}</h4>
-                                        <div className="details-grid grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm text-gray-600">
-                                            <div><span className="font-medium">Engine:</span> {vehicle.engine_size}L</div>
-                                            <div><span className="font-medium">Power:</span> {vehicle.horsepower} HP</div>
-                                            <div><span className="font-medium">Weight:</span> {vehicle.weight} lbs</div>
-                                        </div>
-                                    </div>
-                                    <div className="discover-result-item-buttons flex items-center space-x-2 ml-4">
-                                        {/* Only show Garage button if vehicle is in garage */}
-                                        {garageVehicle && (
-                                            <button onClick={e => { e.stopPropagation(); handleGoToGarageVehicle(garageVehicle); }} className="p-2 rounded-full text-gray-400 hover:text-red-600 bg-white bg-opacity-80 shadow" title="Go to Garage Vehicle">
-                                                <Icon name="Garage" className="w-5 h-5" />
-                                            </button>
-                                        )}
-                                        <button onClick={(e) => handleRemove(e, vehicle.saved_id)} className="p-2 rounded-full text-gray-400 hover:text-red-600 bg-white bg-opacity-80 shadow" title="Remove Vehicle">
-                                            <Icon name="Trash2" className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                                actionButtons={[
+                                    garageVehicle && <button key="garage" onClick={e => { e.stopPropagation(); handleGoToGarageVehicle(garageVehicle); }} className="p-2 rounded-full text-gray-400 hover:text-red-600 bg-white bg-opacity-80 shadow" title="Go to Garage Vehicle"><Icon name="Garage" className="w-5 h-5" /></button>,
+                                    <button key="compare" onClick={e => { e.stopPropagation(); setVehicleProfileId(vehicle.vehicle_id); setActiveView('compare'); setFromView('saved'); }} className="p-2 rounded-full text-gray-400 hover:text-blue-600 bg-white bg-opacity-80 shadow" title="Compare"><Icon name="Columns" className="w-5 h-5" /></button>,
+                                    <button key="delete" onClick={e => handleRemove(e, vehicle.saved_id)} className="p-2 rounded-full text-gray-400 hover:text-red-600 bg-white bg-opacity-80 shadow" title="Remove Vehicle"><Icon name="Trash2" className="w-5 h-5" /></button>
+                                ]}
+                            />
                         );
                     })
                 ) : (
@@ -857,30 +867,45 @@ const CompareDimensions = ({ vehicle, statWinners }) => (
 const AddVehicleSlot = ({ onSelect, onBrowse }) => {
     const { garageVehicles, savedVehicles } = useUserLists();
     const { addVehicleToCompare, compareVehicles } = useCompare();
+    const { isAuthenticated } = useAuth();
     const [modalOpen, setModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState({ title: '', vehicles: [] });
+    const [modalType, setModalType] = useState('saved');
 
     const openModal = (type) => {
+        setModalType(type);
         if (type === 'saved') {
             setModalContent({ title: 'Select from Saved Vehicles', vehicles: savedVehicles });
         } else if (type === 'garage') {
-            const formattedGarageVehicles = garageVehicles.map(v => ({...v, vehicle_id: v.vehicle_id_from_main_table}));
-            setModalContent({ title: 'Select from Your Garage', vehicles: formattedGarageVehicles });
+            let garageList = [];
+            if (Array.isArray(garageVehicles)) {
+                garageList = garageVehicles;
+            } else if (garageVehicles && Array.isArray(garageVehicles.vehicles)) {
+                garageList = garageVehicles.vehicles;
+            }
+            setModalContent({ title: 'Select from Your Garage', vehicles: garageList });
         }
         setModalOpen(true);
     };
 
-    // Pass the handler as a prop to the modal
     const handleSelect = (vehicle) => {
-        // Debug: log the vehicle object and ID used
-        console.log('Garage/Saved vehicle selected for compare:', vehicle);
         let id = vehicle && (vehicle.ID || vehicle.vehicle_id || vehicle.vehicle_id_from_main_table);
-        if (id) {
-            const slotIndex = compareVehicles.findIndex(v => !v);
-            console.log('Adding to compare slot', slotIndex, 'with ID', id);
-            addVehicleToCompare(id, slotIndex);
-        } else {
-            console.warn('No valid ID found for selected vehicle:', vehicle);
+        const slotIndex = compareVehicles.findIndex(v => !v);
+        if (modalType === 'saved') {
+            if (id) {
+                addVehicleToCompare(id, slotIndex);
+            } else {
+                console.warn('No valid ID found for selected saved vehicle:', vehicle);
+            }
+        } else if (modalType === 'garage') {
+            if (id) {
+                let vehicleToAdd = { ...vehicle };
+                if (vehicle.custom_image_url) vehicleToAdd.custom_image_url = vehicle.custom_image_url;
+                if (vehicle.name) vehicleToAdd.garage_nickname = vehicle.name;
+                addVehicleToCompare(vehicleToAdd, slotIndex);
+            } else {
+                console.warn('No valid ID found for selected garage vehicle:', vehicle);
+            }
         }
         setModalOpen(false);
     };
@@ -897,8 +922,12 @@ const AddVehicleSlot = ({ onSelect, onBrowse }) => {
             <div className="h-full border-2 border-dashed border-gray-300 rounded-lg flex flex-col justify-center items-center p-6 space-y-3">
                 <p className="font-medium text-gray-700">Add a Vehicle</p>
                 <button onClick={onBrowse} className="w-full text-center py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Browse New</button>
-                <button onClick={() => openModal('saved')} className="w-full text-center py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">From Saved</button>
-                <button onClick={() => openModal('garage')} className="w-full text-center py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">From Garage</button>
+                {isAuthenticated && (
+                    <>
+                        <button onClick={() => openModal('saved')} className="w-full text-center py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">From Saved</button>
+                        <button onClick={() => openModal('garage')} className="w-full text-center py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">From Garage</button>
+                    </>
+                )}
             </div>
         </>
     );
@@ -936,11 +965,15 @@ const StatRow = ({ label, value, unit, isBest, barPercent }) => {
 
 // Helper to get the first image URL from various fields (shared)
 const getFirstImageUrl = (vehicle) => {
+    if (vehicle?.custom_image_url) return vehicle.custom_image_url;
+    if (vehicle?.db_image_url) return vehicle.db_image_url;
+    if (vehicle?.hero_image) return vehicle.hero_image;
+    if (vehicle?.ImageURL) return vehicle.ImageURL.split(';')[0];
+    if (vehicle?.['Image URL']) return vehicle['Image URL'].split(';')[0];
     if (vehicle?.at_a_glance?.hero_image && vehicle.at_a_glance.hero_image !== 'N/A') return vehicle.at_a_glance.hero_image;
-    if (vehicle.custom_image_url) return vehicle.custom_image_url;
-    if (vehicle.db_image_url) return vehicle.db_image_url;
     // fallback: use title for placeholder text
     const title = vehicle?.at_a_glance?.title || `${vehicle.Year || ''} ${vehicle.Make || ''}` || 'Vehicle';
+    console.warn('No image found for vehicle:', vehicle);
     return `https://via.placeholder.com/400x250?text=${encodeURIComponent(title)}`;
 };
 
@@ -1075,52 +1108,19 @@ const CompareSlot = ({ vehicle, slotIndex, statWinners, analysisType, setActiveV
     );
 };
 
-const CompareView = ({ setActiveView, setVehicleProfileId, setFromView }) => {
-    const { compareVehicles, addVehicleToCompare } = useCompare();
+const CompareView = ({ setActiveView, setVehicleProfileId, setFromView, onUpgradeClick }) => {
+    const { compareVehicles } = useCompare();
+    const { isAuthenticated } = useAuth();
+    const { fetchGarageVehicles } = useVehicles();
     const [analysisType, setAnalysisType] = useState('General');
 
-    // --- FIXED: statWinners calculation ---
-    const statWinners = useMemo(() => {
-        const loadedVehicles = compareVehicles.filter(v => v);
-        if (loadedVehicles.length < 1) return {};
+    useEffect(() => {
+        fetchGarageVehicles && fetchGarageVehicles();
+    }, [fetchGarageVehicles]);
 
-        // Helper to get the best value for a stat
-        const getBest = (key, preference = 'max') => {
-            const values = loadedVehicles
-                .map(v => {
-                    // Defensive: handle numbers as strings with commas
-                    let val = v[key];
-                    if (typeof val === 'string') val = val.replace(/,/g, '');
-                    const num = parseFloat(val);
-                    return isNaN(num) ? null : num;
-                })
-                .filter(v => v !== null);
-            if (values.length === 0) return null;
-            return preference === 'max' ? Math.max(...values) : Math.min(...values);
-        };
-
-        // Power-to-weight
-        const pwrValues = loadedVehicles
-            .map(v => {
-                let hp = v['Horsepower (HP)'];
-                let weight = v['Curb weight (lbs)'];
-                if (typeof hp === 'string') hp = hp.replace(/,/g, '');
-                if (typeof weight === 'string') weight = weight.replace(/,/g, '');
-                hp = parseFloat(hp);
-                weight = parseFloat(weight);
-                if (isNaN(hp) || isNaN(weight) || weight === 0) return null;
-                return hp / weight;
-            })
-            .filter(v => v !== null);
-
-        return {
-            'Horsepower (HP)': getBest('Horsepower (HP)'),
-            'Torque (ft-lbs)': getBest('Torque (ft-lbs)'),
-            'Curb weight (lbs)': getBest('Curb weight (lbs)', 'min'),
-            '0-60 mph': getBest('0-60 mph', 'min'),
-            'Power-to-Weight': pwrValues.length > 0 ? Math.max(...pwrValues) : null,
-        };
-    }, [compareVehicles]);
+    // Only allow 2 slots for guests, 3 for signed-in users
+    const maxSlots = isAuthenticated ? 3 : 2;
+    const visibleSlots = compareVehicles.slice(0, maxSlots);
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1134,14 +1134,13 @@ const CompareView = ({ setActiveView, setVehicleProfileId, setFromView }) => {
                     </div>
                 </div>
             </div>
-            <div className="compare-view-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-                {compareVehicles.map((vehicle, index) => (
+            <div className={`compare-view-grid grid grid-cols-1 md:grid-cols-${maxSlots} lg:grid-cols-${maxSlots} gap-6 items-stretch`}>
+                {visibleSlots.map((vehicle, index) => (
                     <div key={index} className="h-full">
                         {vehicle ? (
                             <CompareSlot 
                                 vehicle={vehicle} 
                                 slotIndex={index} 
-                                statWinners={statWinners}
                                 analysisType={analysisType}
                                 setActiveView={setActiveView}
                                 setVehicleProfileId={setVehicleProfileId}
@@ -1156,6 +1155,12 @@ const CompareView = ({ setActiveView, setVehicleProfileId, setFromView }) => {
                     </div>
                 ))}
             </div>
+            {/* Show upgrade link if at 2 vehicles and not pro */}
+            {!isAuthenticated && visibleSlots.filter(Boolean).length === 2 && (
+                <div className="mt-6 flex justify-center">
+                    <a href="#" className="text-sm text-blue-600 underline hover:text-blue-800 font-medium cursor-pointer" onClick={onUpgradeClick}>Want to compare more than two vehicles?</a>
+                </div>
+            )}
         </div>
     );
 };
@@ -1217,6 +1222,15 @@ const GarageMetrics = () => {
 };
 
 const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
+    // Use custom image if set and non-empty, otherwise use getFirstImageUrl
+    let imageUrl = '';
+    if (vehicle.custom_image_url && vehicle.custom_image_url.trim() !== '') {
+        imageUrl = vehicle.custom_image_url;
+    } else {
+        imageUrl = getFirstImageUrl(vehicle);
+    }
+    // Debug: log the vehicle object to inspect image fields
+    console.log('VehicleCard vehicle:', vehicle);
     const statusConfig = {
         operational: { label: 'Operational', classes: 'bg-green-100 text-green-800' },
         maintenance: { label: 'In Service', classes: 'bg-yellow-100 text-yellow-800' },
@@ -1225,14 +1239,27 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
         default: { label: 'Offline', classes: 'bg-gray-100 text-gray-800' }
     };
     const currentStatus = statusConfig[vehicle.status] || statusConfig.default;
+    // Prefer custom image, then main image from vehicle data, then fallback SVG
+    let mainImage = '';
+    if (vehicle.custom_image_url) {
+        mainImage = vehicle.custom_image_url;
+    } else if (vehicle.hero_image) {
+        mainImage = vehicle.hero_image;
+    } else if (vehicle.db_image_url) {
+        mainImage = vehicle.db_image_url;
+    } else if (vehicle.ImageURL) {
+        mainImage = vehicle.ImageURL.split(';')[0];
+    } else if (vehicle['Image URL']) {
+        mainImage = vehicle['Image URL'].split(';')[0];
+    } else {
+        mainImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='200' y='150' font-family='Arial,sans-serif' font-size='16' fill='%23374151' text-anchor='middle'%3E${vehicle.Year} ${vehicle.Make}%3C/text%3E%3C/svg%3E`;
+    }
 
+    // Restore formatInvestment
     const formatInvestment = (value) => {
         if (value >= 1000) { return `$${(value / 1000).toFixed(1)}K`; }
         return `$${(value || 0).toFixed(2)}`;
     };
-
-    // Use custom image, fall back to DB image, then to a generated SVG placeholder
-    const imageUrl = vehicle.custom_image_url || vehicle.db_image_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='200' y='150' font-family='Arial,sans-serif' font-size='16' fill='%23374151' text-anchor='middle'%3E${vehicle.Year} ${vehicle.Make}%3C/text%3E%3C/svg%3E`;
 
     // Handler for the work mode button
     const handleWorkModeClick = (e) => {
@@ -1245,8 +1272,8 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
     return (
         <div className="vehicle-card bg-white rounded-lg border flex flex-col" onClick={() => onSelect(vehicle)}>
             <div className="relative">
-                <div className="vehicle-card-bg" style={{ backgroundImage: `url(${imageUrl})` }}></div>
-                <div className="vehicle-card-overlay"></div>
+                <div className="vehicle-card-bg" style={{ backgroundImage: `url(${imageUrl})`, height: '120px' }}></div>
+                <div className="vehicle-card-overlay" style={{ height: '120px' }}></div>
                 
                 {/* NEW: Mobile Work Mode Button */}
                 <button onClick={handleWorkModeClick} className="work-mode-btn">
@@ -1298,37 +1325,171 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
 
 const GarageOverview = ({ setActiveView, setGarageView, requireAuth }) => {
     const { isAuthenticated } = useAuth();
-    const { vehicles, setSelectedVehicle } = useVehicles();
+    const { vehicles, setSelectedVehicle, fetchGarageVehicles } = useVehicles();
+    const { savedVehicles } = useUserLists();
+    const [garageLimit, setGarageLimit] = useState(null);
+    const [garageCount, setGarageCount] = useState(0);
+    const [canAddMore, setCanAddMore] = useState(false);
+    const [canUseGarage, setCanUseGarage] = useState(true);
+    const [showSelectModal, setShowSelectModal] = useState(false);
+    const [addToGarageLoading, setAddToGarageLoading] = useState(false);
+    const [vehicleToAdd, setVehicleToAdd] = useState(null);
+    const { rest_url, nonce } = window.myddpcAppData || {};
+    const [addCardExpanded, setAddCardExpanded] = useState(false);
+    const [selectedSavedId, setSelectedSavedId] = useState('');
+    const [nickname, setNickname] = useState('');
+    const [addError, setAddError] = useState('');
+
+    useEffect(() => {
+        // Fetch garage permissions/limits from backend
+        async function fetchGarageMeta() {
+            try {
+                const res = await fetch(`${rest_url}myddpc/v2/garage/vehicles`, { headers: { 'X-WP-Nonce': nonce } });
+                const data = await res.json();
+                setGarageLimit(data.garage_limit);
+                setGarageCount(data.garage_count);
+                setCanAddMore(data.can_add_more);
+                setCanUseGarage(data.can_use_garage !== false);
+            } catch (e) {
+                setCanUseGarage(false);
+            }
+        }
+        if (isAuthenticated) fetchGarageMeta();
+    }, [isAuthenticated, rest_url, nonce]);
 
     const handleSelectVehicle = (vehicle) => {
         setSelectedVehicle(vehicle);
         setGarageView('vehicle-detail');
-        // NEW: Push a new state to the browser history
         window.history.pushState({ view: 'detail' }, '');
     };
 
-    if (!isAuthenticated) {
-        return ( <div className="text-center py-16 max-w-2xl mx-auto"> <h2 className="text-2xl font-light text-gray-800 mb-4">Access Your Garage</h2> <p className="text-gray-600 mb-6">Log in or register to manage your vehicles, track your builds, and view your service history.</p> <button onClick={() => requireAuth(() => {})} className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700">Login / Register</button> </div> );
+    const handleAddFromSaved = () => setShowSelectModal(true);
+    const handleSelectSavedVehicle = (vehicle) => {
+        setVehicleToAdd(vehicle);
+        setShowSelectModal(false);
+    };
+    const handleAddToGarage = async (vehicleId, nickname) => {
+        setAddToGarageLoading(true);
+        try {
+            const response = await fetch(`${rest_url}myddpc/v2/garage/add_vehicle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                body: JSON.stringify({ vehicle_id: vehicleId, nickname }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Failed to add vehicle to garage.');
+            setVehicleToAdd(null);
+            await fetchGarageVehicles();
+            // No notification/toast here
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setAddToGarageLoading(false);
+        }
+    };
+
+    // Inline add handler
+    const handleInlineAdd = async () => {
+        setAddToGarageLoading(true);
+        setAddError('');
+        try {
+            const selectedVehicle = savedVehicles.find(v => v.saved_id === selectedSavedId);
+            if (!selectedVehicle) throw new Error('Please select a saved vehicle.');
+            if (!nickname.trim()) throw new Error('Nickname is required.');
+            const response = await fetch(`${rest_url}myddpc/v2/garage/add_vehicle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                body: JSON.stringify({ vehicle_id: selectedVehicle.vehicle_id, nickname }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Failed to add vehicle to garage.');
+            setAddCardExpanded(false);
+            setSelectedSavedId('');
+            setNickname('');
+            await fetchGarageVehicles();
+        } catch (err) {
+            setAddError(err.message);
+        } finally {
+            setAddToGarageLoading(false);
+        }
+    };
+
+    if (!isAuthenticated || canUseGarage === false) {
+        if (typeof window !== 'undefined' && window.setShowGarageBenefits) {
+            window.setShowGarageBenefits(true);
+        }
+        return null;
     }
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <PageHeader title="Garage Operations" subtitle="Vehicle management and build tracking system">
-                <button onClick={() => setActiveView('discover')} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center font-medium">
-                    <PlusIcon className="w-5 h-5 mr-2" /> Add Vehicle
-                </button>
             </PageHeader>
             <GarageMetrics />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {Array.isArray(vehicles) && vehicles.length > 0 ? vehicles.map((vehicle) => (
+                {Array.isArray(vehicles) && vehicles.length > 0 ? vehicles.slice().reverse().map((vehicle) => (
                     <VehicleCard 
                         key={vehicle.garage_id} 
                         vehicle={vehicle} 
                         onSelect={handleSelectVehicle}
                         onWorkMode={(vehicle) => { setSelectedVehicle(vehicle); setGarageView('mobile-work'); }}
                     />
-                )) : <p className="text-gray-600 lg:col-span-2">Your garage is empty. Go to the Discover tool to find and save vehicles.</p>}
+                )) : <p className="text-gray-600 lg:col-span-2">Your garage is empty. Add a vehicle from your saved list.</p>}
+                {/* Inline Add/Pro Card Logic */}
+                {canAddMore && (
+                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 bg-white min-h-[180px]">
+                        {!addCardExpanded ? (
+                            <button onClick={() => setAddCardExpanded(true)} className="flex flex-col items-center">
+                                <PlusIcon className="w-10 h-10 text-red-500 mb-2" />
+                                <span className="font-medium text-red-600">Add from Saved Vehicles</span>
+                                <span className="text-xs text-gray-500 mt-1">You can add {garageLimit === -1 ? 'unlimited' : `${garageLimit - garageCount}`} more</span>
+                            </button>
+                        ) : (
+                            <div className="w-full max-w-xs mx-auto">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Select Saved Vehicle</label>
+                                <select value={selectedSavedId} onChange={e => setSelectedSavedId(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-3">
+                                    <option value="">-- Select --</option>
+                                    {savedVehicles.filter(v => !vehicles.some(gv => gv.vehicle_id === v.vehicle_id)).map(v => (
+                                        <option key={v.saved_id} value={v.saved_id}>{`${v.Year} ${v.Make} ${v.Model} ${v.Trim}`}</option>
+                                    ))}
+                                </select>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nickname</label>
+                                <input type="text" value={nickname} onChange={e => setNickname(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-3" placeholder="Enter nickname" />
+                                {addError && <p className="text-red-500 text-xs mb-2">{addError}</p>}
+                                <div className="flex gap-2">
+                                    <button onClick={handleInlineAdd} disabled={addToGarageLoading} className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:bg-red-400">{addToGarageLoading ? 'Adding...' : 'Add Vehicle'}</button>
+                                    <button onClick={() => { setAddCardExpanded(false); setAddError(''); setSelectedSavedId(''); setNickname(''); }} className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">Cancel</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+                {!canAddMore && garageLimit !== null && (
+                    <div className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 bg-white min-h-[180px]">
+                        <div className="flex flex-col items-center">
+                            <Icon name="Garage" className="w-10 h-10 text-gray-400 mb-2" />
+                            <span className="font-medium text-gray-500">Garage Full</span>
+                            <span className="text-xs text-gray-500 mt-1">Go Pro for more space</span>
+                        </div>
+                    </div>
+                )}
             </div>
+            {/* Saved Vehicle Select Modal */}
+            <VehicleSelectModal 
+                isOpen={showSelectModal} 
+                onClose={() => setShowSelectModal(false)} 
+                title="Select a vehicle to add to your garage" 
+                vehicles={savedVehicles.filter(v => !vehicles.some(gv => gv.vehicle_id === v.vehicle_id))}
+                onSelect={handleSelectSavedVehicle}
+            />
+            {/* Add to Garage Modal for nickname */}
+            <AddToGarageModal 
+                isOpen={!!vehicleToAdd} 
+                onClose={() => setVehicleToAdd(null)} 
+                vehicle={vehicleToAdd} 
+                onSave={handleAddToGarage} 
+                loading={addToGarageLoading}
+            />
         </div>
     );
 };
@@ -2219,45 +2380,45 @@ const SpecTable = ({ data, section }) => {
 // 4. MAIN APP COMPONENT & LAYOUT
 //================================================================================
 const App = () => {
-    const [activeView, setActiveView] = useState('garage');
+    const [activeView, setActiveView] = useState('discover');
     const [garageView, setGarageView] = useState('overview');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // This state is crucial
     const [isAuthModalOpen, setAuthModalOpen] = useState(false);
     const [vehicleToAddToGarage, setVehicleToAddToGarage] = useState(null);
     const [vehicleProfileId, setVehicleProfileId] = useState(null);
     const [fromView, setFromView] = useState('discover');
-    
-    const { isAuthenticated, user, logout } = useAuth();
+    const [showGarageBenefits, setShowGarageBenefits] = useState(false);
+    const [prevView, setPrevView] = useState(null);
+    const [prevGarageView, setPrevGarageView] = useState(null);
+    const { isAuthenticated = false, user, logout } = useAuth() || {};
+    const safeIsAuthenticated = typeof isAuthenticated === 'boolean' ? isAuthenticated : false;
     const { fetchGarageVehicles, setSelectedVehicle } = useVehicles();
 
     // Enhanced history management
     useEffect(() => {
         const handlePopState = (event) => {
             if (event.state) {
-                // Restore both activeView and garageView from history state
-                setActiveView(event.state.activeView || 'garage');
+                setActiveView(event.state.activeView || (safeIsAuthenticated ? 'garage' : 'discover'));
                 setGarageView(event.state.garageView || 'overview');
             } else {
-                // Default state when no history state exists
-                setActiveView('garage');
-                setGarageView('overview');
+                if (safeIsAuthenticated) {
+                    setActiveView('garage');
+                    setGarageView('overview');
+                } else {
+                    setActiveView('discover');
+                    setGarageView('overview');
+                }
             }
         };
-
-        // Set the initial state when the app loads
         window.history.replaceState({ 
-            activeView: activeView, 
-            garageView: garageView 
+            activeView: safeIsAuthenticated ? 'garage' : 'discover', 
+            garageView: 'overview' 
         }, '');
-
-        // Add the event listener for popstate events
         window.addEventListener('popstate', handlePopState);
-
-        // Cleanup: remove the event listener when the component unmounts
         return () => {
             window.removeEventListener('popstate', handlePopState);
         };
-    }, []); // Empty array ensures this runs only on mount and unmount
+    }, [safeIsAuthenticated]);
 
     // Function to update browser history when navigation occurs
     const updateHistory = (newActiveView, newGarageView = 'overview') => {
@@ -2306,13 +2467,13 @@ const App = () => {
     };
 
     useEffect(() => {
-        if (isAuthenticated) {
+        if (safeIsAuthenticated) {
             fetchGarageVehicles();
         }
-    }, [isAuthenticated, fetchGarageVehicles]);
+    }, [safeIsAuthenticated, fetchGarageVehicles]);
 
     const requireAuth = (callback) => {
-        if (isAuthenticated) {
+        if (safeIsAuthenticated) {
             if (callback) callback();
         } else {
             setAuthModalOpen(true);
@@ -2328,13 +2489,22 @@ const App = () => {
 
     const handleNavClick = (viewId) => {
         if (navigationItems.find(item => item.id === viewId)?.auth) {
+            if (!safeIsAuthenticated) {
+                setPrevView(activeView);
+                setPrevGarageView(garageView);
+                setShowGarageBenefits(true);
+                setActiveView(viewId); // still set for UI highlight
+                setMobileMenuOpen(false);
+                return;
+            }
             requireAuth(() => {
                 setActiveView(viewId);
-                setMobileMenuOpen(false); // Close menu on navigation
+                setMobileMenuOpen(false);
             });
         } else {
+            setShowGarageBenefits(false);
             setActiveView(viewId);
-            setMobileMenuOpen(false); // Close menu on navigation
+            setMobileMenuOpen(false);
         }
     };
     
@@ -2384,9 +2554,27 @@ const App = () => {
         }
     };
 
+    // Helper to open register modal
+    const openRegisterModal = () => {
+        setAuthModalOpen(true);
+        setTimeout(() => {
+            const regTab = document.querySelector('[data-tab="register"]');
+            if (regTab) regTab.click();
+        }, 100);
+    };
+
+    // Intercept compare upgrade link for guests
+    const handleCompareUpgradeClick = (e) => {
+        e.preventDefault();
+        setPrevView(activeView);
+        setPrevGarageView(garageView);
+        setShowGarageBenefits(true);
+        setActiveView('compare');
+    };
+
     // This is the new return statement for the App component
     return (
-        <UserListsProvider isAuthenticated={!!isAuthenticated}>
+        <UserListsProvider isAuthenticated={safeIsAuthenticated}>
             <div id="myddpc-react-root" className="flex flex-col min-h-screen">
                 <AuthModal isOpen={isAuthModalOpen} onClose={() => setAuthModalOpen(false)} />
                 <CompareSwapModal />
@@ -2422,7 +2610,7 @@ const App = () => {
 
                             {/* Right: User Profile */}
                             <div className="flex items-center justify-end space-x-2 flex-shrink-0">
-                                {isAuthenticated ? <UserProfile /> : (
+                                {safeIsAuthenticated ? <UserProfile /> : (
                                     <button onClick={() => setAuthModalOpen(true)} className="text-sm font-medium text-gray-600 hover:text-gray-900 flex-shrink-0">Login</button>
                                 )}
                             </div>
@@ -2430,19 +2618,21 @@ const App = () => {
                     </div>
                 </header>
                 <main className="flex-grow bg-gray-50">
-                    {activeView === 'discover' && <DiscoverView setActiveView={navigateToView} requireAuth={requireAuth} setVehicleProfileId={setVehicleProfileId} setFromView={setFromView} />}
-                    {activeView === 'saved' && <SavedVehiclesView requireAuth={requireAuth} setActiveView={navigateToView} setVehicleProfileId={setVehicleProfileId} setFromView={setFromView} setSelectedVehicle={setSelectedVehicle} setGarageView={navigateToGarageView} />}
-                    {activeView === 'compare' && <CompareView setActiveView={navigateToView} setVehicleProfileId={setVehicleProfileId} setFromView={setFromView} />}
-                    {activeView === 'garage' && (
+                    {showGarageBenefits ? (
+                        <GarageBenefitsScreen onCreateAccount={openRegisterModal} />
+                    ) : (
                         <>
-                            {garageView === 'overview' && <GarageOverview setActiveView={navigateToView} setGarageView={navigateToGarageView} requireAuth={requireAuth} />}
-                            {garageView === 'vehicle-detail' && <VehicleDetailView setGarageView={navigateToGarageView} />}
-                            {garageView === 'mobile-work' && <MobileWorkInterface setGarageView={navigateToGarageView} />}
+                            {activeView === 'discover' && <DiscoverView setActiveView={navigateToView} requireAuth={requireAuth} setVehicleProfileId={setVehicleProfileId} setFromView={setFromView} />}
+                            {activeView === 'saved' && <SavedVehiclesView requireAuth={requireAuth} setActiveView={navigateToView} setVehicleProfileId={setVehicleProfileId} setFromView={setFromView} setSelectedVehicle={setSelectedVehicle} setGarageView={navigateToGarageView} />}
+                            {activeView === 'compare' && <CompareView setActiveView={navigateToView} setVehicleProfileId={setVehicleProfileId} setFromView={setFromView} onUpgradeClick={handleCompareUpgradeClick} />}
+                            {activeView === 'garage' && (
+                                <>
+                                    {garageView === 'overview' && <GarageOverview setActiveView={navigateToView} setGarageView={navigateToGarageView} requireAuth={requireAuth} />}
+                                    {garageView === 'vehicle-detail' && <VehicleDetailView setGarageView={navigateToGarageView} />}
+                                    {garageView === 'mobile-work' && <MobileWorkInterface setGarageView={navigateToGarageView} />}
+                                </>
+                            )}
                         </>
-                    )}
-                    {activeView === 'account' && <MyAccountView />}
-                    {activeView === 'vehicle-profile' && (
-                        <VehicleProfileView vehicleId={vehicleProfileId} onBack={() => navigateToView(fromView)} />
                     )}
                 </main>
             </div>
@@ -2519,3 +2709,147 @@ function AddToGarageModalWrapper({ vehicleToAddToGarage, setVehicleToAddToGarage
         />
     );
 }
+
+// Shared VehicleRow component (move this above DiscoverView and SavedVehiclesView)
+const VehicleRow = ({ vehicle, onRowClick, actionButtons, isSelected }) => (
+  <div
+    className={`discover-result-item border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-all cursor-pointer ${isSelected ? 'ring-2 ring-red-400' : ''}`}
+    tabIndex={0}
+    onClick={onRowClick}
+    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(); } }}
+    aria-selected={isSelected}
+    role="button"
+  >
+    <div className="discover-result-item-content flex items-start justify-between">
+      <div className="discover-result-item-info flex-1">
+        <h4 className="text-lg font-medium text-gray-900 mb-2">{`${vehicle.Year || vehicle.year} ${vehicle.Make || vehicle.make} ${vehicle.Model || vehicle.model} ${vehicle.Trim || vehicle.trim}`}</h4>
+        <div className="details-grid grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm text-gray-600">
+          <div><span className="font-medium">Engine:</span> {vehicle['Engine size (l)'] || vehicle.engine_size}L {vehicle.Cylinders || vehicle.cylinders}-cyl</div>
+          <div><span className="font-medium">Power:</span> {vehicle['Horsepower (HP)'] || vehicle.horsepower} HP</div>
+          <div><span className="font-medium">Weight:</span> {vehicle['Curb weight (lbs)'] || vehicle.weight} lbs</div>
+          {vehicle['Drive type'] && <div><span className="font-medium">Drive:</span> {vehicle['Drive type']}</div>}
+        </div>
+      </div>
+      <div className="discover-result-item-buttons flex items-center space-x-2 ml-4">
+        {actionButtons}
+      </div>
+    </div>
+  </div>
+);
+
+// GarageBenefitsScreen: shown to guests when accessing garage, saved, or compare upgrade link
+const GarageBenefitsScreen = ({ onCreateAccount, onRegisterSuccess }) => {
+  const [email, setEmail] = React.useState("");
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [success, setSuccess] = React.useState(false);
+
+  // Registration logic (calls backend)
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess(false);
+    try {
+      const res = await fetch(window.myddpcAppData.rest_url + 'myddpc/v2/user/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': window.myddpcAppData.nonce },
+        body: JSON.stringify({ email, username, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Registration failed.');
+      setSuccess(true);
+      setTimeout(() => {
+        if (onRegisterSuccess) onRegisterSuccess();
+      }, 800);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row items-center justify-center min-h-[70vh] p-8 gap-8 bg-white rounded-lg shadow-md max-w-4xl mx-auto">
+      {/* Left column: image + features */}
+      <div className="flex-1 flex flex-col items-center md:items-start text-left mb-8 md:mb-0">
+        <h2 className="text-3xl font-bold mb-6 text-gray-900 text-left">Build, Track, and Showcase Your Ultimate Project Car.</h2>
+        <div className="w-full flex justify-center md:justify-start mb-6">
+          {/* Placeholder image (replace with garage screenshot later) */}
+          <div className="w-64 h-40 bg-gray-200 rounded-lg flex items-center justify-center border border-gray-300">
+            <span className="text-gray-400 text-lg">[Garage Screenshot]</span>
+          </div>
+        </div>
+        <ul className="space-y-4 text-gray-700 text-base max-w-md">
+          <li><span className="font-semibold text-red-700">Document Every Mod:</span> Create a definitive build sheet for your project. Never lose track of a part number or install date again.</li>
+          <li><span className="font-semibold text-red-700">Visualize Your Investment:</span> Track every dollar spent to understand the true value of your build.</li>
+          <li><span className="font-semibold text-red-700">Master Your Maintenance:</span> Log all service records to stay ahead of your car's needs.</li>
+          <li><span className="font-semibold text-red-700">Compare Builds Side-by-Side:</span> Analyze your setup against others in the community to find your next competitive edge.</li>
+          <li><span className="font-semibold text-red-700">Your Garage, Anywhere:</span> Access your complete build history from your phone at the track or in the garage.</li>
+        </ul>
+      </div>
+      {/* Right column: registration form */}
+      <form className="flex-1 bg-gray-50 rounded-lg shadow p-8 flex flex-col items-center min-w-[320px] max-w-sm w-full" onSubmit={handleRegister}>
+        <h3 className="text-xl font-semibold mb-4 text-gray-800">Create Your Account</h3>
+        <input
+          type="email"
+          className="mb-3 w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
+          placeholder="Email Address"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="text"
+          className="mb-3 w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
+          placeholder="Username"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          className="mb-4 w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold text-lg transition-colors mb-2"
+          disabled={loading}
+        >
+          {loading ? 'Creating Account...' : 'Create My Free Garage'}
+        </button>
+        <div className="text-xs text-gray-500 text-center mt-2">
+          We respect your privacy. We will never share your email address or personal information.
+        </div>
+        {error && <div className="text-red-600 text-sm mb-2">{error}</div>}
+        {success && <div className="text-green-600 text-sm mb-2">Account created! Redirecting...</div>}
+      </form>
+    </div>
+  );
+};
+
+// Handler to restore previous view after registration
+const handleRegisterSuccess = () => {
+    setShowGarageBenefits(false);
+    if (prevView === 'garage') {
+        setActiveView('garage');
+        setGarageView(prevGarageView || 'overview');
+    } else if (prevView) {
+        setActiveView(prevView);
+    } else {
+        setActiveView('garage');
+        setGarageView('overview');
+    }
+};
+
+// In App component, after setShowGarageBenefits is defined:
+useEffect(() => {
+    window.setShowGarageBenefits = setShowGarageBenefits;
+    return () => { delete window.setShowGarageBenefits; };
+}, [setShowGarageBenefits]);
