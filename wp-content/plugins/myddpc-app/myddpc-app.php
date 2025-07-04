@@ -106,6 +106,11 @@ function myddpc_app_register_rest_routes() {
     register_rest_route($namespace, '/saved', [ 'methods' => 'GET', 'callback' => 'myddpc_get_saved_vehicles_callback', 'permission_callback' => 'is_user_logged_in' ]);
     register_rest_route($namespace, '/saved', [ 'methods' => 'POST', 'callback' => 'myddpc_add_to_saved_vehicles_callback', 'permission_callback' => 'is_user_logged_in' ]);
     register_rest_route($namespace, '/saved/(?P<id>\d+)', [ 'methods' => 'DELETE', 'callback' => 'myddpc_remove_from_saved_vehicles_callback', 'permission_callback' => 'is_user_logged_in' ]);
+    register_rest_route( $namespace, '/vehicle/full_data', [
+        'methods'  => 'GET',
+        'callback' => 'myddpc_get_full_vehicle_data_callback',
+        'permission_callback' => '__return_true',
+    ] );
 }
 add_action( 'rest_api_init', 'myddpc_app_register_rest_routes' );
 
@@ -447,13 +452,24 @@ function myddpc_get_garage_vehicles_callback() {
             $garage_id
         ));
         
-        // Get total investment (only from completed builds)
-        $investment = $wpdb->get_var($wpdb->prepare(
-            "SELECT SUM(CASE WHEN part_price IS NOT NULL AND part_price != '' AND part_price != '0' 
-             THEN CAST(part_price AS DECIMAL(10,2)) ELSE 0 END) 
-             FROM {$builds_table} WHERE garage_entry_id = %d AND status = 'complete'", 
+        // Get all completed builds for this vehicle
+        $completed_builds = $wpdb->get_results($wpdb->prepare(
+            "SELECT items_data FROM {$builds_table} WHERE garage_entry_id = %d AND status = 'complete'",
             $garage_id
-        ));
+        ), ARRAY_A);
+        $investment = 0;
+        foreach ($completed_builds as $build) {
+            if (!empty($build['items_data'])) {
+                $items = json_decode($build['items_data'], true);
+                if (is_array($items)) {
+                    foreach ($items as $item) {
+                        if (isset($item['cost']) && is_numeric($item['cost'])) {
+                            $investment += floatval($item['cost']);
+                        }
+                    }
+                }
+            }
+        }
         
         // Process and clean up data
         $vehicle['garage_id'] = $garage_id;
@@ -946,3 +962,235 @@ add_action('rest_api_init', function () {
 // Ensure all required tables are created on plugin activation and init
 register_activation_hook(__FILE__, 'myddpc_create_saved_vehicles_table_if_not_exists');
 add_action('init', 'myddpc_create_saved_vehicles_table_if_not_exists');
+
+// Enqueue styles for the profile page
+add_action('wp_enqueue_scripts', 'myddpc_profile_enqueue_assets');
+function myddpc_profile_enqueue_assets() {
+    if (is_page_template('vehicle-profile.php')) { // Assuming you might use a page template
+        wp_enqueue_style(
+            'myddpc-vehicle-profile-style',
+            plugin_dir_url(__FILE__) . 'assets/css/vehicle-profile.css',
+            [],
+            '1.0.0'
+        );
+    }
+}
+
+// Function to get all data for a single vehicle
+function myddpc_get_vehicle_full_data($vehicle_id) {
+    global $wpdb;
+    $vehicle_id = intval($vehicle_id);
+    if ($vehicle_id <= 0) {
+        return null;
+    }
+    
+    // Fetch all columns from the vehicle_data table
+    $vehicle_data = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}vehicle_data WHERE ID = %d",
+            $vehicle_id
+        ),
+        ARRAY_A
+    );
+    
+    // You can also add your image fetching logic from myddpc-car-lookup.php here
+    // For now, we'll just return the main data.
+
+    return $vehicle_data;
+}
+
+// Placeholder for 0-60 calculation
+function myddpc_calculate_0_60($vehicle_data) {
+    // A more sophisticated calculation could be implemented here based on weight, power, etc.
+    // This is a simplified placeholder.
+    $power_to_weight = $vehicle_data['Horsepower (HP)'] / $vehicle_data['Curb weight (lbs)'];
+    if ($power_to_weight > 0.15) return "3.5 - 4.5";
+    if ($power_to_weight > 0.1) return "4.5 - 6.0";
+    if ($power_to_weight > 0.07) return "6.0 - 8.0";
+    return "8.0+";
+}
+
+// Add a rewrite rule to handle the new profile page
+add_action('init', 'myddpc_vehicle_profile_rewrite_rule');
+function myddpc_vehicle_profile_rewrite_rule() {
+    add_rewrite_rule(
+        '^vehicle/([0-9]+)/?$',
+        'index.php?vehicle_id=$matches[1]',
+        'top'
+    );
+}
+
+// Register the vehicle_id query var
+add_filter('query_vars', 'myddpc_register_query_vars');
+function myddpc_register_query_vars($vars) {
+    $vars[] = 'vehicle_id';
+    return $vars;
+}
+
+// Load the template for the vehicle profile page
+add_action('template_include', 'myddpc_profile_template_include');
+function myddpc_profile_template_include($template) {
+    if (get_query_var('vehicle_id')) {
+        $new_template = plugin_dir_path(__FILE__) . 'vehicle-profile.php';
+        if (file_exists($new_template)) {
+            return $new_template;
+        }
+    }
+    return $template;
+}
+
+/**
+ * Enhanced REST callback to fetch and structure all vehicle data.
+ */
+function myddpc_get_full_vehicle_data_callback( WP_REST_Request $request ) {
+    global $wpdb;
+    $params = $request->get_params();
+    $vehicle_id = isset($params['id']) ? absint($params['id']) : 0;
+
+    if ( ! $vehicle_id ) {
+        return new WP_Error( 'bad_request', 'Missing required vehicle ID.', [ 'status' => 400 ] );
+    }
+
+    $vehicle_data_table = $wpdb->prefix . 'vehicle_data';
+    $vehicle_data = $wpdb->get_row( $wpdb->prepare(
+        "SELECT * FROM {$vehicle_data_table} WHERE `ID` = %d",
+        $vehicle_id
+    ), ARRAY_A );
+
+    if ( ! $vehicle_data ) {
+        return new WP_Error( 'not_found', 'Vehicle not found.', [ 'status' => 404 ] );
+    }
+
+    // --- Structure the data for the new profile page blueprint ---
+    
+    // Helper to check for null/empty values
+    $get_val = function($key) use ($vehicle_data) {
+        return isset($vehicle_data[$key]) && !empty($vehicle_data[$key]) ? $vehicle_data[$key] : 'N/A';
+    };
+
+    $structured_data = [
+        'at_a_glance' => [
+            'title' => trim(sprintf('%s %s %s', $get_val('Year'), $get_val('Make'), $get_val('Model'))),
+            'trim_desc' => $get_val('Trim (description)'),
+            'hero_image' => explode(';', $get_val('Image URL'))[0], // Get first image
+            'horsepower' => $get_val('Horsepower (HP)'),
+            'torque' => $get_val('Torque (ft-lbs)'),
+            'combined_mpg' => $get_val('EPA combined MPG'),
+            'drive_type' => ucwords($get_val('Drive type')),
+            'transmission' => $get_val('Transmission'),
+            'price_range' => $get_val('Used price range'),
+            'colors_exterior' => $get_val('Colors exterior'),
+            'colors_interior' => $get_val('Colors interior'),
+            'pros' => $get_val('Pros'),
+            'cons' => $get_val('Cons'),
+        ],
+        'performance' => [
+            'Engine' => [
+                'Cylinders' => $get_val('Cylinders'),
+                'Engine Size (L)' => $get_val('Engine size (l)'),
+                'Horsepower' => sprintf('%s @ %s RPM', $get_val('Horsepower (HP)'), $get_val('Horsepower (rpm)')),
+                'Torque' => sprintf('%s ft-lbs @ %s RPM', $get_val('Torque (ft-lbs)'), $get_val('Torque (rpm)')),
+                'Engine Type' => ucwords($get_val('Engine type')),
+            ],
+            'Fuel & Efficiency' => [
+                'Fuel Type' => ucwords($get_val('Fuel type')),
+                'Fuel Tank Capacity' => $get_val('Fuel tank capacity (gal)') . ' gal',
+                'City/Highway MPG' => $get_val('EPA city/highway MPG'),
+                'Range (City/Hwy)' => $get_val('Range in miles (city/hwy)'),
+            ],
+            'Chassis' => [
+                'Turning Circle' => $get_val('Turning circle (ft)') . ' ft',
+                'Drag Coefficient (Cd)' => $get_val('Drag coefficient (Cd)'),
+            ]
+        ],
+        'dimensions' => [
+            'Exterior' => [
+                'Length' => $get_val('Length (in)') . ' in',
+                'Width' => $get_val('Width (in)') . ' in',
+                'Height' => $get_val('Height (in)') . ' in',
+                'Wheelbase' => $get_val('Wheelbase (in)') . ' in',
+                'Ground Clearance' => $get_val('Ground clearance (in)') . ' in',
+            ],
+            'Weight & Capacity' => [
+                'Curb Weight' => $get_val('Curb weight (lbs)') . ' lbs',
+                'Gross Weight' => $get_val('Gross weight (lbs)') . ' lbs',
+                'Cargo Capacity' => $get_val('Cargo capacity (cu ft)') . ' cu ft',
+                'Max Towing' => $get_val('Maximum towing capacity (lbs)') . ' lbs',
+            ],
+            'Interior' => [
+                'Front Head Room' => $get_val('Front head room (in)') . ' in',
+                'Front Leg Room' => $get_val('Front leg room (in)') . ' in',
+                'Front Shoulder Room' => $get_val('Front shoulder room (in)') . ' in',
+            ]
+        ],
+        'features' => [
+            'Body & Exterior' => [
+                'Body Type' => ucwords($get_val('Body type')),
+                'Doors' => $get_val('Doors'),
+                'Roof and Glass' => $get_val('Roof and glass'),
+                'Tires and Wheels' => $get_val('Tires and wheels'),
+            ],
+            'Convenience' => [
+                'Power Features' => $get_val('Power features'),
+                'Instrumentation' => $get_val('Instrumentation'),
+                'Convenience' => $get_val('Convenience'),
+                'Comfort' => $get_val('Comfort'),
+            ],
+            'Packages' => [
+                'Packages' => $get_val('Packages'),
+                'Exterior Options' => $get_val('Exterior options'),
+                'Interior Options' => $get_val('Interior options'),
+            ]
+        ],
+        'ownership' => [
+            'Pricing' => [
+                'Base MSRP' => $get_val('Base MSRP'),
+                'Base Invoice' => $get_val('Base Invoice'),
+                'Used Price Range' => $get_val('Used price range'),
+            ],
+            'Reviews & Ratings' => [
+                'Expert Verdict' => $get_val('Expert rating - Our verdict'),
+                'Full Review' => $get_val('Review'),
+            ],
+            'Safety' => [
+                'NHTSA Overall Rating' => $get_val('NHTSA Overall Rating'),
+                'Safety Features' => $get_val('Safety features'),
+            ],
+            'Origin' => [
+                'Country of Origin' => $get_val('Country of origin'),
+                'Classification' => $get_val('Car classification'),
+                'Vehicle ID' => $get_val('ID'),
+            ]
+        ]
+    ];
+
+    return new WP_REST_Response( $structured_data, 200 );
+}
+
+// --- ADD THIS: Function to handle the new shortcode ---
+function myddpc_vehicle_profile_shortcode() {
+    // This function will simply load the template file.
+    // The content will be rendered by React/JS.
+    ob_start();
+    include_once plugin_dir_path( __FILE__ ) . 'includes/templates/template-vehicle-profile.php';
+    return ob_get_clean();
+}
+add_shortcode( 'myddpc_vehicle_profile', 'myddpc_vehicle_profile_shortcode' );
+
+// --- ADD THIS: Create the profile page on plugin activation ---
+function myddpc_create_vehicle_profile_page() {
+    // Check if the page already exists
+    if ( ! get_page_by_path( 'vehicle-profile' ) ) {
+        $page = [
+            'post_title'    => 'Vehicle Profile',
+            'post_name'     => 'vehicle-profile',
+            'post_content'  => '[myddpc_vehicle_profile]',
+            'post_status'   => 'publish',
+            'post_author'   => 1,
+            'post_type'     => 'page',
+        ];
+        // Insert the page into the database
+        wp_insert_post( $page );
+    }
+}
+register_activation_hook( __FILE__, 'myddpc_create_vehicle_profile_page' );
