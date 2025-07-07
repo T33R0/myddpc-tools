@@ -279,6 +279,8 @@ const Icon = ({ name, className }) => {
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>;
     case 'Car':
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18.4 10c-.4-.8-1.2-1.3-2.1-1.3H7.7c-.9 0-1.7.5-2.1 1.3L3.5 11.1C2.7 11.3 2 12.1 2 13v3c0 .6.4 1 1 1h2m14 0a2 2 0 1 1-4 0m4 0a2 2 0 1 0-4 0M9 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path></svg>;
+    case 'Plus':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>;
     case 'Settings':
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>;
     case 'Fuel':
@@ -299,6 +301,12 @@ const Icon = ({ name, className }) => {
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x="3" y="3" width="7" height="7"></rect><rect strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x="14" y="3" width="7" height="7"></rect><rect strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x="14" y="14" width="7" height="7"></rect><rect strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" x="3" y="14" width="7" height="7"></rect></svg>;
     case 'Trash2':
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
+    case 'Users':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+    case 'Info':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
+    case 'Bell':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-5 5v-5z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>;
     default:
       return <div className={`icon-placeholder ${className}`}>{name.charAt(0)}</div>;
   }
@@ -312,6 +320,8 @@ const CheckCircleIcon = ({ className }) => <svg className={className} xmlns="htt
 const CameraIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>;
 const Edit3Icon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>;
 const Trash2Icon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
+const UsersIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+const InfoIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 
 const PageHeader = ({ title, subtitle, children }) => ( <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4"> <div> <h1 className="text-3xl font-light text-gray-900 mb-2">{title}</h1> <p className="text-gray-600">{subtitle}</p> </div> <div>{children}</div> </div> );
 
@@ -371,12 +381,12 @@ const LoginView = ({ switchToRegister }) => {
             <h2 className="text-2xl font-light text-center text-gray-900">Member Login</h2>
             {error && <p className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-lg">{error}</p>}
             <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                <label htmlFor="login-username" className="block text-sm font-medium text-gray-700">Username</label>
+                <input type="text" id="login-username" name="username" value={username} onChange={e => setUsername(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                <label htmlFor="login-password" className="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="login-password" name="password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
             </div>
             <button type="submit" disabled={loading} className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 disabled:bg-red-400">{loading ? 'Logging in...' : 'Login'}</button>
             <p className="text-sm text-center text-gray-600">Not a member? <button type="button" onClick={switchToRegister} className="font-medium text-red-600 hover:underline">Register here</button></p>
@@ -407,16 +417,16 @@ const RegisterView = ({ switchToLogin }) => {
             <h2 className="text-2xl font-light text-center text-gray-900">Create Account</h2>
             {error && <p className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-lg">{error}</p>}
             <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                <label htmlFor="register-username" className="block text-sm font-medium text-gray-700">Username</label>
+                <input type="text" id="register-username" name="username" value={username} onChange={e => setUsername(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Email Address</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                <label htmlFor="register-email" className="block text-sm font-medium text-gray-700">Email Address</label>
+                <input type="email" id="register-email" name="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                <label htmlFor="register-password" className="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" id="register-password" name="password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
             </div>
             <button type="submit" disabled={loading} className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 disabled:bg-red-400">{loading ? 'Creating Account...' : 'Register'}</button>
             <p className="text-sm text-center text-gray-600">Already a member? <button type="button" onClick={switchToLogin} className="font-medium text-red-600 hover:underline">Login here</button></p>
@@ -472,8 +482,8 @@ const AddToGarageModal = ({ vehicle, isOpen, onClose, onSave, loading }) => {
                 <p className="text-gray-600 mb-6">Give your new vehicle a nickname.</p>
                 {error && <p className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-lg mb-4">{error}</p>}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Nickname</label>
-                    <input type="text" value={nickname} onChange={e => setNickname(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
+                    <label htmlFor="garage-nickname" className="block text-sm font-medium text-gray-700">Nickname</label>
+                    <input type="text" id="garage-nickname" name="nickname" value={nickname} onChange={e => setNickname(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required />
                 </div>
                 <div className="mt-6 flex justify-end gap-3">
                     <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
@@ -522,28 +532,56 @@ const VehicleSelectModal = ({ isOpen, onClose, title, vehicles, onSelect }) => {
 
 const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFromView }) => {
     const { isAuthenticated } = useAuth();
-    React.useEffect(() => {
-        if (isAuthenticated) {
-            setActiveView('garage');
-        }
-    }, [isAuthenticated, setActiveView]);
     const { discoveryResults, loading, fetchDiscoveryResults } = useVehicles();
     const { savedVehicles, refreshLists } = useUserLists();
     const { compareVehicles, addToCompare, removeFromCompare } = useCompare();
     const [filters, setFilters] = useState({});
     const [filterOptions, setFilterOptions] = useState({});
     const [sort, setSort] = useState({ by: 'Year', dir: 'desc' });
-    const [pagination, setPagination] = useState({ page: 1, limit: 10 });
+    const [pagination, setPagination] = useState({ page: 1, limit: 24 }); // Use even number for better layout
     const [vehicleToAddToGarage, setVehicleToAddToGarage] = useState(null);
+    const [viewMode, setViewMode] = useState(() => {
+        const saved = localStorage.getItem('myddpc_discover_view_mode');
+        return saved === 'list' ? 'list' : 'gallery';
+    });
     const { rest_url, nonce } = window.myddpcAppData || {};
 
-    useEffect(() => { if (!rest_url) return; fetch(`${rest_url}myddpc/v2/discover/filters`, { headers: { 'X-WP-Nonce': nonce } }).then(res => res.json()).then(data => { if (typeof data === 'object' && data !== null) setFilterOptions(data); }).catch(err => console.error("Failed to fetch filter options:", err)); }, [rest_url, nonce]);
-    useEffect(() => { const params = { filters, sort_by: sort.by, sort_dir: sort.dir, limit: pagination.limit, offset: (pagination.page - 1) * pagination.limit }; fetchDiscoveryResults(params); }, [filters, sort.by, sort.dir, pagination.page, pagination.limit, fetchDiscoveryResults]);
+    useEffect(() => { 
+        if (!rest_url) return; 
+        fetch(`${rest_url}myddpc/v2/discover/filters`, { 
+            headers: { 'X-WP-Nonce': nonce } 
+        }).then(res => res.json()).then(data => { 
+            if (typeof data === 'object' && data !== null) setFilterOptions(data); 
+        }).catch(err => console.error("Failed to fetch filter options:", err)); 
+    }, [rest_url, nonce]);
     
-    const handleFilterChange = (filterName, value) => { setPagination(p => ({ ...p, page: 1 })); setFilters(p => ({ ...p, [filterName]: value })); };
+    useEffect(() => { 
+        const params = { 
+            filters, 
+            sort_by: sort.by, 
+            sort_dir: sort.dir, 
+            limit: pagination.limit, 
+            offset: (pagination.page - 1) * pagination.limit 
+        }; 
+        fetchDiscoveryResults(params); 
+    }, [filters, sort.by, sort.dir, pagination.page, pagination.limit, fetchDiscoveryResults]);
+    
+    const handleFilterChange = (filterName, value) => { 
+        setPagination(p => ({ ...p, page: 1 })); 
+        setFilters(p => ({ ...p, [filterName]: value })); 
+    };
     const handleSortChange = (field, value) => setSort(p => ({ ...p, [field]: value }));
     const handlePageChange = (direction) => setPagination(p => ({ ...p, page: Math.max(1, p.page + direction) }));
-    const handleReset = () => { setFilters({}); setSort({ by: 'Year', dir: 'desc' }); setPagination({ page: 1, limit: 10 }); };
+        const handleReset = () => { 
+        setFilters({});
+        setSort({ by: 'Year', dir: 'desc' });
+        setPagination({ page: 1, limit: 24 }); // Use even number for better layout
+    };
+
+    const handleViewModeChange = (mode) => {
+        setViewMode(mode);
+        localStorage.setItem('myddpc_discover_view_mode', mode);
+    };
 
     const isVehicleSaved = (vehicleId) => {
         return savedVehicles.some(v => v.vehicle_id === vehicleId);
@@ -552,7 +590,6 @@ const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFrom
         return compareVehicles.some(v => v && v.ID === vehicleId);
     };
 
-    // NEW: Logic to save a vehicle
     const handleSaveVehicle = async (vehicle) => {
         requireAuth(async () => {
             try {
@@ -567,17 +604,20 @@ const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFrom
                     throw new Error(errorData.message || 'Could not save vehicle.');
                 }
                 
-                await refreshLists(); // Refresh the saved vehicles list
-                
-                // Show success feedback - this will be automatically handled by the button state change
+                await refreshLists();
             } catch (error) {
                 console.error('Error saving vehicle:', error);
                 alert(error.message);
             }
         });
     };
+
+    const handleAddToGarage = (vehicle) => {
+        requireAuth(() => {
+            setVehicleToAddToGarage(vehicle);
+        });
+    };
     
-    // UPDATED: Button state logic now checks saved list
     const getButtonState = (vehicle) => {
         if (isVehicleSaved(vehicle.ID)) {
             return { text: 'Saved', disabled: true, className: 'bg-green-600' };
@@ -585,83 +625,584 @@ const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFrom
         return { text: 'Save', disabled: false, className: 'bg-red-600 hover:bg-red-700', action: () => handleSaveVehicle(vehicle) };
     };
 
+    // Enhanced VehicleCard component with visual-first design
+    const VehicleCard = ({ vehicle }) => {
+        const buttonState = getButtonState(vehicle);
+        const imageUrl = getFirstImageUrl(vehicle);
+        
+        // Handle grouped vehicle data (with trim metadata)
+        const hasGroupMetadata = vehicle._group_metadata;
+        const vehicleName = hasGroupMetadata 
+            ? `${vehicle.Year} ${vehicle.Make} ${vehicle.Model}`
+            : `${vehicle.Year || vehicle.year} ${vehicle.Make || vehicle.make} ${vehicle.Model || vehicle.model} ${vehicle.Trim || vehicle.trim}`;
+        
+        // State for trim selection within the card
+        const [selectedTrimId, setSelectedTrimId] = React.useState(vehicle.ID);
+        const [modelTrims, setModelTrims] = React.useState(null);
+        const [currentVehicleData, setCurrentVehicleData] = React.useState(vehicle);
+        
+        // Fetch trims for this model when card loads
+        React.useEffect(() => {
+            const fetchModelTrims = async () => {
+                try {
+                    const year = vehicle.Year || vehicle.year;
+                    const make = vehicle.Make || vehicle.make;
+                    const model = vehicle.Model || vehicle.model;
+                    
+                    if (!year || !make || !model) return;
+                    
+                    const fetchUrl = `${rest_url}myddpc/v2/discover/model_trims?year=${year}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`;
+                    const response = await fetch(fetchUrl, { headers: { 'X-WP-Nonce': nonce } });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        setModelTrims(data);
+                        
+                        // Set the first trim as default if we have trims
+                        if (data.trims && data.trims.length > 0) {
+                            setSelectedTrimId(data.trims[0].ID);
+                            setCurrentVehicleData(data.trims[0]);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error fetching model trims:', err);
+                }
+            };
+            
+            fetchModelTrims();
+        }, [vehicle, rest_url, nonce]);
+        
+        // Handle trim selection
+        const handleTrimChange = (trimId, e) => {
+            e.stopPropagation(); // Prevent card click
+            if (!modelTrims || !modelTrims.trims) return;
+            
+            const selectedTrim = modelTrims.trims.find(trim => trim.ID == trimId);
+            if (!selectedTrim) return;
+            
+            setSelectedTrimId(trimId);
+            setCurrentVehicleData(selectedTrim);
+        };
+        
+        // Use current vehicle data for display
+        const displayVehicle = currentVehicleData || vehicle;
+        
+        return (
+            <div 
+                className="vehicle-discovery-card bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group"
+                onClick={(e) => {
+                    // Don't navigate if clicking on the dropdown or buttons
+                    if (e.target.closest('select') || e.target.closest('button')) return;
+                    setVehicleProfileId(selectedTrimId); 
+                    setActiveView('vehicle-profile'); 
+                    setFromView('discover'); 
+                }}
+            >
+                {/* Hero Image Container - Largest element for visual impact */}
+                <div className="vehicle-card-image-container relative h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                    <img 
+                        src={getFirstImageUrl(displayVehicle)} 
+                        alt={vehicleName}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                        }}
+                    />
+                    <div className="vehicle-placeholder absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200" style={{ display: 'none' }}>
+                        <div className="text-center">
+                            <Icon name="Car" className="w-16 h-16 text-gray-400 mx-auto mb-3" />
+                            <p className="text-gray-500 text-sm font-medium">Image coming soon</p>
+                        </div>
+                    </div>
+                    
+                    {/* Quick action overlay on hover */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div className="bg-white rounded-lg px-4 py-2 shadow-lg">
+                            <span className="text-sm font-medium text-gray-900">View Details</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Vehicle Information */}
+                <div className="p-5">
+                    {/* Vehicle Title */}
+                    <h3 className="vehicle-card-title text-xl font-semibold text-gray-900 mb-2 line-clamp-2 leading-tight">
+                        {vehicleName}
+                    </h3>
+                    
+                    {/* Trim Selector Dropdown */}
+                    {(modelTrims && modelTrims.trims && modelTrims.trims.length > 1) || (hasGroupMetadata && hasGroupMetadata.trim_count > 1) ? (
+                        <div className="mb-3">
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                Select Trim {hasGroupMetadata && hasGroupMetadata.trim_count > 1 && `(${hasGroupMetadata.trim_count} available)`}
+                            </label>
+                            <select 
+                                value={selectedTrimId} 
+                                onChange={(e) => handleTrimChange(e.target.value, e)}
+                                className="w-full rounded-lg border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
+                            >
+                                {modelTrims && modelTrims.trims ? (
+                                    modelTrims.trims.map(trim => (
+                                        <option key={trim.ID} value={trim.ID}>
+                                            {trim.Trim} - {trim['Horsepower (HP)']} HP
+                                        </option>
+                                    ))
+                                ) : (
+                                    <option value={vehicle.ID}>
+                                        {vehicle.Trim} - {vehicle['Horsepower (HP)']} HP
+                                    </option>
+                                )}
+                            </select>
+                        </div>
+                    ) : null}
+                    
+                    {/* Key Specifications Grid */}
+                    <div className="vehicle-card-specs grid grid-cols-2 gap-3 mb-5">
+                        <div className="spec-item bg-gray-50 rounded-lg p-3">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Power</div>
+                            <div className="font-bold text-gray-900">
+                                {displayVehicle['Horsepower (HP)'] || displayVehicle.horsepower || 'N/A'} <span className="text-sm font-normal">HP</span>
+                            </div>
+                        </div>
+                        <div className="spec-item bg-gray-50 rounded-lg p-3">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Engine</div>
+                            <div className="font-bold text-gray-900">
+                                {displayVehicle['Engine size (l)'] || displayVehicle.engine_size || 'N/A'}L <span className="text-sm font-normal">{displayVehicle.Cylinders || displayVehicle.cylinders || 'N/A'}-cyl</span>
+                            </div>
+                        </div>
+                        <div className="spec-item bg-gray-50 rounded-lg p-3">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Weight</div>
+                            <div className="font-bold text-gray-900">
+                                {displayVehicle['Curb weight (lbs)'] ? Math.round(displayVehicle['Curb weight (lbs)']).toLocaleString() : displayVehicle.weight || 'N/A'} <span className="text-sm font-normal">lbs</span>
+                            </div>
+                        </div>
+                        {displayVehicle['Drive type'] && (
+                            <div className="spec-item bg-gray-50 rounded-lg p-3">
+                                <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Drive</div>
+                                <div className="font-bold text-gray-900">
+                                    {displayVehicle['Drive type'].toUpperCase().includes('ALL WHEEL') ? 'AWD' : 
+                                     displayVehicle['Drive type'].toUpperCase().includes('FRONT WHEEL') ? 'FWD' : 
+                                     displayVehicle['Drive type'].toUpperCase().includes('FOUR WHEEL') ? '4WD' : 
+                                     displayVehicle['Drive type'].toUpperCase().includes('REAR WHEEL') ? 'RWD' : 
+                                     displayVehicle['Drive type']}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Action Bar - Clear, prominent buttons */}
+                    <div className="vehicle-card-actions flex gap-2">
+                        <button 
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                // Save the base model (without specific trim) to saved vehicles
+                                const baseVehicle = {
+                                    ...displayVehicle,
+                                    ID: vehicle.ID, // Use the original vehicle ID (base model)
+                                    Trim: vehicle.Trim // Use the original trim (base model)
+                                };
+                                handleSaveVehicle(baseVehicle); 
+                            }}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                        >
+                            <PlusIcon className="w-4 h-4" />
+                            Save Vehicle
+                        </button>
+                        <button 
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                if (isVehicleCompared(displayVehicle.ID)) {
+                                    removeFromCompare(compareVehicles.findIndex(v => v && v.ID === displayVehicle.ID));
+                                } else {
+                                    addToCompare(displayVehicle); 
+                                }
+                            }}
+                            className={`flex-1 px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
+                                isVehicleCompared(displayVehicle.ID) 
+                                    ? 'bg-green-100 text-green-700 border-2 border-green-300' 
+                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                            }`}
+                            title={isVehicleCompared(displayVehicle.ID) ? 'Remove from Head-to-Head' : 'Add to Head-to-Head'}
+                        >
+                            <Icon name="Columns" className="w-4 h-4" />
+                            <span className="hidden sm:inline">Head-to-Head</span>
+                            <span className="sm:hidden">Compare</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <PageHeader title="Vehicle Discovery" subtitle="Find and compare vehicles by specifications and features" />
                 <div className="mb-8"> <CompareTray /> </div>
+                
+                {/* Two-Column Layout: Filter Pane + Results Pane */}
                 <div className="discover-view-grid grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    {/* Filter Pane (Left Column) - Persistent */}
                     <div className="discover-filters-column lg:col-span-1">
-                        <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-24">
+                        <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-24 shadow-sm">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-medium text-gray-900">Filters</h3>
-                                <button onClick={handleReset} className="text-xs font-semibold text-red-600 hover:underline">Reset</button>
+                                <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                                <button 
+                                    onClick={handleReset} 
+                                    className="text-sm font-medium text-red-600 hover:text-red-700 hover:underline transition-colors"
+                                >
+                                    Reset All
+                                </button>
                             </div>
                             <div className="space-y-6">
                                 {Object.keys(filterOptions).map(key => (
                                     <div key={key}>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">{key.replace(/_/g, ' ')}</label>
-                                        <select 
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2 capitalize">
+                                            {key.replace(/_/g, ' ')}
+                                        </label>
+                            <select 
                                             value={filters[key] || ''} 
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" 
+                                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors" 
                                             onChange={(e) => handleFilterChange(key, e.target.value)}
                                         >
-                                            <option value="">All</option>
-                                            {Array.isArray(filterOptions[key]) && filterOptions[key].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                            <option value="">All {key.replace(/_/g, ' ')}</option>
+                                            {Array.isArray(filterOptions[key]) && filterOptions[key].map(opt => 
+                                                <option key={opt} value={opt}>{opt}</option>
+                                )}
+                            </select>
+                    </div>
+                                ))}
+                    </div>
+                </div>
+                    </div>
+                    
+                    {/* Results Pane (Right Column) */}
+                    <div className="lg:col-span-3">
+                        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                            {/* Header Bar with Results Count, Sorting, and View Toggle */}
+                            <div className="flex flex-col md:flex-row justify-between md:items-center mb-8 gap-4">
+                                <div className="flex items-center gap-3">
+                                    <p className="text-lg font-medium text-gray-900">
+                                        {loading ? 'Loading...' : `${discoveryResults.total || 0} vehicles found`}
+                                    </p>
+                                    {!loading && discoveryResults.total > 0 && (
+                                        <span className="text-sm text-gray-500">
+                                            (Page {pagination.page} of {Math.ceil((discoveryResults.total || 0) / pagination.limit)})
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <ViewToggle currentView={viewMode} onViewChange={handleViewModeChange} />
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-sm font-semibold text-gray-700">Sort by:</label>
+                                        <select 
+                                            value={sort.by} 
+                                            onChange={(e) => handleSortChange('by', e.target.value)} 
+                                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                        >
+                                            <option value="Year">Year</option>
+                                            <option value="Make">Make</option>
+                                            <option value="Horsepower (HP)">Power</option>
+                                            <option value="Curb weight (lbs)">Weight</option>
+                                        </select>
+                                        <select 
+                                            value={sort.dir} 
+                                            onChange={(e) => handleSortChange('dir', e.target.value)} 
+                                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                        >
+                                            <option value="desc">Descending</option>
+                                            <option value="asc">Ascending</option>
                                         </select>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="lg:col-span-3">
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                            <div className="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
-                                <p className="text-gray-600">{`${discoveryResults.total || 0} vehicles found`}</p>
-                                <div className="flex items-center gap-2">
-                                    <label className="text-sm font-medium">Sort by:</label>
-                                    <select value={sort.by} onChange={(e) => handleSortChange('by', e.target.value)} className="rounded-lg border border-gray-300 px-2 py-1 text-sm">
-                                        <option value="Year">Year</option>
-                                        <option value="Horsepower (HP)">Horsepower</option>
-                                    </select>
-                                    <select value={sort.dir} onChange={(e) => handleSortChange('dir', e.target.value)} className="rounded-lg border border-gray-300 px-2 py-1 text-sm">
-                                        <option value="desc">Descending</option>
-                                        <option value="asc">Ascending</option>
-                                    </select>
                                 </div>
                             </div>
-                            {loading ? <div className="text-center p-12">Loading results...</div> : (
-                                <div className="space-y-4">
-                                    {Array.isArray(discoveryResults.results) && discoveryResults.results.map((vehicle) => {
-                                        const buttonState = getButtonState(vehicle);
-                                        return (
-                                            <VehicleRow
-                                                key={vehicle.ID}
+                            
+                            {/* Results Grid */}
+                            {loading ? (
+                                <div className="text-center p-16">
+                                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                                    <p className="mt-4 text-gray-600 text-lg">Loading vehicles...</p>
+                                </div>
+                            ) : Array.isArray(discoveryResults.results) && discoveryResults.results.length > 0 ? (
+                                viewMode === 'gallery' ? (
+                                    <div className="vehicle-discovery-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                                        {discoveryResults.results.map((vehicle) => (
+                                            <VehicleCardGallery 
+                                                key={vehicle.ID} 
                                                 vehicle={vehicle}
-                                                onRowClick={() => { setVehicleProfileId(vehicle.ID); setActiveView('vehicle-profile'); setFromView('discover'); }}
-                                                actionButtons={[
-                                                    <button key="details" onClick={e => { e.stopPropagation(); setVehicleProfileId(vehicle.ID); setActiveView('vehicle-profile'); setFromView('discover'); }} className="p-2 rounded-full text-gray-400 hover:text-blue-600 bg-white bg-opacity-80 shadow" title="View Details"><Icon name="FileText" className="w-5 h-5" /></button>,
-                                                    isVehicleCompared(vehicle.ID)
-                                                        ? <span key="compared" className="p-2 rounded-full bg-green-100 text-green-700 border border-green-300" title="In Compare"><Icon name="Columns" className="w-5 h-5" /></span>
-                                                        : <button key="compare" onClick={e => { e.stopPropagation(); addToCompare(vehicle); }} className="p-2 rounded-full text-gray-400 hover:text-red-600 bg-white bg-opacity-80 shadow" title="Compare"><Icon name="Columns" className="w-5 h-5" /></button>,
-                                                    <button key="save" onClick={e => { e.stopPropagation(); buttonState.action(); }} disabled={buttonState.disabled} className={`p-2 rounded-full text-gray-400 hover:text-green-600 bg-white bg-opacity-80 shadow ${buttonState.disabled ? 'opacity-50 cursor-not-allowed' : ''}`} title={buttonState.disabled ? 'Saved' : 'Save'}><Icon name="Bookmark" className="w-5 h-5" /></button>
-                                                ]}
+                                                onCardClick={(selectedTrimId) => {
+                                                    setVehicleProfileId(selectedTrimId);
+                                                    setActiveView('vehicle-profile');
+                                                    setFromView('discover');
+                                                }}
+                                                onSaveVehicle={handleSaveVehicle}
+                                                onAddToCompare={addToCompare}
+                                                isVehicleSaved={isVehicleSaved}
+                                                isVehicleCompared={isVehicleCompared}
+                                                removeFromCompare={removeFromCompare}
+                                                compareVehicles={compareVehicles}
+                                                setVehicleProfileId={setVehicleProfileId}
+                                                setActiveView={setActiveView}
+                                                setFromView={setFromView}
                                             />
-                                        );
-                                    })}
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {discoveryResults.results.map((vehicle) => (
+                                            <VehicleCardList 
+                                                key={vehicle.ID} 
+                                                vehicle={vehicle}
+                                                onCardClick={(selectedTrimId) => {
+                                                    setVehicleProfileId(selectedTrimId);
+                                                    setActiveView('vehicle-profile');
+                                                    setFromView('discover');
+                                                }}
+                                                onSaveVehicle={handleSaveVehicle}
+                                                onAddToCompare={addToCompare}
+                                                isVehicleSaved={isVehicleSaved}
+                                                isVehicleCompared={isVehicleCompared}
+                                                removeFromCompare={removeFromCompare}
+                                                compareVehicles={compareVehicles}
+                                                setVehicleProfileId={setVehicleProfileId}
+                                                setActiveView={setActiveView}
+                                                setFromView={setFromView}
+                                                isSavedList={false}
+                                            />
+                                        ))}
+                                    </div>
+                                )
+                            ) : (
+                                <div className="text-center p-16">
+                                    <Icon name="Search" className="w-20 h-20 text-gray-300 mx-auto mb-6" />
+                                    <h3 className="text-xl font-semibold text-gray-900 mb-3">No vehicles found</h3>
+                                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                                        No vehicles match your current filters. Try adjusting your search criteria or reset the filters to see all vehicles.
+                                    </p>
+                    <button
+                                        onClick={handleReset}
+                                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg text-sm font-semibold transition-colors"
+                                    >
+                                        Reset All Filters
+                    </button>
                                 </div>
                             )}
-                            <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
-                                <button onClick={() => handlePageChange(-1)} disabled={loading || pagination.page <= 1} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">Previous</button>
-                                <span className="text-sm text-gray-600">Page {pagination.page} of {Math.ceil((discoveryResults.total || 0) / pagination.limit)}</span>
-                                <button onClick={() => handlePageChange(1)} disabled={loading || pagination.page * pagination.limit >= (discoveryResults.total || 0)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">Next</button>
-                            </div>
-                        </div>
+                            
+                            {/* Enhanced Pagination */}
+                            {Array.isArray(discoveryResults.results) && discoveryResults.results.length > 0 && (
+                                <div className="flex justify-between items-center mt-12 pt-8 border-t border-gray-200">
+                    <button
+                                        onClick={() => handlePageChange(-1)} 
+                                        disabled={loading || pagination.page <= 1} 
+                                        className="px-6 py-3 text-sm font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        ← Previous
+                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-gray-600">
+                                            Page {pagination.page} of {Math.ceil((discoveryResults.total || 0) / pagination.limit)}
+                                        </span>
+                                        <span className="text-sm text-gray-400">•</span>
+                                        <span className="text-sm text-gray-600">
+                                            {discoveryResults.total || 0} total vehicles
+                                        </span>
+                </div>
+                                    <button 
+                                        onClick={() => handlePageChange(1)} 
+                                        disabled={loading || pagination.page * pagination.limit >= (discoveryResults.total || 0)} 
+                                        className="px-6 py-3 text-sm font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Next →
+                                    </button>
+            </div>
+                            )}
+        </div>
                     </div>
                 </div>
             </div>
+            
+            {/* Add to Garage Modal */}
+            <AddToGarageModalWrapper 
+                vehicleToAddToGarage={vehicleToAddToGarage} 
+                setVehicleToAddToGarage={setVehicleToAddToGarage} 
+            />
         </>
-   );
+    );
+};
+
+// --- VEHICLE CARD LIST COMPONENT ---
+const VehicleCardList = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompare, isVehicleSaved, isVehicleCompared, removeFromCompare, compareVehicles, setVehicleProfileId, setActiveView, setFromView, isSavedList }) => {
+    // State for trim selection within the card
+    const [selectedTrimId, setSelectedTrimId] = React.useState(vehicle.ID);
+    const [modelTrims, setModelTrims] = React.useState(null);
+    const [currentVehicleData, setCurrentVehicleData] = React.useState(vehicle);
+    const { rest_url, nonce } = window.myddpcAppData || {};
+    
+    // Fetch trims for this model when card loads
+    React.useEffect(() => {
+        const fetchModelTrims = async () => {
+            try {
+                const year = vehicle.Year || vehicle.year;
+                const make = vehicle.Make || vehicle.make;
+                const model = vehicle.Model || vehicle.model;
+                
+                if (!year || !make || !model) return;
+                
+                const fetchUrl = `${rest_url}myddpc/v2/discover/model_trims?year=${year}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`;
+                const response = await fetch(fetchUrl, { headers: { 'X-WP-Nonce': nonce } });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setModelTrims(data);
+                    
+                    // Set the first trim as default if we have trims
+                    if (data.trims && data.trims.length > 0) {
+                        setSelectedTrimId(data.trims[0].ID);
+                        setCurrentVehicleData(data.trims[0]);
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching model trims:', err);
+            }
+        };
+        
+        fetchModelTrims();
+    }, [vehicle, rest_url, nonce]);
+    
+    // Handle trim selection
+    const handleTrimChange = (trimId, e) => {
+        e.stopPropagation(); // Prevent card click
+        if (!modelTrims || !modelTrims.trims) return;
+        
+        const selectedTrim = modelTrims.trims.find(trim => trim.ID == trimId);
+        if (!selectedTrim) return;
+        
+        setSelectedTrimId(trimId);
+        setCurrentVehicleData(selectedTrim);
+    };
+    
+    // Use current vehicle data for display
+    const displayVehicle = currentVehicleData || vehicle;
+    
+    // Handle grouped vehicle data (with trim metadata)
+    const hasGroupMetadata = vehicle._group_metadata;
+    const vehicleName = hasGroupMetadata 
+        ? `${vehicle.Year} ${vehicle.Make} ${vehicle.Model}`
+        : `${vehicle.Year || vehicle.year} ${vehicle.Make || vehicle.make} ${vehicle.Model || vehicle.model} ${vehicle.Trim || vehicle.trim}`;
+    
+    return (
+        <div 
+            className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer"
+            onClick={() => onCardClick(selectedTrimId)}
+        >
+            <div className="flex items-center gap-4">
+                {/* Vehicle Image (only for saved list) */}
+                {isSavedList && (
+                    <div className="flex-shrink-0 w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
+                        <img 
+                            src={getFirstImageUrl(displayVehicle)} 
+                            alt={vehicleName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                            }}
+                        />
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200" style={{ display: 'none' }}>
+                            <Icon name="Car" className="w-8 h-8 text-gray-400" />
+                        </div>
+                    </div>
+                )}
+                
+                {/* Vehicle Info */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900 truncate">
+                            {vehicleName}
+                        </h3>
+                        
+                        {/* Trim Selector Dropdown */}
+                        {(modelTrims && modelTrims.trims && modelTrims.trims.length > 1) || (hasGroupMetadata && hasGroupMetadata.trim_count > 1) ? (
+                            <select 
+                                value={selectedTrimId} 
+                                onChange={(e) => handleTrimChange(e.target.value, e)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-red-500 focus:border-red-500 ml-2"
+                            >
+                                {modelTrims && modelTrims.trims ? (
+                                    modelTrims.trims.map(trim => (
+                                        <option key={trim.ID} value={trim.ID}>
+                                            {trim.Trim} ({trim['Horsepower (HP)']} HP)
+                                        </option>
+                                    ))
+                                ) : (
+                                    <option value={vehicle.ID}>
+                                        {vehicle.Trim || vehicle.trim} ({vehicle['Horsepower (HP)'] || vehicle.horsepower} HP)
+                                    </option>
+                                )}
+                            </select>
+                        ) : null}
+                    </div>
+                    
+                    {/* Vehicle Specs */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-sm text-gray-600">
+                        <div><span className="font-medium">Power:</span> {displayVehicle['Horsepower (HP)'] || displayVehicle.horsepower || 'N/A'} HP</div>
+                        <div><span className="font-medium">Engine:</span> {displayVehicle['Engine size (l)'] || displayVehicle.engine_size || 'N/A'}L {displayVehicle.Cylinders || displayVehicle.cylinders || 'N/A'}-cyl</div>
+                        <div><span className="font-medium">Weight:</span> {displayVehicle['Curb weight (lbs)'] ? Math.round(displayVehicle['Curb weight (lbs)']).toLocaleString() : displayVehicle.weight || 'N/A'} lbs</div>
+                        {displayVehicle['Drive type'] && <div><span className="font-medium">Drive:</span> {displayVehicle['Drive type'].toUpperCase().includes('ALL WHEEL') ? 'AWD' : 
+                         displayVehicle['Drive type'].toUpperCase().includes('FRONT WHEEL') ? 'FWD' : 
+                         displayVehicle['Drive type'].toUpperCase().includes('FOUR WHEEL') ? '4WD' : 
+                         displayVehicle['Drive type'].toUpperCase().includes('REAR WHEEL') ? 'RWD' : 
+                         displayVehicle['Drive type']}</div>}
+                    </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (isVehicleSaved(displayVehicle.ID)) {
+                                // Already saved, could add remove functionality here
+                                return;
+                            }
+                            onSaveVehicle(displayVehicle);
+                        }}
+                        className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                            isVehicleSaved(displayVehicle.ID) 
+                                ? 'bg-green-100 text-green-700 border-2 border-green-300' 
+                                : 'bg-red-600 hover:bg-red-700 text-white'
+                        }`}
+                        title={isVehicleSaved(displayVehicle.ID) ? 'Already Saved' : 'Save Vehicle'}
+                    >
+                        <Icon name="Heart" className="w-4 h-4" />
+                        <span className="hidden sm:inline ml-1">Save</span>
+                    </button>
+                    
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (isVehicleCompared(displayVehicle.ID)) {
+                                removeFromCompare(compareVehicles.findIndex(v => v && v.ID === displayVehicle.ID));
+                            } else {
+                                onAddToCompare(displayVehicle);
+                            }
+                        }}
+                        className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
+                            isVehicleCompared(displayVehicle.ID) 
+                                ? 'bg-green-100 text-green-700 border-2 border-green-300' 
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                        title={isVehicleCompared(displayVehicle.ID) ? 'Remove from Head-to-Head' : 'Add to Head-to-Head'}
+                    >
+                        <Icon name="Columns" className="w-4 h-4" />
+                        <span className="hidden sm:inline">Compare</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 // --- SAVED VEHICLES COMPONENT ---
@@ -673,6 +1214,14 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
     const [error, setError] = useState(null);
     const { refreshLists } = useUserLists();
     const { fetchGarageVehicles, vehicles: garageVehicles } = useVehicles();
+    
+    // State for grouped vehicles with trim selection
+    const [groupedVehicles, setGroupedVehicles] = useState({});
+    const [selectedTrims, setSelectedTrims] = useState({});
+    const [viewMode, setViewMode] = useState(() => {
+        const saved = localStorage.getItem('myddpc_saved_view_mode');
+        return saved === 'list' ? 'list' : 'gallery';
+    });
 
     const fetchSavedVehicles = useCallback(async () => {
         try {
@@ -682,6 +1231,31 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
             if (!response.ok) throw new Error('Failed to fetch saved vehicles.');
             const data = await response.json();
             setSavedVehicles(data);
+            
+            // Fetch trims for each saved vehicle
+            const trimsData = {};
+            for (const vehicle of data) {
+                try {
+                    const trimsResponse = await fetch(
+                        `${rest_url}myddpc/v2/discover/model_trims?year=${vehicle.Year}&make=${vehicle.Make}&model=${vehicle.Model}`,
+                        { headers: { 'X-WP-Nonce': nonce } }
+                    );
+                    if (trimsResponse.ok) {
+                        const trimsResult = await trimsResponse.json();
+                        trimsData[vehicle.vehicle_id] = trimsResult;
+                    }
+                } catch (err) {
+                    console.warn(`Failed to fetch trims for ${vehicle.Year} ${vehicle.Make} ${vehicle.Model}:`, err);
+                }
+            }
+            setGroupedVehicles(trimsData);
+            
+            // Set default selected trims to the original vehicle
+            const defaultTrims = {};
+            data.forEach(vehicle => {
+                defaultTrims[vehicle.vehicle_id] = vehicle.vehicle_id;
+            });
+            setSelectedTrims(defaultTrims);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -725,42 +1299,187 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
         setActiveView('garage');
         setGarageView('vehicle-detail');
     };
+    
+    // Handler: change selected trim for a vehicle
+    const handleTrimChange = (vehicleId, trimId) => {
+        setSelectedTrims(prev => ({
+            ...prev,
+            [vehicleId]: trimId
+        }));
+    };
+    
+    // Helper: get the currently selected vehicle data
+    const getCurrentVehicleData = (savedVehicle) => {
+        const trims = groupedVehicles[savedVehicle.vehicle_id];
+        if (!trims || !trims.trims) return savedVehicle;
+        
+        const selectedTrimId = selectedTrims[savedVehicle.vehicle_id];
+        const selectedTrim = trims.trims.find(trim => trim.ID === parseInt(selectedTrimId));
+        
+        if (selectedTrim) {
+            return {
+                ...savedVehicle,
+                ...selectedTrim,
+                vehicle_id: selectedTrim.ID
+            };
+        }
+        
+        return savedVehicle;
+    };
+
+    const handleViewModeChange = (mode) => {
+        setViewMode(mode);
+        localStorage.setItem('myddpc_saved_view_mode', mode);
+    };
 
     if (loading) return <div className="text-center p-12">Loading your saved vehicles...</div>;
     if (error) return <div className="text-center p-12 text-red-600">Error: {error}</div>;
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <PageHeader title="My Saved Vehicles" subtitle="A list of vehicles you're keeping an eye on. Add them to your Garage to start tracking mods." />
-            <div className="space-y-4">
-                {savedVehicles.length > 0 ? (
-                    savedVehicles.map((vehicle) => {
-                        const garageVehicle = findGarageVehicle(vehicle.vehicle_id);
-                        return (
-                            <VehicleRow
-                                key={vehicle.saved_id}
-                                vehicle={vehicle}
-                                onRowClick={() => {
-                                    setVehicleProfileId(vehicle.vehicle_id);
-                                    setActiveView('vehicle-profile');
-                                    setFromView('saved');
-                                    if (setSelectedVehicle) setSelectedVehicle(vehicle);
-                                }}
-                                actionButtons={[
-                                    garageVehicle && <button key="garage" onClick={e => { e.stopPropagation(); handleGoToGarageVehicle(garageVehicle); }} className="p-2 rounded-full text-gray-400 hover:text-red-600 bg-white bg-opacity-80 shadow" title="Go to Garage Vehicle"><Icon name="Garage" className="w-5 h-5" /></button>,
-                                    <button key="compare" onClick={e => { e.stopPropagation(); setVehicleProfileId(vehicle.vehicle_id); setActiveView('compare'); setFromView('saved'); }} className="p-2 rounded-full text-gray-400 hover:text-blue-600 bg-white bg-opacity-80 shadow" title="Compare"><Icon name="Columns" className="w-5 h-5" /></button>,
-                                    <button key="delete" onClick={e => handleRemove(e, vehicle.saved_id)} className="p-2 rounded-full text-gray-400 hover:text-red-600 bg-white bg-opacity-80 shadow" title="Remove Vehicle"><Icon name="Trash2" className="w-5 h-5" /></button>
-                                ]}
-                            />
-                        );
-                    })
-                ) : (
-                    <div className="text-center p-12 text-gray-500 bg-white border border-gray-200 rounded-lg">
-                        <p>You haven't saved any vehicles yet.</p>
-                        <p className="mt-2 text-sm">Use the Discover tool to find and save vehicles to your list.</p>
+            <PageHeader 
+                title="My Saved Vehicles" 
+                subtitle="A list of vehicles you're keeping an eye on. Add them to your Garage to start tracking mods."
+            >
+                <ViewToggle currentView={viewMode} onViewChange={handleViewModeChange} />
+            </PageHeader>
+            
+            {savedVehicles.length > 0 ? (
+                viewMode === 'gallery' ? (
+                    <div className="vehicle-discovery-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                        {savedVehicles.map((vehicle) => {
+                            const currentVehicle = getCurrentVehicleData(vehicle);
+                            const garageVehicle = findGarageVehicle(currentVehicle.vehicle_id);
+                            const trims = groupedVehicles[vehicle.vehicle_id];
+                            const hasMultipleTrims = trims && trims.trims && trims.trims.length > 1;
+                            
+                            return (
+                                <VehicleCardGallery 
+                                    key={vehicle.saved_id}
+                                    vehicle={{
+                                        ...currentVehicle,
+                                        saved_id: vehicle.saved_id,
+                                        _hasMultipleTrims: hasMultipleTrims,
+                                        _trims: trims,
+                                        _selectedTrimId: selectedTrims[vehicle.vehicle_id] || vehicle.vehicle_id,
+                                        _onTrimChange: (trimId) => handleTrimChange(vehicle.vehicle_id, trimId),
+                                        _garageVehicle: garageVehicle,
+                                        _onRemove: (e) => handleRemove(e, vehicle.saved_id),
+                                        _onGoToGarage: () => handleGoToGarageVehicle(garageVehicle),
+                                        _onViewDetails: () => {
+                                            setVehicleProfileId(currentVehicle.vehicle_id);
+                                            setActiveView('vehicle-profile');
+                                            setFromView('saved');
+                                            if (setSelectedVehicle) setSelectedVehicle(currentVehicle);
+                                        },
+                                        _onCompare: () => {
+                                            setVehicleProfileId(currentVehicle.vehicle_id);
+                                            setActiveView('compare');
+                                            setFromView('saved');
+                                        }
+                                    }}
+                                    onCardClick={(selectedTrimId) => {
+                                        setVehicleProfileId(selectedTrimId);
+                                        setActiveView('vehicle-profile');
+                                        setFromView('saved');
+                                    }}
+                                    onSaveVehicle={() => {}} // Already saved, no action needed
+                                    onAddToCompare={() => {}} // Could implement compare functionality
+                                    isVehicleSaved={() => true} // Always true for saved vehicles
+                                    isVehicleCompared={() => false} // Could implement compare state
+                                    removeFromCompare={() => {}}
+                                    compareVehicles={[]}
+                                    setVehicleProfileId={setVehicleProfileId}
+                                    setActiveView={setActiveView}
+                                    setFromView={setFromView}
+                                    isSavedList={true}
+                                />
+                            );
+                        })}
                     </div>
-                )}
-            </div>
+                ) : (
+                    <div className="space-y-4">
+                        {savedVehicles.map((vehicle) => {
+                            const currentVehicle = getCurrentVehicleData(vehicle);
+                            const garageVehicle = findGarageVehicle(currentVehicle.vehicle_id);
+                            const trims = groupedVehicles[vehicle.vehicle_id];
+                            const hasMultipleTrims = trims && trims.trims && trims.trims.length > 1;
+                            
+                            return (
+                                <div 
+                                    key={vehicle.saved_id} 
+                                    className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-all cursor-pointer bg-white"
+                                    onClick={() => {
+                                        setVehicleProfileId(currentVehicle.vehicle_id);
+                                        setActiveView('vehicle-profile');
+                                        setFromView('saved');
+                                        if (setSelectedVehicle) setSelectedVehicle(currentVehicle);
+                                    }}
+                                >
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <h4 className="text-lg font-medium text-gray-900 truncate">
+                                                    {`${currentVehicle.Year} ${currentVehicle.Make} ${currentVehicle.Model}`}
+                                                </h4>
+                                                {hasMultipleTrims && (
+                                                    <select 
+                                                        value={selectedTrims[vehicle.vehicle_id] || vehicle.vehicle_id}
+                                                        onChange={(e) => handleTrimChange(vehicle.vehicle_id, e.target.value)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                                                    >
+                                                        {trims.trims.map(trim => (
+                                                            <option key={trim.ID} value={trim.ID}>
+                                                                {trim.Trim} ({trim['Horsepower (HP)']} HP)
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm text-gray-600">
+                                                <div><span className="font-medium">Power:</span> {currentVehicle['Horsepower (HP)'] || currentVehicle.horsepower || 'N/A'} HP</div>
+                                                <div><span className="font-medium">Engine:</span> {currentVehicle['Engine size (l)'] || currentVehicle.engine_size || 'N/A'}L {currentVehicle.Cylinders || currentVehicle.cylinders || 'N/A'}-cyl</div>
+                                                <div><span className="font-medium">Weight:</span> {currentVehicle['Curb weight (lbs)'] ? Math.round(currentVehicle['Curb weight (lbs)']).toLocaleString() : currentVehicle.weight || 'N/A'} lbs</div>
+                                                {currentVehicle['Drive type'] && <div><span className="font-medium">Drive:</span> {currentVehicle['Drive type'].toUpperCase().includes('ALL WHEEL') ? 'AWD' : 
+                                                 currentVehicle['Drive type'].toUpperCase().includes('FRONT WHEEL') ? 'FWD' : 
+                                                 currentVehicle['Drive type'].toUpperCase().includes('FOUR WHEEL') ? '4WD' : 
+                                                 currentVehicle['Drive type'].toUpperCase().includes('REAR WHEEL') ? 'RWD' : 
+                                                 currentVehicle['Drive type']}</div>}
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 ml-4 min-w-[120px] items-end">
+                                            {garageVehicle && (
+                                                <button 
+                                                    onClick={e => { e.stopPropagation(); handleGoToGarageVehicle(garageVehicle); }} 
+                                                    className="px-3 py-2 rounded-lg text-sm font-semibold transition-colors bg-blue-600 hover:bg-blue-700 text-white"
+                                                    title="Go to Garage Vehicle"
+                                                >
+                                                    <Icon name="Garage" className="w-4 h-4" />
+                                                    <span className="hidden sm:inline ml-1">Garage</span>
+                                                </button>
+                                            )}
+                                            <button 
+                                                onClick={e => handleRemove(e, vehicle.saved_id)} 
+                                                className="px-3 py-2 rounded-lg text-sm font-semibold transition-colors bg-red-600 hover:bg-red-700 text-white"
+                                                title="Remove Vehicle"
+                                            >
+                                                <Icon name="Trash2" className="w-4 h-4" />
+                                                <span className="hidden sm:inline ml-1">Remove</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )
+            ) : (
+                <div className="text-center p-12 text-gray-500 bg-white border border-gray-200 rounded-lg">
+                    <p>You haven't saved any vehicles yet.</p>
+                    <p className="mt-2 text-sm">Use the Discover tool to find and save vehicles to your list.</p>
+                </div>
+            )}
         </div>
     );
 };
@@ -971,10 +1690,11 @@ const getFirstImageUrl = (vehicle) => {
     if (vehicle?.ImageURL) return vehicle.ImageURL.split(';')[0];
     if (vehicle?.['Image URL']) return vehicle['Image URL'].split(';')[0];
     if (vehicle?.at_a_glance?.hero_image && vehicle.at_a_glance.hero_image !== 'N/A') return vehicle.at_a_glance.hero_image;
-    // fallback: use title for placeholder text
+    
+    // fallback: create a data URL SVG placeholder instead of external service
     const title = vehicle?.at_a_glance?.title || `${vehicle.Year || ''} ${vehicle.Make || ''}` || 'Vehicle';
-    console.warn('No image found for vehicle:', vehicle);
-    return `https://via.placeholder.com/400x250?text=${encodeURIComponent(title)}`;
+    const encodedTitle = encodeURIComponent(title);
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='%23f3f4f6'/%3E%3Ctext x='200' y='125' font-family='Arial,sans-serif' font-size='14' fill='%236b7280' text-anchor='middle'%3E${encodedTitle}%3C/text%3E%3C/svg%3E`;
 };
 
 const CompareSlot = ({ vehicle, slotIndex, statWinners, analysisType, setActiveView, setVehicleProfileId, setFromView }) => {
@@ -1252,7 +1972,9 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
     } else if (vehicle['Image URL']) {
         mainImage = vehicle['Image URL'].split(';')[0];
     } else {
-        mainImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='200' y='150' font-family='Arial,sans-serif' font-size='16' fill='%23374151' text-anchor='middle'%3E${vehicle.Year} ${vehicle.Make}%3C/text%3E%3C/svg%3E`;
+        const title = `${vehicle.Year || ''} ${vehicle.Make || ''}` || 'Vehicle';
+        const encodedTitle = encodeURIComponent(title);
+        mainImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='200' y='150' font-family='Arial,sans-serif' font-size='16' fill='%236b7280' text-anchor='middle'%3E${encodedTitle}%3C/text%3E%3C/svg%3E`;
     }
 
     // Restore formatInvestment
@@ -1415,9 +2137,6 @@ const GarageOverview = ({ setActiveView, setGarageView, requireAuth }) => {
     };
 
     if (!isAuthenticated || canUseGarage === false) {
-        if (typeof window !== 'undefined' && window.setShowGarageBenefits) {
-            window.setShowGarageBenefits(true);
-        }
         return null;
     }
 
@@ -1454,7 +2173,7 @@ const GarageOverview = ({ setActiveView, setGarageView, requireAuth }) => {
                                     ))}
                                 </select>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nickname</label>
-                                <input type="text" value={nickname} onChange={e => setNickname(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-3" placeholder="Enter nickname" />
+                                <input type="text" id="inline-nickname" name="nickname" value={nickname} onChange={e => setNickname(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-3" placeholder="Enter nickname" />
                                 {addError && <p className="text-red-500 text-xs mb-2">{addError}</p>}
                                 <div className="flex gap-2">
                                     <button onClick={handleInlineAdd} disabled={addToGarageLoading} className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:bg-red-400">{addToGarageLoading ? 'Adding...' : 'Add Vehicle'}</button>
@@ -1552,16 +2271,48 @@ const VehicleDetailView = ({ setGarageView }) => {
     const [editingJob, setEditingJob] = useState(null);
     const { rest_url, nonce } = window.myddpcAppData || {};
 
-    // NEW: State to control the edit mode UI
+    // State to control the edit mode UI
     const [isEditing, setIsEditing] = useState(false);
-    // NEW: State to control which tab is active
     const [activeTab, setActiveTab] = useState('details'); // 'details' or 'builds'
     
+    // Enhanced vehicle info state with new fields
     const [vehicleInfo, setVehicleInfo] = useState({
-        nickname: '', status: 'operational', type: 'Personal', mileage: ''
+        nickname: '', 
+        status: 'operational', 
+        type: 'Personal', 
+        mileage: '',
+        vin: '',
+        engine_code: '',
+        drivetrain: '',
+        exterior_color: '',
+        interior_color: '',
+        production_date: '',
+        purchase_date: '',
+        purchase_price: '',
+        purchased_from: '',
+        purchase_mileage: '',
+        service_intervals: {
+            oil_change: 5000,
+            brake_fluid: 24000,
+            transmission: 60000,
+            coolant: 60000
+        },
+        last_service: {
+            oil_change: '',
+            brake_fluid: '',
+            transmission: '',
+            coolant: ''
+        }
     });
-    // NEW: State for the image file to be uploaded
+    
+    // Image carousel state
     const [imageFile, setImageFile] = useState(null);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [images, setImages] = useState([]);
+    
+    // Add Entry modal state
+    const [showAddEntryModal, setShowAddEntryModal] = useState(false);
+    const [addEntryType, setAddEntryType] = useState('');
 
     // Populates the form state when a vehicle is selected or edit mode is cancelled
     const populateVehicleInfo = useCallback(() => {
@@ -1571,9 +2322,59 @@ const VehicleDetailView = ({ setGarageView }) => {
                 status: selectedVehicle.status || 'operational',
                 type: selectedVehicle.type || 'Personal',
                 mileage: selectedVehicle.mileage || '',
-                // Keep track of the current image to avoid losing it on cancel
+                vin: selectedVehicle.vin || '',
+                engine_code: selectedVehicle.engine_code || '',
+                drivetrain: selectedVehicle.drivetrain || '',
+                exterior_color: selectedVehicle.exterior_color || '',
+                interior_color: selectedVehicle.interior_color || '',
+                production_date: selectedVehicle.production_date || '',
+                purchase_date: selectedVehicle.purchase_date || '',
+                purchase_price: selectedVehicle.purchase_price || '',
+                purchased_from: selectedVehicle.purchased_from || '',
+                purchase_mileage: selectedVehicle.purchase_mileage || '',
+                service_intervals: selectedVehicle.service_intervals || {
+                    oil_change: 5000,
+                    brake_fluid: 24000,
+                    transmission: 60000,
+                    coolant: 60000
+                },
+                last_service: selectedVehicle.last_service || {
+                    oil_change: '',
+                    brake_fluid: '',
+                    transmission: '',
+                    coolant: ''
+                },
                 custom_image_url: selectedVehicle.custom_image_url || '' 
             });
+            
+            // Set up images array
+            const imageArray = [];
+            if (selectedVehicle.custom_image_url) {
+                imageArray.push(selectedVehicle.custom_image_url);
+            }
+            if (selectedVehicle.hero_image) {
+                imageArray.push(selectedVehicle.hero_image);
+            }
+            if (selectedVehicle.db_image_url) {
+                imageArray.push(selectedVehicle.db_image_url);
+            }
+            if (selectedVehicle.ImageURL) {
+                const urls = selectedVehicle.ImageURL.split(';').filter(url => url.trim());
+                imageArray.push(...urls);
+            }
+            if (selectedVehicle['Image URL']) {
+                const urls = selectedVehicle['Image URL'].split(';').filter(url => url.trim());
+                imageArray.push(...urls);
+            }
+            
+            // Add placeholder if no images
+            if (imageArray.length === 0) {
+                const title = `${selectedVehicle.Year || ''} ${selectedVehicle.Make || ''}` || 'Vehicle';
+                const encodedTitle = encodeURIComponent(title);
+                imageArray.push(`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='200' y='150' font-family='Arial,sans-serif' font-size='16' fill='%236b7280' text-anchor='middle'%3E${encodedTitle}%3C/text%3E%3C/svg%3E`);
+            }
+            
+            setImages(imageArray);
         }
     }, [selectedVehicle]);
 
@@ -1610,11 +2411,77 @@ const VehicleDetailView = ({ setGarageView }) => {
         setVehicleInfo(prev => ({ ...prev, [name]: value }));
     };
 
-    // NEW: Handles file selection for the custom image
+    const handleServiceIntervalChange = (service, value) => {
+        setVehicleInfo(prev => ({
+            ...prev,
+            service_intervals: {
+                ...prev.service_intervals,
+                [service]: parseInt(value) || 0
+            }
+        }));
+    };
+
+    const handleLastServiceChange = (service, value) => {
+        setVehicleInfo(prev => ({
+            ...prev,
+            last_service: {
+                ...prev.last_service,
+                [service]: value
+            }
+        }));
+    };
+
+    // Handles file selection for the custom image
     const handleImageFileChange = (e) => {
         if (e.target.files[0]) {
             setImageFile(e.target.files[0]);
         }
+    };
+
+    // Calculate service due information
+    const getServiceDueInfo = () => {
+        const currentMileage = parseInt(vehicleInfo.mileage) || 0;
+        const services = [];
+        
+        Object.entries(vehicleInfo.service_intervals).forEach(([service, interval]) => {
+            const lastServiceMileage = parseInt(vehicleInfo.last_service[service]) || 0;
+            const milesSinceService = currentMileage - lastServiceMileage;
+            const milesUntilService = interval - milesSinceService;
+            
+            if (milesUntilService <= 0) {
+                services.push({
+                    name: service.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    status: 'overdue',
+                    miles: Math.abs(milesUntilService),
+                    type: 'overdue'
+                });
+            } else if (milesUntilService <= interval * 0.2) {
+                services.push({
+                    name: service.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    status: 'due_soon',
+                    miles: milesUntilService,
+                    type: 'warning'
+                });
+            }
+        });
+        
+        return services;
+    };
+
+    // Calculate total investment
+    const getTotalInvestment = () => {
+        let total = 0;
+        buildList.forEach(build => {
+            if (build.status === 'complete' && build.items_data) {
+                const items = Array.isArray(build.items_data) ? build.items_data : JSON.parse(build.items_data || '[]');
+                items.forEach(item => {
+                    if (item.cost && !isNaN(parseFloat(item.cost))) {
+                        total += parseFloat(item.cost);
+                    }
+                });
+            }
+        });
+        return total;
     };
 
     // Main save function
@@ -1667,14 +2534,14 @@ const VehicleDetailView = ({ setGarageView }) => {
         }
     };
     
-    // NEW: Handler for the cancel button
+    // Handler for the cancel button
     const handleCancelEdit = () => {
         populateVehicleInfo(); // Revert any changes
         setIsEditing(false);
         setImageFile(null);
     };
 
-    // NEW: Remove from Garage handler
+    // Remove from Garage handler
     const handleRemoveFromGarage = async () => {
         if (!selectedVehicle?.garage_id) return;
         if (!window.confirm('Are you sure you want to remove this vehicle from your garage?')) return;
@@ -1694,85 +2561,445 @@ const VehicleDetailView = ({ setGarageView }) => {
         }
     };
 
-    if (!selectedVehicle) { return <div className="text-center p-8">No vehicle selected.</div>; }
+    // Quick mileage update
+    const handleQuickMileageUpdate = async () => {
+        const newMileage = prompt('Enter current mileage:', vehicleInfo.mileage);
+        if (newMileage && !isNaN(parseInt(newMileage))) {
+            setVehicleInfo(prev => ({ ...prev, mileage: newMileage }));
+            // Auto-save the mileage update
+            try {
+                const response = await fetch(`${rest_url}myddpc/v2/garage/vehicle/update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                    body: JSON.stringify({
+                        garage_id: selectedVehicle.garage_id,
+                        mileage: newMileage
+                    }),
+                });
+                if (response.ok) {
+                    await fetchGarageVehicles();
+                }
+            } catch (error) {
+                console.error('Error updating mileage:', error);
+            }
+        }
+    };
 
-    // Display component for static vehicle info
-    const StaticInfoDisplay = () => (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-            <div><p className="text-sm text-gray-500">Nickname</p><p>{vehicleInfo.nickname}</p></div>
-            <div><p className="text-sm text-gray-500">Mileage</p><p>{vehicleInfo.mileage ? Number(vehicleInfo.mileage).toLocaleString() : 'N/A'}</p></div>
-            <div><p className="text-sm text-gray-500">Status</p><p className="capitalize">{vehicleInfo.status}</p></div>
-            <div><p className="text-sm text-gray-500">Type</p><p>{vehicleInfo.type}</p></div>
-        </div>
-    );
+    if (!selectedVehicle) { 
+        return <div className="text-center p-8">No vehicle selected.</div>; 
+    }
 
-    // Form component for editing vehicle info
-    const EditableInfoForm = () => (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Nickname</label>
-                <input type="text" name="nickname" value={vehicleInfo.nickname} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Mileage</label>
-                <input type="number" name="mileage" value={vehicleInfo.mileage} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Status</label>
-                <select name="status" value={vehicleInfo.status} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
-                    <option value="operational">Operational</option>
-                    <option value="maintenance">In Service</option>
-                    <option value="project">Project</option>
-                    <option value="stored">Stored</option>
-                </select>
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Type</label>
-                <select name="type" value={vehicleInfo.type} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
-                    <option value="Personal">Personal</option>
-                    <option value="Daily">Daily</option>
-                    <option value="Track">Track</option>
-                    <option value="Show">Show</option>
-                </select>
-            </div>
-            <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Custom Card Image</label>
-                <input type="file" accept="image/*" onChange={handleImageFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
-                {imageFile && <p className="text-xs text-gray-500 mt-1">New: {imageFile.name}</p>}
-            </div>
-        </div>
-    );
+    const serviceDueInfo = getServiceDueInfo();
+    const totalInvestment = getTotalInvestment();
+    const statusConfig = {
+        operational: { label: 'Operational', classes: 'bg-green-100 text-green-800', icon: '✓' },
+        maintenance: { label: 'In Service', classes: 'bg-yellow-100 text-yellow-800', icon: '🔧' },
+        stored: { label: 'Stored', classes: 'bg-blue-100 text-blue-800', icon: '🏠' },
+        project: { label: 'Project', classes: 'bg-purple-100 text-purple-800', icon: '🚧' },
+        default: { label: 'Offline', classes: 'bg-gray-100 text-gray-800', icon: '⏸️' }
+    };
+    const currentStatus = statusConfig[vehicleInfo.status] || statusConfig.default;
+
+    // Get full vehicle name
+    const getFullVehicleName = () => {
+        const parts = [];
+        if (selectedVehicle.Year) parts.push(selectedVehicle.Year);
+        if (selectedVehicle.Make) parts.push(selectedVehicle.Make);
+        if (selectedVehicle.Model) parts.push(selectedVehicle.Model);
+        if (selectedVehicle.Trim) parts.push(selectedVehicle.Trim);
+        return parts.join(' ');
+    };
 
     return (
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <button onClick={() => setGarageView('overview')} className="mb-4 text-sm text-red-600 font-medium">← Back to Garage</button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* Header Block: Identity and Primary Actions */}
+            <div className="mb-8">
+                <button onClick={() => setGarageView('overview')} className="mb-4 text-sm text-red-600 font-medium">← Back to Garage</button>
+                
+                {/* Hero Image Carousel */}
+                <div className="relative mb-6 bg-gray-100 rounded-lg overflow-hidden" style={{ height: '400px' }}>
+                    {images.length > 0 ? (
+                        <>
+                            <img 
+                                src={images[currentImageIndex]} 
+                                alt={`${vehicleInfo.nickname || selectedVehicle.name}`}
+                                className="w-full h-full object-cover"
+                            />
+                            {images.length > 1 && (
+                                <>
+                                    <button 
+                                        onClick={() => setCurrentImageIndex(prev => prev === 0 ? images.length - 1 : prev - 1)}
+                                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
+                                    >
+                                        ←
+                                    </button>
+                                    <button 
+                                        onClick={() => setCurrentImageIndex(prev => prev === images.length - 1 ? 0 : prev + 1)}
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70"
+                                    >
+                                        →
+                                    </button>
+                                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                                        {images.map((_, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => setCurrentImageIndex(index)}
+                                                className={`w-2 h-2 rounded-full ${index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'}`}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-500">
+                            <div className="text-center">
+                                <CameraIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                                <p>No images available</p>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Image upload overlay when editing */}
+                    {isEditing && (
+                        <div className="absolute top-4 right-4">
+                            <label className="bg-white bg-opacity-90 px-3 py-2 rounded-lg cursor-pointer hover:bg-opacity-100 transition-all">
+                                <CameraIcon className="w-4 h-4 inline mr-1" />
+                                Add Photo
+                                <input type="file" id="vehicle-image-upload" accept="image/*" onChange={handleImageFileChange} className="hidden" />
+                            </label>
+                        </div>
+                    )}
+                </div>
+
+                {/* Title Hierarchy */}
+                <div className="mb-6">
+                    <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                        {vehicleInfo.nickname || `${selectedVehicle.Year} ${selectedVehicle.Make} ${selectedVehicle.Model}`}
+                    </h1>
+                    <h2 className="text-xl text-gray-600">
+                        {getFullVehicleName()}
+                    </h2>
+                </div>
+
+                {/* Primary Actions */}
+                <div className="flex flex-wrap gap-4 items-center justify-between">
+                    <div className="flex gap-4">
+                        <button 
+                            onClick={() => setShowAddEntryModal(true)}
+                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2"
+                        >
+                            <PlusIcon className="w-5 h-5" />
+                            Add Entry
+                        </button>
+                    </div>
+                    <button 
+                        onClick={handleRemoveFromGarage} 
+                        className="text-red-600 hover:text-red-800 font-medium"
+                    >
+                        Remove from Garage
+                    </button>
+                </div>
+            </div>
+
+            {/* Dashboard Block: At-a-Glance Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {/* Mileage */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-medium text-gray-500">Current Mileage</h3>
+                        <button 
+                            onClick={handleQuickMileageUpdate}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                            <PlusIcon className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900">
+                        {vehicleInfo.mileage ? Number(vehicleInfo.mileage).toLocaleString() : 'N/A'}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">miles</p>
+                </div>
+
+                {/* Status */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Status</h3>
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${currentStatus.classes}`}>
+                        <span className="mr-1">{currentStatus.icon}</span>
+                        {currentStatus.label}
+                    </div>
+                </div>
+
+                {/* Total Investment */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Total Invested</h3>
+                    <div className="text-3xl font-bold text-gray-900">
+                        ${totalInvestment.toLocaleString()}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">in modifications</p>
+                </div>
+
+                {/* Service Due */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-sm font-medium text-gray-500 mb-2">Service Due</h3>
+                    {serviceDueInfo.length > 0 ? (
+                        <div className="space-y-1">
+                            {serviceDueInfo.slice(0, 2).map((service, index) => (
+                                <div key={index} className={`text-sm ${service.type === 'overdue' ? 'text-red-600' : 'text-yellow-600'}`}>
+                                    {service.name}: {service.miles.toLocaleString()} mi
+                                </div>
+                            ))}
+                            {serviceDueInfo.length > 2 && (
+                                <div className="text-xs text-gray-500">+{serviceDueInfo.length - 2} more</div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="text-sm text-green-600">All caught up!</div>
+                    )}
+                </div>
+            </div>
 
             {/* Tab Switcher */}
             <div className="flex gap-2 mb-6">
-                <button onClick={() => setActiveTab('details')} className={`px-4 py-2 rounded-t-lg font-medium ${activeTab === 'details' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Vehicle Details</button>
-                <button onClick={() => setActiveTab('builds')} className={`px-4 py-2 rounded-t-lg font-medium ${activeTab === 'builds' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Build Planner</button>
-                <div className="flex-1"></div>
-                <button onClick={handleRemoveFromGarage} className="px-4 py-2 rounded-lg font-medium bg-white border border-red-600 text-red-600 hover:bg-red-50 ml-auto">Remove from Garage</button>
+                <button 
+                    onClick={() => setActiveTab('details')} 
+                    className={`px-4 py-2 rounded-t-lg font-medium ${activeTab === 'details' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                >
+                    Vehicle Details
+                </button>
+                <button 
+                    onClick={() => setActiveTab('builds')} 
+                    className={`px-4 py-2 rounded-t-lg font-medium ${activeTab === 'builds' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+                >
+                    Build Planner
+                </button>
             </div>
 
             {/* Tab Content */}
             {activeTab === 'details' && (
-                <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-900">Vehicle Details</h3>
-                        {!isEditing && (
-                            <button onClick={() => setIsEditing(true)} className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium">Edit</button>
+                <div className="space-y-6">
+                    {/* Vehicle Specifications Section */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">Vehicle Specifications</h3>
+                            {!isEditing && (
+                                <button onClick={() => setIsEditing(true)} className="text-red-600 hover:text-red-800">
+                                    <Edit3Icon className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                        {isEditing ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="vehicle-vin" className="block text-sm font-medium text-gray-700">VIN</label>
+                                    <input type="text" id="vehicle-vin" name="vin" value={vehicleInfo.vin} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                                </div>
+                                <div>
+                                    <label htmlFor="vehicle-engine-code" className="block text-sm font-medium text-gray-700">Engine Code</label>
+                                    <input type="text" id="vehicle-engine-code" name="engine_code" value={vehicleInfo.engine_code} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                                </div>
+                                <div>
+                                    <label htmlFor="vehicle-drivetrain" className="block text-sm font-medium text-gray-700">Drivetrain</label>
+                                    <input type="text" id="vehicle-drivetrain" name="drivetrain" value={vehicleInfo.drivetrain} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                                </div>
+                                <div>
+                                    <label htmlFor="vehicle-exterior-color" className="block text-sm font-medium text-gray-700">Exterior Color</label>
+                                    <input type="text" id="vehicle-exterior-color" name="exterior_color" value={vehicleInfo.exterior_color} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                                </div>
+                                <div>
+                                    <label htmlFor="vehicle-interior-color" className="block text-sm font-medium text-gray-700">Interior Color</label>
+                                    <input type="text" id="vehicle-interior-color" name="interior_color" value={vehicleInfo.interior_color} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                                </div>
+                                <div>
+                                    <label htmlFor="vehicle-production-date" className="block text-sm font-medium text-gray-700">Production Date</label>
+                                    <input type="date" id="vehicle-production-date" name="production_date" value={vehicleInfo.production_date} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                                </div>
+                            </div>
+                        ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                <div><p className="text-sm text-gray-500">VIN</p><p>{vehicleInfo.vin || 'N/A'}</p></div>
+                                <div><p className="text-sm text-gray-500">Engine Code</p><p>{vehicleInfo.engine_code || 'N/A'}</p></div>
+                                <div><p className="text-sm text-gray-500">Drivetrain</p><p>{vehicleInfo.drivetrain || 'N/A'}</p></div>
+                                <div><p className="text-sm text-gray-500">Exterior Color</p><p>{vehicleInfo.exterior_color || 'N/A'}</p></div>
+                                <div><p className="text-sm text-gray-500">Interior Color</p><p>{vehicleInfo.interior_color || 'N/A'}</p></div>
+                                <div><p className="text-sm text-gray-500">Production Date</p><p>{vehicleInfo.production_date || 'N/A'}</p></div>
+        </div>
                         )}
                     </div>
-                    {isEditing ? <EditableInfoForm /> : <StaticInfoDisplay />}
+
+                    {/* Purchase Information Section */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">Purchase Information</h3>
+                            {!isEditing && (
+                                <button onClick={() => setIsEditing(true)} className="text-red-600 hover:text-red-800">
+                                    <Edit3Icon className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                        {isEditing ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                                    <label htmlFor="purchase-date" className="block text-sm font-medium text-gray-700">Purchase Date</label>
+                                    <input type="date" id="purchase-date" name="purchase_date" value={vehicleInfo.purchase_date} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+            </div>
+            <div>
+                                    <label htmlFor="purchase-price" className="block text-sm font-medium text-gray-700">Purchase Price</label>
+                                    <input type="number" id="purchase-price" name="purchase_price" value={vehicleInfo.purchase_price} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+            </div>
+            <div>
+                                    <label htmlFor="purchased-from" className="block text-sm font-medium text-gray-700">Purchased From</label>
+                                    <input type="text" id="purchased-from" name="purchased_from" value={vehicleInfo.purchased_from} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+            </div>
+            <div>
+                                    <label htmlFor="purchase-mileage" className="block text-sm font-medium text-gray-700">Purchase Mileage</label>
+                                    <input type="number" id="purchase-mileage" name="purchase_mileage" value={vehicleInfo.purchase_mileage} onChange={handleInfoChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+            </div>
+            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                <div><p className="text-sm text-gray-500">Purchase Date</p><p>{vehicleInfo.purchase_date || 'N/A'}</p></div>
+                                <div><p className="text-sm text-gray-500">Purchase Price</p><p>{vehicleInfo.purchase_price ? `$${Number(vehicleInfo.purchase_price).toLocaleString()}` : 'N/A'}</p></div>
+                                <div><p className="text-sm text-gray-500">Purchased From</p><p>{vehicleInfo.purchased_from || 'N/A'}</p></div>
+                                <div><p className="text-sm text-gray-500">Purchase Mileage</p><p>{vehicleInfo.purchase_mileage ? Number(vehicleInfo.purchase_mileage).toLocaleString() : 'N/A'}</p></div>
+        </div>
+                        )}
+                    </div>
+
+                    {/* Service Intervals Section */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">Service Intervals</h3>
+                            {!isEditing && (
+                                <button onClick={() => setIsEditing(true)} className="text-red-600 hover:text-red-800">
+                                    <Edit3Icon className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                        {isEditing ? (
+                            <div className="space-y-4">
+                                {Object.entries(vehicleInfo.service_intervals).map(([service, interval]) => (
+                                    <div key={service} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label htmlFor={`service-interval-${service}`} className="block text-sm font-medium text-gray-700">
+                                                {service.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Interval
+                                            </label>
+                                            <input 
+                                                type="number" 
+                                                id={`service-interval-${service}`}
+                                                name={`service_interval_${service}`}
+                                                value={interval} 
+                                                onChange={(e) => handleServiceIntervalChange(service, e.target.value)}
+                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor={`last-service-${service}`} className="block text-sm font-medium text-gray-700">Last Service</label>
+                                            <input 
+                                                type="number" 
+                                                id={`last-service-${service}`}
+                                                name={`last_service_${service}`}
+                                                value={vehicleInfo.last_service[service]} 
+                                                onChange={(e) => handleLastServiceChange(service, e.target.value)}
+                                                placeholder="Mileage"
+                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" 
+                                            />
+                                        </div>
+                                        <div className="flex items-end">
+                                            <span className="text-sm text-gray-500">
+                                                {vehicleInfo.mileage && vehicleInfo.last_service[service] ? 
+                                                    `Due in ${interval - (parseInt(vehicleInfo.mileage) - parseInt(vehicleInfo.last_service[service]))} miles` : 
+                                                    'Set last service mileage'
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {Object.entries(vehicleInfo.service_intervals).map(([service, interval]) => {
+                                    const lastService = vehicleInfo.last_service[service];
+                                    const currentMileage = parseInt(vehicleInfo.mileage) || 0;
+                                    const lastServiceMileage = parseInt(lastService) || 0;
+                                    const milesSinceService = currentMileage - lastServiceMileage;
+                                    const milesUntilService = interval - milesSinceService;
+                                    
+                                    return (
+                                        <div key={service} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <h4 className="font-medium">{service.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</h4>
+                                                <p className="text-sm text-gray-600">Every {interval.toLocaleString()} miles</p>
+                                            </div>
+                                            <div className="text-right">
+                                                {lastService ? (
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Last: {lastService.toLocaleString()} mi</p>
+                                                        <p className={`text-sm font-medium ${milesUntilService <= 0 ? 'text-red-600' : milesUntilService <= interval * 0.2 ? 'text-yellow-600' : 'text-green-600'}`}>
+                                                            {milesUntilService <= 0 ? 
+                                                                `Overdue by ${Math.abs(milesUntilService).toLocaleString()} mi` : 
+                                                                `Due in ${milesUntilService.toLocaleString()} mi`
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-gray-500">No service recorded</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+            </div>
+
+                    {/* Key Logs Summary */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-medium text-gray-900">Recent Activity</h3>
+                            <button className="text-red-600 hover:text-red-800 text-sm">View All</button>
+                        </div>
+                        <div className="space-y-3">
+                            {buildList.slice(0, 3).map((job) => (
+                                <div key={job.build_entry_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div>
+                                        <p className="font-medium">{job.job_title}</p>
+                                        <p className="text-sm text-gray-600">
+                                            {job.installation_date ? new Date(job.installation_date).toLocaleDateString() : 'TBD'}
+                                        </p>
+                                    </div>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        job.status === 'complete' ? 'bg-green-100 text-green-800' :
+                                        job.status === 'purchased' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                        {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                                    </span>
+                                </div>
+                            ))}
+                            {buildList.length === 0 && (
+                                <div className="text-center py-8 text-gray-500">
+                                    <WrenchIcon className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                                    <p>No recent activity. Add your first modification!</p>
+                                </div>
+                        )}
+                    </div>
+                    </div>
+
+                    {/* Edit Actions */}
                     {isEditing && (
-                        <div className="mt-6 flex justify-end gap-3">
-                            <button onClick={handleCancelEdit} className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg border border-gray-300 font-medium">Cancel</button>
-                            <button onClick={handleSave} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">Save Changes</button>
+                        <div className="flex justify-end gap-3">
+                            <button onClick={handleCancelEdit} className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg border border-gray-300 font-medium">
+                                Cancel
+                            </button>
+                            <button onClick={handleSave} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">
+                                Save Changes
+                            </button>
                         </div>
                     )}
                 </div>
             )}
+
             {activeTab === 'builds' && (
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <div className="flex justify-between items-center mb-4">
@@ -1874,6 +3101,78 @@ const VehicleDetailView = ({ setGarageView }) => {
                     </div>
                 </div>
             )}
+
+            {/* Add Entry Modal */}
+            {showAddEntryModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-[101] flex justify-center items-center">
+                    <div className="bg-white rounded-lg shadow-xl m-4 w-full max-w-md">
+                        <div className="p-6">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Entry</h3>
+                            <div className="space-y-3">
+                                <button 
+                                    onClick={() => {
+                                        setAddEntryType('mod');
+                                        setShowAddEntryModal(false);
+                                        setEditingJob({});
+                                        setActiveTab('builds');
+                                    }}
+                                    className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <WrenchIcon className="w-6 h-6 text-red-600" />
+                                        <div>
+                                            <h4 className="font-medium">New Modification</h4>
+                                            <p className="text-sm text-gray-600">Add parts, upgrades, or custom work</p>
+                                        </div>
+                                    </div>
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        setAddEntryType('service');
+                                        setShowAddEntryModal(false);
+                                        // TODO: Implement service logging
+                                        alert('Service logging coming soon!');
+                                    }}
+                                    className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <CheckCircleIcon className="w-6 h-6 text-red-600" />
+                                        <div>
+                                            <h4 className="font-medium">Service Record</h4>
+                                            <p className="text-sm text-gray-600">Log maintenance and repairs</p>
+                                        </div>
+                                    </div>
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        setAddEntryType('note');
+                                        setShowAddEntryModal(false);
+                                        // TODO: Implement note logging
+                                        alert('Note logging coming soon!');
+                                    }}
+                                    className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Edit3Icon className="w-6 h-6 text-red-600" />
+                                        <div>
+                                            <h4 className="font-medium">Note</h4>
+                                            <p className="text-sm text-gray-600">Add observations or reminders</p>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                            <div className="mt-6 flex justify-end">
+                                <button 
+                                    onClick={() => setShowAddEntryModal(false)}
+                                    className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -1937,7 +3236,7 @@ const BuildJobForm = ({ job, onSave, onCancel }) => {
     return (
         <form onSubmit={handleSubmit} className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
             <h4 className="text-md font-medium text-gray-800">{job ? 'Edit Job' : 'Add New Job'}</h4>
-            <input type="text" name="job_title" placeholder="Job Title (e.g., Front Suspension Overhaul)" value={formData.job_title} onChange={handleChange} className="w-full rounded-lg border-gray-300" required />
+                                    <input type="text" id="job-title" name="job_title" placeholder="Job Title (e.g., Front Suspension Overhaul)" value={formData.job_title} onChange={handleChange} className="w-full rounded-lg border-gray-300" required />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <select name="job_type" value={formData.job_type} onChange={handleChange} className="rounded-lg border-gray-300">
                     <option value="aftermarket_upgrade">Aftermarket Upgrade</option>
@@ -1949,23 +3248,23 @@ const BuildJobForm = ({ job, onSave, onCancel }) => {
                     <option value="purchased">Purchased</option>
                     <option value="complete">Complete</option>
                 </select>
-                <input type="date" name="installation_date" value={formData.installation_date} onChange={handleChange} className="rounded-lg border-gray-300" />
+                                        <input type="date" id="installation-date" name="installation_date" value={formData.installation_date} onChange={handleChange} className="rounded-lg border-gray-300" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <select name="installation_method" value={formData.installation_method} onChange={handleChange} className="rounded-lg border-gray-300">
                     <option value="diy">DIY</option>
                     <option value="professional">Professional</option>
                 </select>
-                <input type="url" name="primary_link" placeholder="Primary Link (optional)" value={formData.primary_link} onChange={handleChange} className="rounded-lg border-gray-300" />
+                                        <input type="url" id="primary-link" name="primary_link" placeholder="Primary Link (optional)" value={formData.primary_link} onChange={handleChange} className="rounded-lg border-gray-300" />
             </div>
             <textarea name="job_notes" placeholder="Job Notes (optional)" value={formData.job_notes} onChange={handleChange} className="w-full rounded-lg border-gray-300" rows="2"></textarea>
             <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Parts & Costs</label>
                 {formData.items_data.map((item, index) => (
                     <div key={index} className="flex items-center gap-2">
-                        <input type="text" name="name" placeholder="Part/Item Name" value={item.name} onChange={e => handleItemChange(index, e)} className="flex-grow rounded-lg border-gray-300 text-sm" />
-                        <input type="number" name="cost" placeholder="Cost" value={item.cost} onChange={e => handleItemChange(index, e)} className="w-24 rounded-lg border-gray-300 text-sm" />
-                        <input type="text" name="purpose" placeholder="Purpose" value={item.purpose} onChange={e => handleItemChange(index, e)} className="w-32 rounded-lg border-gray-300 text-sm" />
+                                                    <input type="text" id={`item-name-${index}`} name="name" placeholder="Part/Item Name" value={item.name} onChange={e => handleItemChange(index, e)} className="flex-grow rounded-lg border-gray-300 text-sm" />
+                            <input type="number" id={`item-cost-${index}`} name="cost" placeholder="Cost" value={item.cost} onChange={e => handleItemChange(index, e)} className="w-24 rounded-lg border-gray-300 text-sm" />
+                            <input type="text" id={`item-purpose-${index}`} name="purpose" placeholder="Purpose" value={item.purpose} onChange={e => handleItemChange(index, e)} className="w-32 rounded-lg border-gray-300 text-sm" />
                         <button type="button" onClick={() => removeItem(index)} className="p-2 text-red-500 hover:text-red-700"><Trash2Icon className="w-4 h-4" /></button>
                     </div>
                 ))}
@@ -1983,27 +3282,109 @@ const BuildJobForm = ({ job, onSave, onCancel }) => {
 
 const MyAccount = () => {
     const { rest_url, nonce } = window.myddpcAppData || {};
-    const [userData, setUserData] = useState({ username: '', email: '', location: '', avatar_url: '' });
+    const [userData, setUserData] = useState({ 
+        username: '', 
+        email: '', 
+        location: '', 
+        avatar_url: '', 
+        bio: '', 
+        member_since: '' 
+    });
     const [passwordData, setPasswordData] = useState({ current_password: '', new_password: '', confirm_password: '' });
+    const [passwordInputs, setPasswordInputs] = useState({ current_password: '', new_password: '', confirm_password: '' });
     const [avatarFile, setAvatarFile] = useState(null);
     const [feedback, setFeedback] = useState({ message: '', type: '' });
+    const [activeTab, setActiveTab] = useState('profile');
+    const [garageData, setGarageData] = useState([]);
+    const [stats, setStats] = useState({
+        vehicles: 0,
+        modifications: 0,
+        serviceRecords: 0,
+        milesTracked: 0
+    });
+    // Add isEditing state for profile section
+    const [isEditing, setIsEditing] = useState(false);
 
     // Fetch user data on initial load
     useEffect(() => {
         const fetchUserData = async () => {
             try {
+                console.log('MyAccount: Fetching user data...', { rest_url, nonce });
                 const response = await fetch(`${rest_url}myddpc/v2/user/me`, {
                     headers: { 'X-WP-Nonce': nonce }
                 });
+                console.log('MyAccount: Response status:', response.status);
                 const data = await response.json();
+                console.log('MyAccount: Response data:', data);
                 if (response.ok) {
                     setUserData(data);
+                } else {
+                    console.error('MyAccount: Failed to fetch user data:', data);
                 }
             } catch (error) {
-                console.error("Error fetching user data:", error);
+                console.error("MyAccount: Error fetching user data:", error);
             }
         };
         fetchUserData();
+    }, [rest_url, nonce]);
+
+    // Fetch garage data for stats and showcase
+    useEffect(() => {
+        const fetchGarageData = async () => {
+            try {
+                const response = await fetch(`${rest_url}myddpc/v2/garage/vehicles`, {
+                    headers: { 'X-WP-Nonce': nonce }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setGarageData(data.vehicles || []);
+                    
+                    // Calculate stats from actual garage data
+                    let totalMods = 0;
+                    let totalService = 0;
+                    let totalMiles = 0;
+                    
+                    data.vehicles?.forEach(vehicle => {
+                        // Count modifications (builds) - backend provides this as a count
+                        if (vehicle.modifications !== undefined) {
+                            totalMods += parseInt(vehicle.modifications) || 0;
+                        }
+                        
+                        // Count service intervals (these represent service records)
+                        if (vehicle.service_intervals) {
+                            try {
+                                // service_intervals is already parsed as an object by the backend
+                                const services = typeof vehicle.service_intervals === 'string' 
+                                    ? JSON.parse(vehicle.service_intervals) 
+                                    : vehicle.service_intervals;
+                                if (services && typeof services === 'object') {
+                                    const serviceCount = Object.keys(services).length;
+                                    totalService += serviceCount;
+                                }
+                            } catch (e) {
+                                console.log('Error parsing service intervals:', e);
+                            }
+                        }
+                        
+                        // Sum up mileage
+                        if (vehicle.mileage) {
+                            const mileage = parseInt(vehicle.mileage) || 0;
+                            totalMiles += mileage;
+                        }
+                    });
+                    
+                    setStats({
+                        vehicles: data.vehicles?.length || 0,
+                        modifications: totalMods,
+                        serviceRecords: totalService,
+                        milesTracked: totalMiles
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching garage data:", error);
+            }
+        };
+        fetchGarageData();
     }, [rest_url, nonce]);
 
     const handleFeedback = (message, type = 'success', duration = 3000) => {
@@ -2011,12 +3392,13 @@ const MyAccount = () => {
         setTimeout(() => setFeedback({ message: '', type: '' }), duration);
     };
     
-    const handleLocationChange = (e) => {
-        setUserData(prev => ({ ...prev, location: e.target.value }));
+    const handleInputChange = (field, value) => {
+        setUserData(prev => ({ ...prev, [field]: value }));
     };
 
     const handlePasswordChange = (e) => {
-        setPasswordData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        const { name, value } = e.target;
+        setPasswordInputs(prev => ({ ...prev, [name]: value }));
     };
 
     const handleAvatarFileChange = (e) => {
@@ -2043,9 +3425,12 @@ const MyAccount = () => {
         return data.source_url;
     };
 
-    // Save profile updates (location, avatar)
+    // Save profile updates
     const handleProfileSave = async () => {
-        let profileData = { location: userData.location };
+        let profileData = { 
+            location: userData.location,
+            bio: userData.bio
+        };
         try {
             if (avatarFile) {
                 const newAvatarUrl = await uploadAvatar();
@@ -2060,20 +3445,43 @@ const MyAccount = () => {
             if (!response.ok) throw new Error(data.message);
 
             handleFeedback('Profile updated successfully!');
-            // Refresh user data to show new avatar immediately
-            if(profileData.avatar_url) {
-                setUserData(prev => ({...prev, avatar_url: profileData.avatar_url}));
-            }
-            setAvatarFile(null); // Clear file input
+            // Update the main userData state with the new values
+            setUserData(prev => ({
+                ...prev, 
+                ...(profileData.avatar_url && { avatar_url: profileData.avatar_url })
+            }));
+            setAvatarFile(null);
+            setIsEditing(false); // Exit edit mode
         } catch (error) {
             handleFeedback(error.message, 'error');
         }
+    };
+
+    // Cancel edit mode and revert changes
+    const handleCancelEdit = () => {
+        // Revert userData to original values by re-fetching
+        const fetchUserData = async () => {
+            try {
+                const response = await fetch(`${rest_url}myddpc/v2/user/me`, {
+                    headers: { 'X-WP-Nonce': nonce }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    setUserData(data);
+                }
+            } catch (error) {
+                console.error("Error reverting user data:", error);
+            }
+        };
+        fetchUserData();
+        setAvatarFile(null);
+        setIsEditing(false);
     };
     
     // Change user password
     const handlePasswordSave = async (e) => {
         e.preventDefault();
-        if (passwordData.new_password !== passwordData.confirm_password) {
+        if (passwordInputs.new_password !== passwordInputs.confirm_password) {
             handleFeedback('New passwords do not match.', 'error');
             return;
         }
@@ -2082,94 +3490,347 @@ const MyAccount = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
                 body: JSON.stringify({
-                    current_password: passwordData.current_password,
-                    new_password: passwordData.new_password,
+                    current_password: passwordInputs.current_password,
+                    new_password: passwordInputs.new_password,
                 }),
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message);
             handleFeedback('Password changed successfully!');
-            setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
+            setPasswordInputs({ current_password: '', new_password: '', confirm_password: '' });
         } catch (error) {
             handleFeedback(error.message, 'error');
         }
     };
 
+    // Format member since date
+    const formatMemberSince = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long' 
+        });
+    };
+
+    // Tab components
+    const ProfileTab = () => (
+        <div className="space-y-6">
+            {/* Profile Header */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
+                    {!isEditing && (
+                        <button onClick={() => setIsEditing(true)} className="text-red-600 hover:text-red-800">
+                            <Edit3Icon className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
+                <div className="grid grid-cols-6 gap-6">
+                    {/* Avatar Section - 1 column */}
+                    <div className="col-span-1">
+                        <div className="avatar-container">
+                            <img 
+                                src={userData.avatar_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23f3f4f6'/%3E%3Ctext x='40' y='40' font-family='Arial,sans-serif' font-size='24' fill='%23374151' text-anchor='middle' dominant-baseline='central'%3E${userData.username ? userData.username.charAt(0).toUpperCase() : 'U'}%3C/text%3E%3C/svg%3E`} 
+                                alt="Avatar" 
+                                className="w-20 h-20 rounded-full object-cover flex-shrink-0 border-2 border-white shadow-md"
+                            />
+                            {isEditing && (
+                                <>
+                                    <div className="avatar-overlay">
+                                        <CameraIcon className="w-6 h-6 text-white" />
+                                    </div>
+                                    <input type="file" accept="image/*" onChange={handleAvatarFileChange} id="avatar-upload" className="hidden"/>
+                                    <label htmlFor="avatar-upload" className="absolute inset-0 cursor-pointer rounded-full"></label>
+                                </>
+                            )}
+                        </div>
+                        {isEditing && avatarFile && (
+                            <div className="avatar-actions">
+                                <button 
+                                    onClick={() => setAvatarFile(null)}
+                                    className="px-3 py-1 text-xs text-red-600 hover:text-red-700"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* User Info Section - 5 columns */}
+                    <div className="col-span-5 space-y-4">
+                        {/* Username and Member Since Row */}
+                        <div className="grid grid-cols-5 gap-4">
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700">Username</label>
+                                <p className="mt-1 text-gray-800 font-medium text-lg">{userData.username}</p>
+                            </div>
+                            <div className="col-span-1"></div>
+                            <div className="col-span-2">
+                                <label className="block text-sm font-medium text-gray-700">Member Since</label>
+                                <p className="mt-1 text-gray-800">{formatMemberSince(userData.member_since)}</p>
+                            </div>
+                        </div>
+                        
+                        {/* Location - 5 columns */}
+                        <div>
+                            <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
+                            {isEditing ? (
+                                <input 
+                                    type="text" 
+                                    id="location" 
+                                    name="location" 
+                                    value={userData.location || ''} 
+                                    onChange={(e) => handleInputChange('location', e.target.value)}
+                                    placeholder="City, State"
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                                />
+                            ) : (
+                                <p className="mt-1 text-gray-800">{userData.location || 'No location added yet.'}</p>
+                            )}
+                        </div>
+                        
+                        {/* Bio - 5 columns */}
+                        <div>
+                            <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
+                            {isEditing ? (
+                                <textarea 
+                                    id="bio" 
+                                    name="bio" 
+                                    value={userData.bio || ''} 
+                                    onChange={(e) => handleInputChange('bio', e.target.value)}
+                                    placeholder="Tell us about your cars and builds..."
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md resize-none"
+                                    rows="3"
+                                />
+                            ) : (
+                                <p className="mt-1 text-gray-800">{userData.bio || 'No bio added yet.'}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Edit Actions */}
+                {isEditing && (
+                    <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                        <button onClick={handleCancelEdit} className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg border border-gray-300 font-medium">
+                            Cancel
+                        </button>
+                        <button onClick={handleProfileSave} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">
+                            Save Changes
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Stats Dashboard */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Activity</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-2xl font-bold text-red-600">{stats.vehicles}</div>
+                        <div className="text-sm text-gray-600">Vehicles in Garage</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-2xl font-bold text-red-600">{stats.modifications}</div>
+                        <div className="text-sm text-gray-600">Modifications Logged</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-2xl font-bold text-red-600">{stats.serviceRecords}</div>
+                        <div className="text-sm text-gray-600">Service Records</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                        <div className="text-2xl font-bold text-red-600">{stats.milesTracked.toLocaleString()}</div>
+                        <div className="text-sm text-gray-600">Miles Tracked</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Garage Showcase */}
+            {garageData.length > 0 && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">My Garage</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {garageData.map((vehicle, index) => {
+                            // Get the best available image
+                            const imageUrl = vehicle.custom_image_url || 
+                                           vehicle.vehicle_data?.Image_URL || 
+                                           vehicle.vehicle_data?.hero_image ||
+                                           `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f3f4f6'/%3E%3Ctext x='150' y='100' font-family='Arial,sans-serif' font-size='16' fill='%236b7280' text-anchor='middle' dominant-baseline='central'%3E${vehicle.Year || ''} ${vehicle.Make || ''} ${vehicle.Model || ''}%3C/text%3E%3C/svg%3E`;
+                            
+                            // Build YMMT string
+                            const ymmt = [vehicle.Year, vehicle.Make, vehicle.Model, vehicle.Trim].filter(Boolean).join(' ');
+                            
+                            return (
+                                <div 
+                                    key={index} 
+                                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                                    onClick={() => {
+                                        // Navigate to garage and select this vehicle
+                                        if (window.setSelectedVehicle && window.navigateToView) {
+                                            window.setSelectedVehicle(vehicle);
+                                            window.navigateToView('garage', 'vehicle-detail');
+                                        }
+                                    }}
+                                >
+                                    <div className="aspect-w-16 aspect-h-9 mb-3">
+                                        <img 
+                                            src={imageUrl}
+                                            alt={vehicle.name || 'Vehicle'}
+                                            className="w-full h-32 object-cover rounded"
+                                            onError={(e) => {
+                                                // Fallback to SVG placeholder if image fails to load
+                                                e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f3f4f6'/%3E%3Ctext x='150' y='100' font-family='Arial,sans-serif' font-size='16' fill='%236b7280' text-anchor='middle' dominant-baseline='central'%3E${vehicle.Year || ''} ${vehicle.Make || ''} ${vehicle.Model || ''}%3C/text%3E%3C/svg%3E`;
+                                            }}
+                                        />
+                                    </div>
+                                    <h4 className="font-medium text-gray-900 mb-1">{vehicle.name}</h4>
+                                    <p className="text-sm text-gray-600">
+                                        {ymmt}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    const AccountSettingsTab = () => (
+        <div className="space-y-6">
+            {/* Profile Information */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Information</h3>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-500">Username</label>
+                        <p className="mt-1 text-gray-800">{userData.username}</p>
+                    </div>
+                    <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            value={userData.email || ''} 
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                            disabled
+                        />
+                        <p className="mt-1 text-sm text-gray-500">Contact support to change your email address</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Security */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Security</h3>
+                <form onSubmit={handlePasswordSave} className="space-y-4">
+                    <div>
+                        <label htmlFor="current-password" className="block text-sm font-medium text-gray-700">Current Password</label>
+                        <input type="password" id="current-password" name="current_password" value={passwordInputs.current_password} onChange={handlePasswordChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required/>
+                    </div>
+                    <div>
+                        <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">New Password</label>
+                        <input type="password" id="new-password" name="new_password" value={passwordInputs.new_password} onChange={handlePasswordChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required/>
+                    </div>
+                    <div>
+                        <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                        <input type="password" id="confirm-password" name="confirm_password" value={passwordInputs.confirm_password} onChange={handlePasswordChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required/>
+                    </div>
+                    <div className="text-right">
+                        <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">
+                            Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {/* Notification Preferences */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h3>
+                <div className="space-y-3">
+                    <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-red-600 focus:ring-red-500" defaultChecked />
+                        <span className="ml-2 text-sm text-gray-700">Email me when someone comments on my build</span>
+                    </label>
+                    <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-red-600 focus:ring-red-500" defaultChecked />
+                        <span className="ml-2 text-sm text-gray-700">Email me when someone replies to my comment</span>
+                    </label>
+                    <label className="flex items-center">
+                        <input type="checkbox" className="rounded border-gray-300 text-red-600 focus:ring-red-500" />
+                        <span className="ml-2 text-sm text-gray-700">Send me a weekly summary of popular builds</span>
+                    </label>
+                </div>
+            </div>
+
+            {/* Future Enhancements */}
+            <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Future Enhancements</h3>
+                <p className="text-gray-600">We're currently developing site themes and membership options. Stay tuned for exciting new features!</p>
+            </div>
+        </div>
+    );
+
+    const NotificationsTab = () => (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+            <div className="text-center py-8">
+                <div className="text-gray-400 mb-2">
+                    <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <p className="text-gray-500">No recent activity to show</p>
+                <p className="text-sm text-gray-400 mt-1">Activity feed coming soon!</p>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
             {feedback.message && (
-                <div className={`p-4 rounded-md ${feedback.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                <div className={`p-4 rounded-md mb-6 ${feedback.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                     {feedback.message}
                 </div>
             )}
             
-            {/* --- Profile Section --- */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-                <h2 className="text-xl font-medium text-gray-900 mb-6">My Profile</h2>
-                <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-6 space-y-4 sm:space-y-0">
-                    <div className="flex flex-col items-center sm:items-start">
-                        <img 
-                            src={userData.avatar_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f3f4f6'/%3E%3Ctext x='32' y='32' font-family='Arial,sans-serif' font-size='20' fill='%23374151' text-anchor='middle' dominant-baseline='central'%3E${userData.username ? userData.username.charAt(0).toUpperCase() : 'U'}%3C/text%3E%3C/svg%3E`} 
-                            alt="Avatar" 
-                            className="w-16 h-16 rounded-full object-cover mb-2 flex-shrink-0"
-                        />
-                        <input type="file" accept="image/*" onChange={handleAvatarFileChange} id="avatar-upload" className="hidden"/>
-                        <label htmlFor="avatar-upload" className="cursor-pointer text-sm text-red-600 hover:text-red-800 font-medium text-center">
-                            {avatarFile ? 'File Selected' : 'Set Avatar'}
-                        </label>
-                    </div>
-                    <div className="flex-grow space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-500">Username</label>
-                            <p className="mt-1 text-gray-800">{userData.username}</p>
-                        </div>
-                        <div>
-                            <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
-                            <input type="text" id="location" value={userData.location || ''} onChange={handleLocationChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"/>
-                        </div>
-                    </div>
-                </div>
-                <div className="mt-6 text-center sm:text-right">
-                    <button onClick={handleProfileSave} className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">Save Profile</button>
-                </div>
+            {/* Page Header */}
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold text-gray-900">My Account</h1>
+                <p className="text-gray-600 mt-2">Manage your profile, settings, and preferences</p>
             </div>
 
-            {/* --- Password Section --- */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-                 <h2 className="text-xl font-medium text-gray-900 mb-6">Change Password</h2>
-                 <form onSubmit={handlePasswordSave} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Current Password</label>
-                        <input type="password" name="current_password" value={passwordData.current_password} onChange={handlePasswordChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required/>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">New Password</label>
-                        <input type="password" name="new_password" value={passwordData.new_password} onChange={handlePasswordChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required/>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
-                        <input type="password" name="confirm_password" value={passwordData.confirm_password} onChange={handlePasswordChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required/>
-                    </div>
-                    <div className="text-center sm:text-right">
-                        <button type="submit" className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">Update Password</button>
-                    </div>
-                 </form>
+            {/* Tab Navigation */}
+            <div className="border-b border-gray-200 mb-6">
+                <nav className="-mb-px flex space-x-8">
+                    {[
+                        { id: 'profile', label: 'Profile', icon: 'User' },
+                        { id: 'settings', label: 'Account Settings', icon: 'Settings' },
+                        { id: 'notifications', label: 'Notifications', icon: 'Bell' }
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                                activeTab === tab.id
+                                    ? 'border-red-500 text-red-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            <Icon name={tab.icon} className="w-4 h-4" />
+                            <span>{tab.label}</span>
+                        </button>
+                    ))}
+                </nav>
             </div>
 
-            {/* --- Settings Section --- */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-                <h2 className="text-xl font-medium text-gray-900 mb-6">Settings</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button disabled className="w-full text-left p-4 bg-gray-100 rounded-lg text-gray-400 cursor-not-allowed">
-                        <p className="font-medium">Theme</p>
-                        <p className="text-sm">Customize app appearance (coming soon)</p>
-                    </button>
-                    <button disabled className="w-full text-left p-4 bg-gray-100 rounded-lg text-gray-400 cursor-not-allowed">
-                        <p className="font-medium">Membership</p>
-                        <p className="text-sm">Manage subscription (coming soon)</p>
-                    </button>
-                </div>
-            </div>
+            {/* Tab Content */}
+            {activeTab === 'profile' && <ProfileTab />}
+            {activeTab === 'settings' && <AccountSettingsTab />}
+            {activeTab === 'notifications' && <NotificationsTab />}
         </div>
     );
 };
@@ -2179,11 +3840,16 @@ const MyAccountView = () => {
 };
 
 // 1. Add VehicleProfileView component
-const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim }) => {
+const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim, setVehicleToAddToGarage }) => {
     const [vehicle, setVehicle] = React.useState(null);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState(null);
     const [activeTab, setActiveTab] = React.useState('performance');
+    const [communityBuilds, setCommunityBuilds] = React.useState(null);
+    const [communityLoading, setCommunityLoading] = React.useState(false);
+    const [modelTrims, setModelTrims] = React.useState(null);
+    const [selectedTrimId, setSelectedTrimId] = React.useState(vehicleId);
+    const [currentVehicleData, setCurrentVehicleData] = React.useState(null);
     const { rest_url, nonce } = window.myddpcAppData || {};
 
     // SVG icons for key specs and drivetrain
@@ -2223,26 +3889,123 @@ const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim }) => {
         }).filter(Boolean);
     };
 
+    // Fetch initial vehicle data
     React.useEffect(() => {
         let isMounted = true;
         setLoading(true);
         setError(null);
         setVehicle(null);
-        let fetchUrl = null;
-        if (vehicleId) {
-            fetchUrl = `${rest_url}myddpc/v2/vehicle/full_data?id=${vehicleId}`;
+        setCommunityBuilds(null);
+        
+        if (!vehicleId) return;
+        
+        // Fetch the initial vehicle data
+        const fetchVehicleData = async () => {
+            try {
+                const fetchUrl = `${rest_url}myddpc/v2/vehicle/full_data?id=${vehicleId}`;
+                const response = await fetch(fetchUrl, { headers: { 'X-WP-Nonce': nonce } });
+                if (!response.ok) throw new Error('Failed to fetch vehicle details');
+                const data = await response.json();
+                
+                if (isMounted) {
+                    setVehicle(data);
+                    setCurrentVehicleData(data);
+                    setLoading(false);
+                }
+            } catch (err) {
+                if (isMounted) {
+                    setError(err);
+                    setLoading(false);
+                }
+            }
+        };
+        
+        fetchVehicleData();
+        return () => { isMounted = false; };
+    }, [vehicleId, rest_url, nonce]);
+
+    // Fetch model trims when vehicle data is available
+    React.useEffect(() => {
+        if (!vehicle || !vehicle.at_a_glance) return;
+        
+        const fetchModelTrims = async () => {
+            try {
+                const year = vehicle.at_a_glance.title.split(' ')[0];
+                const make = vehicle.at_a_glance.title.split(' ')[1];
+                const model = vehicle.at_a_glance.title.split(' ').slice(2).join(' ');
+                
+                if (!year || !make || !model) return;
+                
+                const fetchUrl = `${rest_url}myddpc/v2/discover/model_trims?year=${year}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`;
+                const response = await fetch(fetchUrl, { headers: { 'X-WP-Nonce': nonce } });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setModelTrims(data);
+                }
+            } catch (err) {
+                console.error('Error fetching model trims:', err);
+            }
+        };
+        
+        fetchModelTrims();
+    }, [vehicle, rest_url, nonce]);
+
+    // Handle trim selection
+    const handleTrimChange = async (trimId) => {
+        if (!modelTrims || !modelTrims.trims) return;
+        
+        const selectedTrim = modelTrims.trims.find(trim => trim.ID == trimId);
+        if (!selectedTrim) return;
+        
+        setSelectedTrimId(trimId);
+        
+        // Fetch full data for the selected trim
+        try {
+            const fetchUrl = `${rest_url}myddpc/v2/vehicle/full_data?id=${trimId}`;
+            const response = await fetch(fetchUrl, { headers: { 'X-WP-Nonce': nonce } });
+            if (response.ok) {
+                const data = await response.json();
+                setCurrentVehicleData(data);
+            }
+        } catch (err) {
+            console.error('Error fetching trim data:', err);
         }
-        if (!fetchUrl) return;
-        fetch(fetchUrl, { headers: { 'X-WP-Nonce': nonce } })
-            .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch vehicle details'))
-            .then(data => { if (isMounted) { setVehicle(data); setLoading(false); } })
-            .catch(err => { if (isMounted) { setError(err); setLoading(false); } });
+    };
+
+    // Fetch community builds
+    React.useEffect(() => {
+        if (!vehicleId) return;
+        
+        let isMounted = true;
+        setCommunityLoading(true);
+        
+        fetch(`${rest_url}myddpc/v2/community/builds/${vehicleId}`, { 
+            headers: { 'X-WP-Nonce': nonce } 
+        })
+            .then(res => res.ok ? res.json() : Promise.reject('Failed to fetch community builds'))
+            .then(data => { 
+                if (isMounted) { 
+                    setCommunityBuilds(data); 
+                    setCommunityLoading(false); 
+                } 
+            })
+            .catch(err => { 
+                if (isMounted) { 
+                    console.error('Error fetching community builds:', err);
+                    setCommunityLoading(false); 
+                } 
+            });
+            
         return () => { isMounted = false; };
     }, [vehicleId, rest_url, nonce]);
 
     if (!vehicleId) return null;
     if (loading) return <div className="text-center p-12">Loading vehicle details...</div>;
     if (error || !vehicle) return <div className="text-center p-12 text-red-600">Error loading vehicle details.</div>;
+
+    // Use current vehicle data for display (selected trim)
+    const displayData = currentVehicleData || vehicle;
 
     // --- Visual-first layout ---
     return (
@@ -2252,50 +4015,72 @@ const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim }) => {
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Left: Hero Image */}
                     <div className="flex-1 flex items-center justify-center mb-6 md:mb-0" style={{ minWidth: 0 }}>
-                        <img src={getFirstImageUrl(vehicle)} alt="Vehicle" className="w-full max-w-md h-auto object-cover rounded-lg shadow" />
+                        <img src={getFirstImageUrl(displayData)} alt="Vehicle" className="w-full max-w-md h-auto object-cover rounded-lg shadow" />
                     </div>
                     {/* Right: Info */}
                     <div className="flex-1 flex flex-col gap-4 min-w-0">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900 mb-1">{vehicle.at_a_glance?.title || ''}</h1>
-                            <h2 className="text-lg text-gray-600 mb-2">{vehicle.at_a_glance?.trim_desc || ''}</h2>
+                            <h1 className="text-2xl font-bold text-gray-900 mb-1">{displayData.at_a_glance?.title || ''}</h1>
+                            <h2 className="text-lg text-gray-600 mb-2">{displayData.at_a_glance?.trim_desc || ''}</h2>
+                            
+                            {/* Trim Selector */}
+                            {modelTrims && modelTrims.trims && modelTrims.trims.length > 1 && (
+                                <div className="mt-3">
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Select Trim ({modelTrims.trims.length} available)
+                                    </label>
+                                    <select 
+                                        value={selectedTrimId} 
+                                        onChange={(e) => handleTrimChange(e.target.value)}
+                                        className="w-full max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                                    >
+                                        {modelTrims.trims.map(trim => (
+                                            <option key={trim.ID} value={trim.ID}>
+                                                {trim.Trim} - {trim['Horsepower (HP)']} HP
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                         </div>
+                        
+
                         {/* Key Specs */}
                         <div className="flex gap-4 mb-2">
-                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.horsepower}</span><span className="font-bold text-lg">{vehicle.at_a_glance?.horsepower || 'N/A'}</span><span className="text-xs ml-1">HP</span></div>
-                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.torque}</span><span className="font-bold text-lg">{vehicle.at_a_glance?.torque || 'N/A'}</span><span className="text-xs ml-1">ft-lbs</span></div>
-                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.mpg}</span><span className="font-bold text-lg">{vehicle.at_a_glance?.combined_mpg || 'N/A'}</span><span className="text-xs ml-1">MPG</span></div>
+                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.horsepower}</span><span className="font-bold text-lg">{displayData.at_a_glance?.horsepower || 'N/A'}</span><span className="text-xs ml-1">HP</span></div>
+                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.torque}</span><span className="font-bold text-lg">{displayData.at_a_glance?.torque || 'N/A'}</span><span className="text-xs ml-1">ft-lbs</span></div>
+                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.mpg}</span><span className="font-bold text-lg">{displayData.at_a_glance?.combined_mpg || 'N/A'}</span><span className="text-xs ml-1">MPG</span></div>
                         </div>
                         {/* Drivetrain */}
                         <div className="flex gap-3 mb-2">
                             <div className="drivetrain-item flex items-center gap-2 bg-gray-100 px-3 py-1 rounded border">
                                 {(() => {
-                                    const drive = (vehicle.at_a_glance?.drive_type || '').toLowerCase();
+                                    const drive = (displayData.at_a_glance?.drive_type || '').toLowerCase();
                                     if (drive.includes('rear')) return ICONS.rwd;
                                     if (drive.includes('front')) return ICONS.fwd;
                                     if (drive.includes('all')) return ICONS.awd;
                                     return null;
                                 })()}
-                                <span>{vehicle.at_a_glance?.drive_type || 'N/A'}</span>
+                                <span>{displayData.at_a_glance?.drive_type || 'N/A'}</span>
                             </div>
                             <div className="drivetrain-item flex items-center gap-2 bg-gray-100 px-3 py-1 rounded border">
                                 {ICONS.transmission}
-                                <span>{vehicle.at_a_glance?.transmission || 'N/A'}</span>
+                                <span>{displayData.at_a_glance?.transmission || 'N/A'}</span>
                             </div>
                         </div>
                         {/* Color Swatches */}
                         <div className="color-swatches mb-2">
                             <div className="mb-1 text-sm font-medium">Exterior Colors</div>
                             <div className="flex gap-2 flex-wrap mb-2">
-                                {parseColors(vehicle.at_a_glance?.colors_exterior).length === 0 ? <span className="text-xs text-gray-400">N/A</span> :
-                                    parseColors(vehicle.at_a_glance?.colors_exterior).map((color, idx) => (
+                                {parseColors(displayData.at_a_glance?.colors_exterior).length === 0 ? <span className="text-xs text-gray-400">N/A</span> :
+                                    parseColors(displayData.at_a_glance?.colors_exterior).map((color, idx) => (
                                         <div key={idx} className="color-swatch" style={{ backgroundColor: `rgb(${color.rgb})` }} title={color.name}></div>
                                     ))}
                             </div>
                             <div className="mb-1 text-sm font-medium">Interior Colors</div>
                             <div className="flex gap-2 flex-wrap">
-                                {parseColors(vehicle.at_a_glance?.colors_interior).length === 0 ? <span className="text-xs text-gray-400">N/A</span> :
-                                    parseColors(vehicle.at_a_glance?.colors_interior).map((color, idx) => (
+                                {parseColors(displayData.at_a_glance?.colors_interior).length === 0 ? <span className="text-xs text-gray-400">N/A</span> :
+                                    parseColors(displayData.at_a_glance?.colors_interior).map((color, idx) => (
                                         <div key={idx} className="color-swatch" style={{ backgroundColor: `rgb(${color.rgb})` }} title={color.name}></div>
                                     ))}
                             </div>
@@ -2304,13 +4089,57 @@ const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim }) => {
                         <div className="grid grid-cols-2 gap-4 mt-2">
                             <div className="pros bg-green-50 border-l-4 border-green-500 rounded p-3">
                                 <div className="flex items-center gap-2 mb-1 text-green-700 font-semibold"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-thumbs-up"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> The Good</div>
-                                <div className="text-sm text-gray-700 whitespace-pre-line">{(vehicle.at_a_glance?.pros || '').replace(/;+\s*$/, '') || 'N/A'}</div>
+                                <div className="text-sm text-gray-700 whitespace-pre-line">{(displayData.at_a_glance?.pros || '').replace(/;+\s*$/, '') || 'N/A'}</div>
                             </div>
                             <div className="cons bg-red-50 border-l-4 border-red-500 rounded p-3">
                                 <div className="flex items-center gap-2 mb-1 text-red-700 font-semibold"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-thumbs-down"><path d="M10 15v-5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> The Bad</div>
-                                <div className="text-sm text-gray-700 whitespace-pre-line">{(vehicle.at_a_glance?.cons || '').replace(/;+\s*$/, '') || 'N/A'}</div>
+                                <div className="text-sm text-gray-700 whitespace-pre-line">{(displayData.at_a_glance?.cons || '').replace(/;+\s*$/, '') || 'N/A'}</div>
                             </div>
                         </div>
+                        
+                        {/* Save Vehicle Button */}
+                        {setVehicleToAddToGarage && (
+                            <div className="mt-6">
+                                <button 
+                                    onClick={async () => {
+                                        try {
+                                            // Save the base model (without specific trim) to saved vehicles
+                                            const baseVehicle = {
+                                                ...vehicle,
+                                                ID: vehicleId, // Use the original vehicle ID (base model)
+                                                Year: vehicle.at_a_glance?.title?.split(' ')[0],
+                                                Make: vehicle.at_a_glance?.title?.split(' ')[1],
+                                                Model: vehicle.at_a_glance?.title?.split(' ').slice(2).join(' '),
+                                                Trim: vehicle.at_a_glance?.trim_desc // Use the original trim (base model)
+                                            };
+                                            
+                                            // Save to saved vehicles list instead of garage
+                                            const response = await fetch(`${rest_url}myddpc/v2/saved`, {
+                                                method: 'POST',
+                                                headers: { 
+                                                    'Content-Type': 'application/json', 
+                                                    'X-WP-Nonce': nonce 
+                                                },
+                                                body: JSON.stringify({ vehicle_id: vehicleId })
+                                            });
+                                            
+                                            if (!response.ok) {
+                                                const error = await response.json();
+                                                throw new Error(error.message || 'Failed to save vehicle');
+                                            }
+                                            
+                                            // Show success feedback
+                                            alert('Vehicle saved to your list!');
+                                        } catch (err) {
+                                            alert(err.message);
+                                        }
+                                    }}
+                                    className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold text-lg transition-colors"
+                                >
+                                    + Save Vehicle
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
                 {/* Enthusiast's Deep Dive Tabs */}
@@ -2323,7 +4152,7 @@ const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim }) => {
                     </div>
                     {activeTab === 'performance' && (
                         <div id="tab-performance" className="tab-content active">
-                            <SpecTable data={vehicle.performance} section={null} />
+                            <SpecTable data={displayData.performance} section={null} />
                         </div>
                     )}
                     {activeTab === 'dimensions' && (
@@ -2332,20 +4161,134 @@ const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim }) => {
                                 <svg width="220" height="80" viewBox="0 0 220 80" style={{ opacity: 0.2 }}><rect x="10" y="30" width="200" height="30" rx="10" fill="#888" /><rect x="60" y="10" width="100" height="20" rx="8" fill="#888" /></svg>
                                 <div className="text-xs text-gray-500">Vehicle dimensions (side/top profile)</div>
                             </div>
-                            <SpecTable data={vehicle.dimensions} section={null} />
+                            <SpecTable data={displayData.dimensions} section={null} />
                         </div>
                     )}
                     {activeTab === 'features' && (
                         <div id="tab-features" className="tab-content active">
-                            <SpecTable data={vehicle.features} section={null} />
+                            <SpecTable data={displayData.features} section={null} />
                         </div>
                     )}
                     {activeTab === 'ownership' && (
                         <div id="tab-ownership" className="tab-content active">
-                            <SpecTable data={vehicle.ownership} section={null} />
+                            <SpecTable data={displayData.ownership} section={null} />
                         </div>
                     )}
                 </div>
+                
+                {/* Community Bridge Section */}
+                {communityLoading ? (
+                    <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                        <div className="text-center">
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                            <p className="mt-2 text-gray-600">Loading community builds...</p>
+                        </div>
+                    </div>
+                ) : communityBuilds && communityBuilds.has_builds ? (
+                    <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-1">Community Builds</h3>
+                                <p className="text-gray-600">
+                                    {communityBuilds.build_count} community member{communityBuilds.build_count !== 1 ? 's' : ''} have built this vehicle
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Icon name="Users" className="w-5 h-5 text-gray-400" />
+                                <span className="text-sm text-gray-500">Community</span>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {communityBuilds.builds.map((buildData, index) => (
+                                <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div>
+                                            <h4 className="font-semibold text-gray-900">
+                                                {buildData.garage_vehicle.nickname}
+                                            </h4>
+                                            <p className="text-sm text-gray-600">
+                                                Built by {buildData.garage_vehicle.owner_name}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-sm font-medium text-gray-900">
+                                                {buildData.garage_vehicle.completed_builds} completed
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {buildData.garage_vehicle.total_builds} total builds
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        {buildData.builds.slice(0, 3).map((build, buildIndex) => (
+                                            <div key={buildIndex} className="flex items-center justify-between bg-white rounded-md p-3 border border-gray-100">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-2 h-2 rounded-full ${
+                                                        build.status === 'complete' ? 'bg-green-500' : 
+                                                        build.status === 'in_progress' ? 'bg-yellow-500' : 'bg-gray-400'
+                                                    }`}></div>
+                                                    <div>
+                                                        <div className="font-medium text-gray-900">{build.title}</div>
+                                                        <div className="text-xs text-gray-500 capitalize">
+                                                            {build.type.replace(/_/g, ' ')}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    {build.installation_date ? 
+                                                        new Date(build.installation_date).toLocaleDateString() : 
+                                                        'Planned'
+                                                    }
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {buildData.builds.length > 3 && (
+                                            <div className="text-center pt-2">
+                                                <span className="text-sm text-gray-500">
+                                                    +{buildData.builds.length - 3} more builds
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-start gap-3">
+                                <Icon name="Info" className="w-5 h-5 text-blue-600 mt-0.5" />
+                                <div>
+                                    <h4 className="font-medium text-blue-900 mb-1">Join the Community</h4>
+                                    <p className="text-sm text-blue-700">
+                                        Add this vehicle to your garage and start sharing your own builds with the community!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : communityBuilds && !communityBuilds.has_builds ? (
+                    <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
+                        <div className="text-center">
+                            <Icon name="Users" className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Community Builds Yet</h3>
+                            <p className="text-gray-600 mb-4">
+                                Be the first to add this vehicle to your garage and start building!
+                            </p>
+                            <button 
+                                onClick={() => {
+                                    // This would typically open the add to garage modal
+                                    // For now, we'll just show a message
+                                    alert('Add to garage functionality would be triggered here');
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg text-sm font-semibold transition-colors"
+                            >
+                                Add to My Garage
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
             </div>
         </div>
     );
@@ -2393,6 +4336,7 @@ const App = () => {
     const { isAuthenticated = false, user, logout } = useAuth() || {};
     const safeIsAuthenticated = typeof isAuthenticated === 'boolean' ? isAuthenticated : false;
     const { fetchGarageVehicles, setSelectedVehicle } = useVehicles();
+    const prevAuthRef = React.useRef(safeIsAuthenticated);
 
     // Enhanced history management
     useEffect(() => {
@@ -2400,6 +4344,10 @@ const App = () => {
             if (event.state) {
                 setActiveView(event.state.activeView || (safeIsAuthenticated ? 'garage' : 'discover'));
                 setGarageView(event.state.garageView || 'overview');
+                // Restore fromView if it exists in the state
+                if (event.state.fromView) {
+                    setFromView(event.state.fromView);
+                }
             } else {
                 if (safeIsAuthenticated) {
                     setActiveView('garage');
@@ -2412,7 +4360,8 @@ const App = () => {
         };
         window.history.replaceState({ 
             activeView: safeIsAuthenticated ? 'garage' : 'discover', 
-            garageView: 'overview' 
+            garageView: 'overview',
+            fromView: 'discover'
         }, '');
         window.addEventListener('popstate', handlePopState);
         return () => {
@@ -2424,7 +4373,8 @@ const App = () => {
     const updateHistory = (newActiveView, newGarageView = 'overview') => {
         const state = { 
             activeView: newActiveView, 
-            garageView: newGarageView 
+            garageView: newGarageView,
+            fromView: fromView // Include the current fromView in history state
         };
         
         // Create a descriptive title for the history entry
@@ -2472,6 +4422,11 @@ const App = () => {
         }
     }, [safeIsAuthenticated, fetchGarageVehicles]);
 
+    // Debug activeView changes
+    useEffect(() => {
+        console.log('App: activeView changed to:', activeView);
+    }, [activeView]);
+
     const requireAuth = (callback) => {
         if (safeIsAuthenticated) {
             if (callback) callback();
@@ -2488,6 +4443,7 @@ const App = () => {
     ];
 
     const handleNavClick = (viewId) => {
+        console.log('handleNavClick called with:', viewId, 'current activeView:', activeView);
         if (navigationItems.find(item => item.id === viewId)?.auth) {
             if (!safeIsAuthenticated) {
                 setPrevView(activeView);
@@ -2521,7 +4477,7 @@ const App = () => {
                 </div>
                 {dropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" onMouseLeave={() => setDropdownOpen(false)}>
-                        <button onClick={() => { navigateToView('account'); setDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Account</button>
+                        <button onClick={() => { console.log('My Account clicked'); navigateToView('account'); setDropdownOpen(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">My Account</button>
                         <button onClick={logout} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</button>
                     </div>
                 )}
@@ -2572,6 +4528,47 @@ const App = () => {
         setActiveView('compare');
     };
 
+    // Handler to restore previous view after registration
+    const handleRegisterSuccess = () => {
+        setShowGarageBenefits(false);
+        if (prevView === 'garage') {
+            setActiveView('garage');
+            setGarageView(prevGarageView || 'overview');
+        } else if (prevView) {
+            setActiveView(prevView);
+        } else {
+            setActiveView('garage');
+            setGarageView('overview');
+        }
+    };
+
+    // Redirect to garage only immediately after login
+    useEffect(() => {
+        if (!prevAuthRef.current && safeIsAuthenticated) {
+            setActiveView('garage');
+            setGarageView('overview');
+            window.history.replaceState({ activeView: 'garage', garageView: 'overview' }, '');
+        }
+        prevAuthRef.current = safeIsAuthenticated;
+    }, [safeIsAuthenticated]);
+
+    // Expose navigation functions globally for MyAccount component
+    useEffect(() => {
+        window.setActiveView = setActiveView;
+        window.setGarageView = setGarageView;
+        window.setSelectedVehicle = setSelectedVehicle;
+        window.navigateToView = navigateToView;
+        window.navigateToGarageView = navigateToGarageView;
+        
+        return () => {
+            delete window.setActiveView;
+            delete window.setGarageView;
+            delete window.setSelectedVehicle;
+            delete window.navigateToView;
+            delete window.navigateToGarageView;
+        };
+    }, [setActiveView, setGarageView, setSelectedVehicle, navigateToView, navigateToGarageView]);
+
     // This is the new return statement for the App component
     return (
         <UserListsProvider isAuthenticated={safeIsAuthenticated}>
@@ -2619,12 +4616,14 @@ const App = () => {
                 </header>
                 <main className="flex-grow bg-gray-50">
                     {showGarageBenefits ? (
-                        <GarageBenefitsScreen onCreateAccount={openRegisterModal} />
+                        <GarageBenefitsScreen onCreateAccount={openRegisterModal} onRegisterSuccess={handleRegisterSuccess} />
                     ) : (
                         <>
                             {activeView === 'discover' && <DiscoverView setActiveView={navigateToView} requireAuth={requireAuth} setVehicleProfileId={setVehicleProfileId} setFromView={setFromView} />}
                             {activeView === 'saved' && <SavedVehiclesView requireAuth={requireAuth} setActiveView={navigateToView} setVehicleProfileId={setVehicleProfileId} setFromView={setFromView} setSelectedVehicle={setSelectedVehicle} setGarageView={navigateToGarageView} />}
                             {activeView === 'compare' && <CompareView setActiveView={navigateToView} setVehicleProfileId={setVehicleProfileId} setFromView={setFromView} onUpgradeClick={handleCompareUpgradeClick} />}
+                            {activeView === 'account' && (() => { console.log('Rendering MyAccountView'); return <MyAccountView />; })()}
+                            {activeView === 'vehicle-profile' && <VehicleProfileView vehicleId={vehicleProfileId} onBack={() => navigateToView(fromView || 'discover')} setVehicleToAddToGarage={setVehicleToAddToGarage} />}
                             {activeView === 'garage' && (
                                 <>
                                     {garageView === 'overview' && <GarageOverview setActiveView={navigateToView} setGarageView={navigateToGarageView} requireAuth={requireAuth} />}
@@ -2644,24 +4643,7 @@ const App = () => {
 // 5. FINAL RENDER CALLS
 //================================================================================
 
-// Mount the main Garage App
-const garageContainer = document.getElementById('myddpc-react-root');
-if (garageContainer) {
-    const root = ReactDOM.createRoot(garageContainer);
-    root.render(
-        <React.StrictMode>
-            <AuthProvider>
-                <CompareProvider>
-                    <VehicleProvider>
-                        <App />
-                    </VehicleProvider>
-                </CompareProvider>
-            </AuthProvider>
-        </React.StrictMode>
-    );
-}
-
-// This is the new render block for the main app
+// Mount the main App
 const appContainer = document.getElementById('myddpc-react-root');
 if (appContainer) {
     const root = ReactDOM.createRoot(appContainer);
@@ -2834,22 +4816,251 @@ const GarageBenefitsScreen = ({ onCreateAccount, onRegisterSuccess }) => {
   );
 };
 
-// Handler to restore previous view after registration
-const handleRegisterSuccess = () => {
-    setShowGarageBenefits(false);
-    if (prevView === 'garage') {
-        setActiveView('garage');
-        setGarageView(prevGarageView || 'overview');
-    } else if (prevView) {
-        setActiveView(prevView);
-    } else {
-        setActiveView('garage');
-        setGarageView('overview');
-    }
+//================================================================================
+// VIEW TOGGLE SYSTEM COMPONENTS
+//================================================================================
+
+// ViewToggle Component
+const ViewToggle = ({ currentView, onViewChange }) => {
+    return (
+        <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+                onClick={() => onViewChange('gallery')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    currentView === 'gallery'
+                        ? 'bg-white text-red-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="Gallery View"
+            >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span className="hidden sm:inline">Gallery</span>
+            </button>
+            <button
+                onClick={() => onViewChange('list')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    currentView === 'list'
+                        ? 'bg-white text-red-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                }`}
+                title="List View"
+            >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                <span className="hidden sm:inline">List</span>
+            </button>
+        </div>
+    );
 };
 
-// In App component, after setShowGarageBenefits is defined:
-useEffect(() => {
-    window.setShowGarageBenefits = setShowGarageBenefits;
-    return () => { delete window.setShowGarageBenefits; };
-}, [setShowGarageBenefits]);
+// VehicleCardGallery Component - Visual card layout
+const VehicleCardGallery = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompare, isVehicleSaved, isVehicleCompared, removeFromCompare, compareVehicles, setVehicleProfileId, setActiveView, setFromView }) => {
+    const { rest_url, nonce } = window.myddpcAppData || {};
+    
+    // Handle grouped vehicle data (with trim metadata)
+    const hasGroupMetadata = vehicle._group_metadata;
+    const vehicleName = hasGroupMetadata 
+        ? `${vehicle.Year} ${vehicle.Make} ${vehicle.Model}`
+        : `${vehicle.Year || vehicle.year} ${vehicle.Make || vehicle.make} ${vehicle.Model || vehicle.model} ${vehicle.Trim || vehicle.trim}`;
+    
+    // State for trim selection within the card
+    const [selectedTrimId, setSelectedTrimId] = React.useState(vehicle.ID);
+    const [modelTrims, setModelTrims] = React.useState(null);
+    const [currentVehicleData, setCurrentVehicleData] = React.useState(vehicle);
+    
+    // Fetch trims for this model when card loads
+    React.useEffect(() => {
+        const fetchModelTrims = async () => {
+            try {
+                const year = vehicle.Year || vehicle.year;
+                const make = vehicle.Make || vehicle.make;
+                const model = vehicle.Model || vehicle.model;
+                
+                if (!year || !make || !model) return;
+                
+                const fetchUrl = `${rest_url}myddpc/v2/discover/model_trims?year=${year}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`;
+                const response = await fetch(fetchUrl, { headers: { 'X-WP-Nonce': nonce } });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setModelTrims(data);
+                    
+                    // Set the first trim as default if we have trims
+                    if (data.trims && data.trims.length > 0) {
+                        setSelectedTrimId(data.trims[0].ID);
+                        setCurrentVehicleData(data.trims[0]);
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching model trims:', err);
+            }
+        };
+        
+        fetchModelTrims();
+    }, [vehicle, rest_url, nonce]);
+    
+    // Handle trim selection
+    const handleTrimChange = (trimId, e) => {
+        e.stopPropagation(); // Prevent card click
+        if (!modelTrims || !modelTrims.trims) return;
+        
+        const selectedTrim = modelTrims.trims.find(trim => trim.ID == trimId);
+        if (!selectedTrim) return;
+        
+        setSelectedTrimId(trimId);
+        setCurrentVehicleData(selectedTrim);
+    };
+    
+    // Use current vehicle data for display
+    const displayVehicle = currentVehicleData || vehicle;
+    
+    return (
+        <div 
+            className="vehicle-discovery-card bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            onClick={(e) => {
+                // Don't navigate if clicking on the dropdown or buttons
+                if (e.target.closest('select') || e.target.closest('button')) return;
+                setVehicleProfileId(selectedTrimId); 
+                setActiveView('vehicle-profile'); 
+                setFromView('discover'); 
+            }}
+        >
+            {/* Hero Image Container - Largest element for visual impact */}
+            <div className="vehicle-card-image-container relative h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                <img 
+                    src={getFirstImageUrl(displayVehicle)} 
+                    alt={vehicleName}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                    onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                    }}
+                />
+                <div className="vehicle-placeholder absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200" style={{ display: 'none' }}>
+                    <div className="text-center">
+                        <Icon name="Car" className="w-16 h-16 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-500 text-sm font-medium">Image coming soon</p>
+                    </div>
+                </div>
+                
+                {/* Quick action overlay on hover */}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="bg-white rounded-lg px-4 py-2 shadow-lg">
+                        <span className="text-sm font-medium text-gray-900">View Details</span>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Vehicle Information */}
+            <div className="p-5">
+                {/* Vehicle Title */}
+                <h3 className="vehicle-card-title text-xl font-semibold text-gray-900 mb-2 line-clamp-2 leading-tight">
+                    {vehicleName}
+                </h3>
+                
+                {/* Trim Selector Dropdown */}
+                {(modelTrims && modelTrims.trims && modelTrims.trims.length > 1) || (hasGroupMetadata && hasGroupMetadata.trim_count > 1) ? (
+                    <div className="mb-3">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Select Trim {hasGroupMetadata && hasGroupMetadata.trim_count > 1 && `(${hasGroupMetadata.trim_count} available)`}
+                        </label>
+                        <select 
+                            value={selectedTrimId} 
+                            onChange={(e) => handleTrimChange(e.target.value, e)}
+                            className="w-full rounded-lg border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
+                        >
+                            {modelTrims && modelTrims.trims ? (
+                                modelTrims.trims.map(trim => (
+                                    <option key={trim.ID} value={trim.ID}>
+                                        {trim.Trim} - {trim['Horsepower (HP)']} HP
+                                    </option>
+                                ))
+                            ) : (
+                                <option value={vehicle.ID}>
+                                    {vehicle.Trim} - {vehicle['Horsepower (HP)']} HP
+                                </option>
+                            )}
+                        </select>
+                    </div>
+                ) : null}
+                
+                {/* Key Specifications Grid */}
+                <div className="vehicle-card-specs grid grid-cols-2 gap-3 mb-5">
+                    <div className="spec-item bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Power</div>
+                        <div className="font-bold text-gray-900">
+                            {displayVehicle['Horsepower (HP)'] || displayVehicle.horsepower || 'N/A'} <span className="text-sm font-normal">HP</span>
+                        </div>
+                    </div>
+                    <div className="spec-item bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Engine</div>
+                        <div className="font-bold text-gray-900">
+                            {displayVehicle['Engine size (l)'] || displayVehicle.engine_size || 'N/A'}L <span className="text-sm font-normal">{displayVehicle.Cylinders || displayVehicle.cylinders || 'N/A'}-cyl</span>
+                        </div>
+                    </div>
+                    <div className="spec-item bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Weight</div>
+                        <div className="font-bold text-gray-900">
+                            {displayVehicle['Curb weight (lbs)'] ? Math.round(displayVehicle['Curb weight (lbs)']).toLocaleString() : displayVehicle.weight || 'N/A'} <span className="text-sm font-normal">lbs</span>
+                        </div>
+                    </div>
+                    {displayVehicle['Drive type'] && (
+                        <div className="spec-item bg-gray-50 rounded-lg p-3">
+                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Drive</div>
+                            <div className="font-bold text-gray-900">
+                                {displayVehicle['Drive type'].toUpperCase().includes('ALL WHEEL') ? 'AWD' : 
+                                 displayVehicle['Drive type'].toUpperCase().includes('FRONT WHEEL') ? 'FWD' : 
+                                 displayVehicle['Drive type'].toUpperCase().includes('FOUR WHEEL') ? '4WD' : 
+                                 displayVehicle['Drive type'].toUpperCase().includes('REAR WHEEL') ? 'RWD' : 
+                                 displayVehicle['Drive type']}
+                            </div>
+                        </div>
+                    )}
+                </div>
+                {/* Action Bar - Clear, prominent buttons */}
+                <div className="vehicle-card-actions flex gap-2">
+                    <button 
+                        onClick={(e) => { 
+                            e.stopPropagation(); 
+                            // Save the base model (without specific trim) to saved vehicles
+                            const baseVehicle = {
+                                ...displayVehicle,
+                                ID: vehicle.ID, // Use the original vehicle ID (base model)
+                                Trim: vehicle.Trim // Use the original trim (base model)
+                            };
+                            onSaveVehicle(baseVehicle); 
+                        }}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                    >
+                        <PlusIcon className="w-4 h-4" />
+                        Save Vehicle
+                    </button>
+                    <button 
+                        onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if (isVehicleCompared(displayVehicle.ID)) {
+                                removeFromCompare(compareVehicles.findIndex(v => v && v.ID === displayVehicle.ID));
+                            } else {
+                                onAddToCompare(displayVehicle); 
+                            }
+                        }}
+                        className={`flex-1 px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
+                            isVehicleCompared(displayVehicle.ID) 
+                                ? 'bg-green-100 text-green-700 border-2 border-green-300' 
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
+                        title={isVehicleCompared(displayVehicle.ID) ? 'Remove from Head-to-Head' : 'Add to Head-to-Head'}
+                    >
+                        <Icon name="Columns" className="w-4 h-4" />
+                        <span className="hidden sm:inline">Head-to-Head</span>
+                        <span className="sm:hidden">Compare</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
