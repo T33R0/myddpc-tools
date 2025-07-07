@@ -1,5 +1,4 @@
 const { useState, useEffect, createContext, useContext, useCallback, useMemo } = React;
-const { useState, useEffect, createContext, useContext, useCallback, useMemo } = React;
 
 //================================================================================
 // 1. CONTEXTS & PROVIDERS (Auth & Vehicles)
@@ -208,62 +207,10 @@ const VehicleProvider = ({ children }) => {
       discoveryResults, selectedVehicle, setSelectedVehicle,
       loading,
       fetchDiscoveryResults, isSwapModalOpen, candidateVehicle
-      loading,
-      fetchDiscoveryResults, isSwapModalOpen, candidateVehicle
   };
 
   return <VehicleContext.Provider value={value}>{children}</VehicleContext.Provider>;
 };
-
-// --- NEW: User Lists Context for Garage & Saved Vehicles ---
-
-const UserListsContext = React.createContext();
-
-const UserListsProvider = ({ children, isAuthenticated }) => {
-    const { rest_url, nonce } = window.myddpcAppData || {};
-    const [garageVehicles, setGarageVehicles] = useState([]);
-    const [savedVehicles, setSavedVehicles] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    const fetchAllLists = useCallback(async () => {
-        if (!isAuthenticated) {
-            setLoading(false);
-            return;
-        }
-        setLoading(true);
-        try {
-            // Fetch both lists in parallel
-            const [garageRes, savedRes] = await Promise.all([
-                fetch(`${rest_url}myddpc/v2/garage/vehicles`, { headers: { 'X-WP-Nonce': nonce } }),
-                fetch(`${rest_url}myddpc/v2/saved`, { headers: { 'X-WP-Nonce': nonce } })
-            ]);
-            const garageData = await garageRes.json();
-            const savedData = await savedRes.json();
-
-            if (garageRes.ok) setGarageVehicles(garageData);
-            if (savedRes.ok) setSavedVehicles(savedData);
-
-        } catch (error) {
-            console.error("Failed to fetch user lists:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [rest_url, nonce, isAuthenticated]);
-
-    useEffect(() => {
-        fetchAllLists();
-    }, [fetchAllLists]);
-
-    const value = { garageVehicles, savedVehicles, loading, refreshLists: fetchAllLists };
-
-    return (
-        <UserListsContext.Provider value={value}>
-            {children}
-        </UserListsContext.Provider>
-    );
-};
-
-const useUserLists = () => useContext(UserListsContext);
 
 // --- NEW: User Lists Context for Garage & Saved Vehicles ---
 
@@ -381,8 +328,6 @@ const PageHeader = ({ title, subtitle, children }) => ( <div className="flex fle
 const CompareTray = () => {
     const { compareVehicles, removeFromCompare, clearCompare } = useCompare();
     if (!compareVehicles || !Array.isArray(compareVehicles) || compareVehicles.length === 0 || compareVehicles.every(v => !v)) return null;
-    const { compareVehicles, removeFromCompare, clearCompare } = useCompare();
-    if (!compareVehicles || !Array.isArray(compareVehicles) || compareVehicles.length === 0 || compareVehicles.every(v => !v)) return null;
     return (
         <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -391,10 +336,7 @@ const CompareTray = () => {
                     <div className="flex items-center gap-3">
                         {compareVehicles.map((v, i) => v && (
                             <div key={v.ID || i} className="bg-gray-100 px-3 py-1 rounded-full flex items-center text-sm">
-                        {compareVehicles.map((v, i) => v && (
-                            <div key={v.ID || i} className="bg-gray-100 px-3 py-1 rounded-full flex items-center text-sm">
                                 <span className="text-gray-700">{`${v.Year} ${v.Make} ${v.Model}`}</span>
-                                <button onClick={() => removeFromCompare(i)} className="ml-2 text-gray-500 hover:text-red-600"><Icon name="X" className="w-4 h-4" /></button>
                                 <button onClick={() => removeFromCompare(i)} className="ml-2 text-gray-500 hover:text-red-600"><Icon name="X" className="w-4 h-4" /></button>
                             </div>
                         ))}
@@ -508,7 +450,6 @@ const CompareSwapModal = () => {
 
 // **NEW**: Modal for setting a vehicle nickname
 const AddToGarageModal = ({ vehicle, isOpen, onClose, onSave, loading }) => {
-const AddToGarageModal = ({ vehicle, isOpen, onClose, onSave, loading }) => {
     const [nickname, setNickname] = useState('');
     const [error, setError] = useState('');
 
@@ -551,37 +492,6 @@ const AddToGarageModal = ({ vehicle, isOpen, onClose, onSave, loading }) => {
             </div>
         </div>,
         document.body
-    );
-};
-
-const VehicleSelectModal = ({ isOpen, onClose, title, vehicles, onSelect }) => {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-[101] flex justify-center items-center">
-            <div className="bg-white rounded-lg shadow-xl m-4 w-full max-w-lg">
-                <div className="p-4 border-b">
-                    <h3 className="text-lg font-medium">{title}</h3>
-                </div>
-                <div className="p-4 max-h-[60vh] overflow-y-auto">
-                    {vehicles.length > 0 ? (
-                        <ul className="space-y-2">
-                            {vehicles.map(v => (
-                                <li key={v.garage_id || v.saved_id} onClick={() => onSelect(v)} className="p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-                                    <p className="font-medium">{v.name || `${v.Year} ${v.Make} ${v.Model}`}</p>
-                                    <p className="text-sm text-gray-500">{v.Trim || ''}</p>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-gray-500 text-center py-4">No vehicles found in this list.</p>
-                    )}
-                </div>
-                <div className="p-4 border-t text-right">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
-                </div>
-            </div>
-        </div>
     );
 };
 
@@ -1603,26 +1513,6 @@ const CompareGeneral = ({ vehicle, statWinners }) => (
                 <span className="text-gray-600">Drive:</span>
                 <span className="font-medium">{vehicle['Drive type']}</span>
             </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Engine:</span>
-                <span className="font-medium text-right">{vehicle['Engine size (l)']}L {vehicle.Cylinders}-cyl</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Power:</span>
-                <span className={`font-medium ${isWinningStat(statWinners, 'Horsepower (HP)', vehicle['Horsepower (HP)']) ? 'text-green-600 font-bold' : ''}`}>
-                    {`${vehicle['Horsepower (HP)']} HP`}
-                </span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Torque:</span>
-                <span className={`font-medium ${isWinningStat(statWinners, 'Torque (ft-lbs)', vehicle['Torque (ft-lbs)']) ? 'text-green-600 font-bold' : ''}`}>
-                    {`${vehicle['Torque (ft-lbs)']} ft-lbs`}
-                </span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Drive:</span>
-                <span className="font-medium">{vehicle['Drive type']}</span>
-            </div>
         </div>
     </div>
 );
@@ -1665,69 +1555,10 @@ const ComparePerformance = ({ vehicle, statWinners }) => {
         </div>
     );
 };
-const ComparePerformance = ({ vehicle, statWinners }) => {
-    const powerToWeight = parseFloat(vehicle['Horsepower (HP)']) / parseFloat(vehicle['Curb weight (lbs)']);
-    
-    return (
-        <div className="p-6 flex-grow">
-            <div className="space-y-3">
-                <div className="flex justify-between">
-                    <span className="text-gray-600">Horsepower:</span>
-                    <span className={`font-medium ${isWinningStat(statWinners, 'Horsepower (HP)', vehicle['Horsepower (HP)']) ? 'text-green-600 font-bold' : ''}`}>
-                        {`${vehicle['Horsepower (HP)']} HP`}
-                    </span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-600">Torque:</span>
-                    <span className={`font-medium ${isWinningStat(statWinners, 'Torque (ft-lbs)', vehicle['Torque (ft-lbs)']) ? 'text-green-600 font-bold' : ''}`}>
-                        {`${vehicle['Torque (ft-lbs)']} ft-lbs`}
-                    </span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-600">Weight:</span>
-                    <span className={`font-medium ${isWinningStat(statWinners, 'Curb weight (lbs)', vehicle['Curb weight (lbs)']) ? 'text-green-600 font-bold' : ''}`}>
-                        {`${vehicle['Curb weight (lbs)']} lbs`}
-                    </span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-600">Power-to-Weight:</span>
-                    <span className={`font-medium ${statWinners && statWinners['Power-to-Weight'] === powerToWeight ? 'text-green-600 font-bold' : ''}`}>
-                        {powerToWeight.toFixed(3)}
-                    </span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-600">MPG (Combined):</span>
-                    <span className="font-medium">{vehicle['EPA combined MPG']}</span>
-                </div>
-            </div>
-        </div>
-    );
-};
 
-const CompareDimensions = ({ vehicle, statWinners }) => (
 const CompareDimensions = ({ vehicle, statWinners }) => (
     <div className="p-6 flex-grow">
         <div className="space-y-3">
-            <div className="flex justify-between">
-                <span className="text-gray-600">Length:</span>
-                <span className="font-medium">{`${vehicle['Length (in)']} in`}</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Width:</span>
-                <span className="font-medium">{`${vehicle['Width (in)']} in`}</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Height:</span>
-                <span className="font-medium">{`${vehicle['Height (in)']} in`}</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Wheelbase:</span>
-                <span className="font-medium">{`${vehicle['Wheelbase (in)']} in`}</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Ground Clearance:</span>
-                <span className="font-medium">{`${vehicle['Ground clearance (in)']} in`}</span>
-            </div>
             <div className="flex justify-between">
                 <span className="text-gray-600">Length:</span>
                 <span className="font-medium">{`${vehicle['Length (in)']} in`}</span>
@@ -2015,12 +1846,8 @@ const CompareView = ({ setActiveView, setVehicleProfileId, setFromView, onUpgrad
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
                 <PageHeader title="Vehicle Comparison" subtitle="Side-by-side vehicle analysis" />
-                <PageHeader title="Vehicle Comparison" subtitle="Side-by-side vehicle analysis" />
                 <div className="compare-view-controls flex items-center gap-2">
                     <div className="isolate inline-flex rounded-md shadow-sm">
-                        {['General', 'Performance', 'Dimensions'].map(type => (
-                             <button key={type} onClick={() => setAnalysisType(type)} className={`relative inline-flex items-center first:rounded-l-md last:rounded-r-md px-3 py-2 text-sm font-semibold -ml-px ${analysisType === type ? 'bg-red-600 text-white z-10' : 'bg-white text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'}`}>{type}</button>
-                        ))}
                         {['General', 'Performance', 'Dimensions'].map(type => (
                              <button key={type} onClick={() => setAnalysisType(type)} className={`relative inline-flex items-center first:rounded-l-md last:rounded-r-md px-3 py-2 text-sm font-semibold -ml-px ${analysisType === type ? 'bg-red-600 text-white z-10' : 'bg-white text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'}`}>{type}</button>
                         ))}
@@ -2172,7 +1999,6 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
                 
                 {/* NEW: Mobile Work Mode Button */}
                 <button onClick={handleWorkModeClick} className="work-mode-btn">
-                    <SmartphoneIcon className="w-5 h-5" />
                     <SmartphoneIcon className="w-5 h-5" />
                 </button>
 
@@ -2396,13 +2222,6 @@ const MobileWorkInterface = ({ setGarageView }) => {
         { id: 'build', label: 'Build', icon: 'Wrench' },
         { id: 'notes', label: 'Notes', icon: 'FileText' },
         { id: 'fuel', label: 'Fuel', icon: 'Fuel' }
-    const [mobileWorkView, setMobileWorkView] = useState('tasks');
-    // UPDATED: Removed 'Scanner' from the actions array
-    const workModeActions = [
-        { id: 'tasks', label: 'Tasks', icon: 'Clipboard' },
-        { id: 'build', label: 'Build', icon: 'Wrench' },
-        { id: 'notes', label: 'Notes', icon: 'FileText' },
-        { id: 'fuel', label: 'Fuel', icon: 'Fuel' }
     ];
 
     return (
@@ -2422,16 +2241,11 @@ const MobileWorkInterface = ({ setGarageView }) => {
                         <button key={action.id} onClick={() => setMobileWorkView(action.id)} className={`flex-1 py-3 px-2 text-center transition-colors ${mobileWorkView === action.id ? 'border-b-2 border-red-600 text-red-600 bg-red-50' : 'text-gray-600'}`}>
                             <Icon name={action.icon} className="w-5 h-5 mx-auto mb-1" />
                             <span className="text-xs font-medium">{action.label}</span>
-                    {workModeActions.map((action) => (
-                        <button key={action.id} onClick={() => setMobileWorkView(action.id)} className={`flex-1 py-3 px-2 text-center transition-colors ${mobileWorkView === action.id ? 'border-b-2 border-red-600 text-red-600 bg-red-50' : 'text-gray-600'}`}>
-                            <Icon name={action.icon} className="w-5 h-5 mx-auto mb-1" />
-                            <span className="text-xs font-medium">{action.label}</span>
                         </button>
                     ))}
                 </div>
             </div>
             <div className="p-4">
-                {mobileWorkView === 'tasks' && (
                 {mobileWorkView === 'tasks' && (
                     <div className="space-y-4">
                         <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -2439,15 +2253,10 @@ const MobileWorkInterface = ({ setGarageView }) => {
                                 <Icon name="Clipboard" className="w-12 h-12 text-gray-400 mx-auto mb-2" />
                                 <p className="text-sm text-gray-600">Task management feature</p>
                                 <button className="mt-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm">View Tasks</button>
-                                <Icon name="Clipboard" className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                                <p className="text-sm text-gray-600">Task management feature</p>
-                                <button className="mt-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm">View Tasks</button>
                             </div>
                         </div>
                     </div>
                 )}
-                 {mobileWorkView === 'build' && <div className="text-center p-8 bg-white rounded-lg">Build feature coming soon.</div>}
-                 {mobileWorkView === 'fuel' && <div className="text-center p-8 bg-white rounded-lg">Fuel tracking feature coming soon.</div>}
                  {mobileWorkView === 'build' && <div className="text-center p-8 bg-white rounded-lg">Build feature coming soon.</div>}
                  {mobileWorkView === 'fuel' && <div className="text-center p-8 bg-white rounded-lg">Fuel tracking feature coming soon.</div>}
                  {mobileWorkView === 'notes' && <div className="text-center p-8 bg-white rounded-lg">Notes feature coming soon.</div>}
@@ -4600,20 +4409,7 @@ const App = () => {
         }
         updateHistory(viewId, garageViewId);
     };
-    // Enhanced setActiveView that updates history
-    const navigateToView = (viewId, garageViewId = 'overview') => {
-        setActiveView(viewId);
-        if (viewId === 'garage') {
-            setGarageView(garageViewId);
-        }
-        updateHistory(viewId, garageViewId);
-    };
 
-    // Enhanced setGarageView that updates history
-    const navigateToGarageView = (garageViewId) => {
-        setGarageView(garageViewId);
-        updateHistory('garage', garageViewId);
-    };
     // Enhanced setGarageView that updates history
     const navigateToGarageView = (garageViewId) => {
         setGarageView(garageViewId);
@@ -4639,12 +4435,6 @@ const App = () => {
         }
     };
 
-    const navigationItems = [
-        { id: 'discover', label: 'Discover', icon: 'Search' },
-        { id: 'compare', label: 'Compare', icon: 'Columns' },
-        { id: 'saved', label: 'Saved Vehicles', icon: 'Bookmark', auth: true },
-        { id: 'garage', label: 'Garage', icon: 'Garage', auth: true },
-    ];
     const navigationItems = [
         { id: 'discover', label: 'Discover', icon: 'Search' },
         { id: 'compare', label: 'Compare', icon: 'Columns' },
@@ -4860,11 +4650,6 @@ if (appContainer) {
     root.render(
         <React.StrictMode>
             <AuthProvider>
-                <CompareProvider>
-                    <VehicleProvider>
-                        <App />
-                    </VehicleProvider>
-                </CompareProvider>
                 <CompareProvider>
                     <VehicleProvider>
                         <App />
