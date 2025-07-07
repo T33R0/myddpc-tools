@@ -149,8 +149,12 @@
   #myddpc-react-root .h-96 { height: 24rem; }
 
   /* --- Custom Compare Bar Colors --- */
-  #myddpc-react-root .bg-red-500 { background-color: #ef4444 !important; }
-  #myddpc-react-root .h-1.5 { height: 6px !important; }
+  #myddpc-react-root .bg-red-500 { 
+    background-color: #ef4444 !important; 
+  }
+  #myddpc-react-root .h-1\.5 { 
+    height: 6px !important; 
+  }
   
   /* Mobile responsive */
   @media (min-width: 768px) {
@@ -389,5 +393,1111 @@
   #myddpc-react-root .nav-btn-icon { margin-right: 0 !important; }
   #myddpc-react-root .nav-btn { padding-left: 0.5rem !important; padding-right: 0.5rem !important; min-width: 40px; justify-content: center; }
 }
+
+/* --- Vehicle Detail Page Styles --- */
+
+/* Hero Image Carousel */
+#myddpc-react-root .hero-carousel {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+#myddpc-react-root .hero-carousel img {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+#myddpc-react-root .hero-carousel:hover img {
+  transform: scale(1.02);
+}
+
+#myddpc-react-root .carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+#myddpc-react-root .carousel-nav:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: translateY(-50%) scale(1.1);
+}
+
+#myddpc-react-root .carousel-nav.left {
+  left: 1rem;
+}
+
+#myddpc-react-root .carousel-nav.right {
+  right: 1rem;
+}
+
+#myddpc-react-root .carousel-dots {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+#myddpc-react-root .carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#myddpc-react-root .carousel-dot.active {
+  background: white;
+  transform: scale(1.2);
+}
+
+/* Dashboard Cards */
+#myddpc-react-root .dashboard-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+#myddpc-react-root .dashboard-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+#myddpc-react-root .dashboard-card h3 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+#myddpc-react-root .dashboard-card .value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+#myddpc-react-root .dashboard-card .unit {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+/* Status Badge */
+#myddpc-react-root .status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  gap: 0.25rem;
+}
+
+/* Service Due Indicators */
+#myddpc-react-root .service-due {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+#myddpc-react-root .service-due.overdue {
+  color: #dc2626;
+}
+
+#myddpc-react-root .service-due.warning {
+  color: #d97706;
+}
+
+#myddpc-react-root .service-due.good {
+  color: #059669;
+}
+
+/* Section Headers */
+#myddpc-react-root .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+#myddpc-react-root .section-header h3 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+#myddpc-react-root .section-header .edit-btn {
+  color: #dc2626;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+#myddpc-react-root .section-header .edit-btn:hover {
+  background: #fef2f2;
+}
+
+/* Service Intervals */
+#myddpc-react-root .service-interval {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+#myddpc-react-root .service-interval:last-child {
+  margin-bottom: 0;
+}
+
+#myddpc-react-root .service-interval .service-name {
+  font-weight: 500;
+  color: #111827;
+}
+
+#myddpc-react-root .service-interval .service-details {
+  text-align: right;
+}
+
+#myddpc-react-root .service-interval .last-service {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+#myddpc-react-root .service-interval .due-status {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Recent Activity */
+#myddpc-react-root .activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+#myddpc-react-root .activity-item:last-child {
+  margin-bottom: 0;
+}
+
+#myddpc-react-root .activity-item .activity-info h4 {
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+#myddpc-react-root .activity-item .activity-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+#myddpc-react-root .activity-item .status-badge {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+}
+
+/* Add Entry Modal */
+#myddpc-react-root .add-entry-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 101;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#myddpc-react-root .add-entry-content {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  margin: 1rem;
+  width: 100%;
+  max-width: 28rem;
+}
+
+#myddpc-react-root .add-entry-option {
+  width: 100%;
+  text-align: left;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#myddpc-react-root .add-entry-option:hover {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+#myddpc-react-root .add-entry-option .option-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+#myddpc-react-root .add-entry-option .option-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #dc2626;
+}
+
+#myddpc-react-root .add-entry-option h4 {
+  font-weight: 500;
+  color: #111827;
+}
+
+#myddpc-react-root .add-entry-option p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-left: 2.25rem;
+}
+
+/* Mobile Responsiveness for Vehicle Detail */
+@media (max-width: 768px) {
+  #myddpc-react-root .hero-carousel img {
+    height: 300px;
+  }
+  
+  #myddpc-react-root .dashboard-card .value {
+    font-size: 1.5rem;
+  }
+  
+  #myddpc-react-root .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  #myddpc-react-root .service-interval {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  #myddpc-react-root .service-interval .service-details {
+    text-align: left;
+  }
+  
+  #myddpc-react-root .activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
   
   
+/* --- Vehicle Discovery Grid & Cards --- */
+
+/* Vehicle Discovery Grid Layout */
+#myddpc-react-root .vehicle-discovery-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    #myddpc-react-root .vehicle-discovery-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1280px) {
+    #myddpc-react-root .vehicle-discovery-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Vehicle Discovery Card */
+#myddpc-react-root .vehicle-discovery-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    height: fit-content;
+}
+
+#myddpc-react-root .vehicle-discovery-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Vehicle Card Image Container */
+#myddpc-react-root .vehicle-card-image-container {
+    position: relative;
+    height: 12rem;
+    background: #f3f4f6;
+    overflow: hidden;
+}
+
+#myddpc-react-root .vehicle-card-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+#myddpc-react-root .vehicle-discovery-card:hover .vehicle-card-image-container img {
+    transform: scale(1.05);
+}
+
+/* Vehicle Placeholder */
+#myddpc-react-root .vehicle-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(to bottom right, #f3f4f6, #e5e7eb);
+}
+
+/* Vehicle Card Content */
+#myddpc-react-root .vehicle-discovery-card .p-4 {
+    padding: 1rem;
+}
+
+/* Vehicle Card Title */
+#myddpc-react-root .vehicle-card-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #111827;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Vehicle Card Specifications */
+#myddpc-react-root .vehicle-card-specs {
+    margin-bottom: 1rem;
+}
+
+#myddpc-react-root .vehicle-card-specs > div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+#myddpc-react-root .vehicle-card-specs > div:not(:last-child) {
+    margin-bottom: 0.5rem;
+}
+
+#myddpc-react-root .vehicle-card-specs span:first-child {
+    color: #6b7280;
+}
+
+#myddpc-react-root .vehicle-card-specs span:last-child {
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Vehicle Card Actions */
+#myddpc-react-root .vehicle-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+#myddpc-react-root .vehicle-card-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+#myddpc-react-root .vehicle-card-actions button:first-child,
+#myddpc-react-root .vehicle-card-actions button:nth-child(2) {
+    flex: 1;
+}
+
+#myddpc-react-root .vehicle-card-actions button:last-child {
+    flex-shrink: 0;
+    width: 2.5rem;
+}
+
+#myddpc-react-root .vehicle-card-actions button svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Line Clamp Utility */
+#myddpc-react-root .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Responsive adjustments for vehicle cards */
+@media (max-width: 767px) {
+    #myddpc-react-root .vehicle-discovery-grid {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1rem;
+    }
+    
+    #myddpc-react-root .vehicle-card-image-container {
+        height: 10rem;
+    }
+    
+    #myddpc-react-root .vehicle-card-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    #myddpc-react-root .vehicle-card-actions button:first-child,
+    #myddpc-react-root .vehicle-card-actions button:nth-child(2),
+    #myddpc-react-root .vehicle-card-actions button:last-child {
+        flex: none;
+        width: 100%;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1279px) {
+    #myddpc-react-root .vehicle-discovery-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#myddpc-react-root .animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Enhanced Vehicle Discovery Styles */
+#myddpc-react-root .rounded-xl {
+    border-radius: 0.75rem;
+}
+
+#myddpc-react-root .shadow-sm {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+#myddpc-react-root .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+#myddpc-react-root .duration-300 {
+    transition-duration: 300ms;
+}
+
+#myddpc-react-root .group:hover .group-hover\:scale-105 {
+    transform: scale(1.05);
+}
+
+#myddpc-react-root .group-hover\:scale-105 {
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+}
+
+#myddpc-react-root .group-hover\:bg-opacity-20 {
+    --tw-bg-opacity: 0.2;
+}
+
+#myddpc-react-root .group-hover\:opacity-100 {
+    opacity: 1;
+}
+
+#myddpc-react-root .bg-opacity-0 {
+    --tw-bg-opacity: 0;
+}
+
+#myddpc-react-root .bg-black {
+    background-color: rgb(0 0 0 / var(--tw-bg-opacity));
+}
+
+#myddpc-react-root .opacity-0 {
+    opacity: 0;
+}
+
+#myddpc-react-root .h-56 {
+    height: 14rem;
+}
+
+#myddpc-react-root .text-xl {
+    font-size: 1.25rem;
+}
+
+#myddpc-react-root .font-semibold {
+    font-weight: 600;
+}
+
+#myddpc-react-root .leading-tight {
+    line-height: 1.25;
+}
+
+#myddpc-react-root .p-5 {
+    padding: 1.25rem;
+}
+
+#myddpc-react-root .mb-5 {
+    margin-bottom: 1.25rem;
+}
+
+#myddpc-react-root .gap-3 {
+    gap: 0.75rem;
+}
+
+#myddpc-react-root .bg-gray-50 {
+    background-color: #F9FAFB;
+}
+
+#myddpc-react-root .text-xs {
+    font-size: 0.75rem;
+}
+
+#myddpc-react-root .uppercase {
+    text-transform: uppercase;
+}
+
+#myddpc-react-root .tracking-wide {
+    letter-spacing: 0.025em;
+}
+
+#myddpc-react-root .mb-1 {
+    margin-bottom: 0.25rem;
+}
+
+#myddpc-react-root .font-bold {
+    font-weight: 700;
+}
+
+#myddpc-react-root .font-normal {
+    font-weight: 400;
+}
+
+#myddpc-react-root .px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+#myddpc-react-root .py-3 {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+#myddpc-react-root .gap-2 {
+    gap: 0.5rem;
+}
+
+#myddpc-react-root .bg-blue-600 {
+    background-color: #2563EB;
+}
+
+#myddpc-react-root .hover\:bg-blue-700:hover {
+    background-color: #1D4ED8;
+}
+
+#myddpc-react-root .text-white {
+    color: #FFFFFF;
+}
+
+#myddpc-react-root .justify-center {
+    justify-content: center;
+}
+
+#myddpc-react-root .border-2 {
+    border-width: 2px;
+}
+
+#myddpc-react-root .border-green-300 {
+    border-color: #86EFAC;
+}
+
+#myddpc-react-root .text-green-700 {
+    color: #15803D;
+}
+
+#myddpc-react-root .mb-8 {
+    margin-bottom: 2rem;
+}
+
+#myddpc-react-root .focus\:ring-2:focus {
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+#myddpc-react-root .focus\:ring-red-500:focus {
+    --tw-ring-color: #EF4444;
+}
+
+#myddpc-react-root .focus\:border-red-500:focus {
+    border-color: #EF4444;
+}
+
+#myddpc-react-root .hover\:text-red-700:hover {
+    color: #B91C1C;
+}
+
+#myddpc-react-root .text-lg {
+    font-size: 1.125rem;
+}
+
+#myddpc-react-root .text-2xl {
+    font-size: 1.5rem;
+}
+
+#myddpc-react-root .p-16 {
+    padding: 4rem;
+}
+
+#myddpc-react-root .h-12 {
+    height: 3rem;
+}
+
+#myddpc-react-root .w-12 {
+    width: 3rem;
+}
+
+#myddpc-react-root .mt-4 {
+    margin-top: 1rem;
+}
+
+#myddpc-react-root .text-lg {
+    font-size: 1.125rem;
+}
+
+#myddpc-react-root .gap-8 {
+    gap: 2rem;
+}
+
+#myddpc-react-root .max-w-md {
+    max-width: 28rem;
+}
+
+#myddpc-react-root .mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#myddpc-react-root .px-6 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+#myddpc-react-root .mt-12 {
+    margin-top: 3rem;
+}
+
+#myddpc-react-root .pt-8 {
+    padding-top: 2rem;
+}
+
+#myddpc-react-root .border-t {
+    border-top-width: 1px;
+}
+
+#myddpc-react-root .border-gray-200 {
+    border-color: #E5E7EB;
+}
+
+#myddpc-react-root .text-gray-400 {
+    color: #9CA3AF;
+}
+
+#myddpc-react-root .text-gray-500 {
+    color: #6B7281;
+}
+
+/* Enhanced vehicle card hover effects */
+#myddpc-react-root .vehicle-discovery-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(0);
+}
+
+#myddpc-react-root .vehicle-discovery-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Spec item enhancements */
+#myddpc-react-root .spec-item {
+    transition: all 0.2s ease-in-out;
+}
+
+#myddpc-react-root .spec-item:hover {
+    background-color: #F3F4F6;
+    transform: translateY(-1px);
+}
+
+/* Action button enhancements */
+#myddpc-react-root .vehicle-card-actions button {
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+#myddpc-react-root .vehicle-card-actions button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+#myddpc-react-root .vehicle-card-actions button:hover::before {
+    left: 100%;
+}
+
+/* Filter pane enhancements */
+#myddpc-react-root .discover-filters-column select {
+    transition: all 0.2s ease-in-out;
+}
+
+#myddpc-react-root .discover-filters-column select:hover {
+    border-color: #D1D5DB;
+}
+
+#myddpc-react-root .discover-filters-column select:focus {
+    outline: none;
+    border-color: #EF4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Loading state enhancements */
+#myddpc-react-root .animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive enhancements */
+@media (max-width: 1023px) {
+    #myddpc-react-root .vehicle-discovery-card {
+        margin-bottom: 1rem;
+    }
+    
+    #myddpc-react-root .vehicle-card-image-container {
+        height: 12rem;
+    }
+    
+    #myddpc-react-root .vehicle-card-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    #myddpc-react-root .vehicle-card-actions button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 767px) {
+    #myddpc-react-root .discover-view-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    #myddpc-react-root .discover-filters-column {
+        position: static;
+        margin-bottom: 1rem;
+    }
+    
+    #myddpc-react-root .vehicle-discovery-card {
+        margin-bottom: 1rem;
+    }
+    
+    #myddpc-react-root .vehicle-card-image-container {
+        height: 10rem;
+    }
+    
+    #myddpc-react-root .p-5 {
+        padding: 1rem;
+    }
+    
+    #myddpc-react-root .vehicle-card-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    #myddpc-react-root .vehicle-card-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Community Bridge Styles */
+#myddpc-react-root .bg-blue-50 {
+    background-color: #EFF6FF;
+}
+
+#myddpc-react-root .border-blue-200 {
+    border-color: #BFDBFE;
+}
+
+#myddpc-react-root .text-blue-600 {
+    color: #2563EB;
+}
+
+#myddpc-react-root .text-blue-900 {
+    color: #1E3A8A;
+}
+
+#myddpc-react-root .text-blue-700 {
+    color: #1D4ED8;
+}
+
+#myddpc-react-root .bg-green-500 {
+    background-color: #10B981;
+}
+
+#myddpc-react-root .bg-yellow-500 {
+    background-color: #F59E0B;
+}
+
+#myddpc-react-root .bg-gray-400 {
+    background-color: #9CA3AF;
+}
+
+#myddpc-react-root .w-2 {
+    width: 0.5rem;
+}
+
+#myddpc-react-root .h-2 {
+    height: 0.5rem;
+}
+
+#myddpc-react-root .rounded-full {
+    border-radius: 9999px;
+}
+
+#myddpc-react-root .capitalize {
+    text-transform: capitalize;
+}
+
+#myddpc-react-root .mt-0\.5 {
+    margin-top: 0.125rem;
+}
+
+/* Community build card enhancements */
+#myddpc-react-root .community-build-card {
+    transition: all 0.2s ease-in-out;
+}
+
+#myddpc-react-root .community-build-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#myddpc-react-root .build-status-indicator {
+    transition: all 0.2s ease-in-out;
+}
+
+#myddpc-react-root .build-status-indicator:hover {
+    transform: scale(1.2);
+}
+
+/* Discover Results Card Layout */
+  
+/* Account page specific styles */
+#myddpc-react-root .account-tab-nav {
+  border-bottom: 1px solid var(--ddpc-gray-200);
+}
+
+#myddpc-react-root .account-tab-nav button {
+  padding: 0.5rem 1rem;
+  border-bottom: 2px solid transparent;
+  font-weight: 500;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+#myddpc-react-root .account-tab-nav button.active {
+  border-bottom-color: var(--ddpc-red);
+  color: var(--ddpc-red);
+}
+
+#myddpc-react-root .account-tab-nav button:hover:not(.active) {
+  color: var(--ddpc-gray-700);
+  border-bottom-color: var(--ddpc-gray-300);
+}
+
+#myddpc-react-root .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  #myddpc-react-root .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+#myddpc-react-root .stat-card {
+  text-align: center;
+  padding: 1rem;
+  background-color: #F9FAFB;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+#myddpc-react-root .stat-card:hover {
+  background-color: #F3F4F6;
+  transform: translateY(-1px);
+}
+
+#myddpc-react-root .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ddpc-red);
+  margin-bottom: 0.25rem;
+}
+
+#myddpc-react-root .stat-label {
+  font-size: 0.875rem;
+  color: var(--ddpc-gray-600);
+}
+
+#myddpc-react-root .garage-showcase {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  #myddpc-react-root .garage-showcase {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  #myddpc-react-root .garage-showcase {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+#myddpc-react-root .garage-card {
+  border: 1px solid var(--ddpc-gray-200);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+#myddpc-react-root .garage-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+#myddpc-react-root .garage-card img {
+  width: 100%;
+  height: 8rem;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  margin-bottom: 0.75rem;
+}
+
+#myddpc-react-root .notification-preferences label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+#myddpc-react-root .notification-preferences input[type="checkbox"] {
+  margin-right: 0.5rem;
+  border-radius: 0.25rem;
+  border-color: var(--ddpc-gray-300);
+  color: var(--ddpc-red);
+}
+
+#myddpc-react-root .notification-preferences input[type="checkbox"]:focus {
+    --tw-ring-color: var(--ddpc-red);
+}
+
+
+
+/* Avatar hover effects */
+#myddpc-react-root .avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+#myddpc-react-root .avatar-container:hover .avatar-overlay {
+    opacity: 1;
+}
+
+#myddpc-react-root .avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 9999px;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#myddpc-react-root .avatar-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}

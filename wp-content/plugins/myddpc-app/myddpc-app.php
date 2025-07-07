@@ -78,6 +78,7 @@ function myddpc_app_register_rest_routes() {
     register_rest_route( $namespace, '/discover/results', [ 'methods' => 'POST', 'callback' => 'get_myddpc_discover_results_callback', 'permission_callback' => '__return_true' ]);
     register_rest_route( $namespace, '/discover/filters', [ 'methods' => 'GET', 'callback' => 'get_myddpc_discover_filters_callback', 'permission_callback' => '__return_true' ]);
     register_rest_route( $namespace, '/discover/vehicle/(?P<id>\d+)', [ 'methods' => 'GET', 'callback' => 'get_myddpc_discover_vehicle_details_callback', 'permission_callback' => '__return_true', 'args' => [ 'id' => [ 'validate_callback' => function($param, $request, $key) { return is_numeric( $param ); } ] ], ]);
+    register_rest_route( $namespace, '/discover/model_trims', [ 'methods' => 'GET', 'callback' => 'get_myddpc_model_trims_callback', 'permission_callback' => '__return_true' ]);
     register_rest_route( $namespace, '/dimensions/vehicle', [ 'methods'  => 'GET', 'callback' => 'get_myddpc_vehicle_dimensions_callback', 'permission_callback' => '__return_true' ] );
     register_rest_route( $namespace, '/dimensions/years', [ 'methods' => 'GET', 'callback' => 'get_myddpc_distinct_years_callback', 'permission_callback' => '__return_true' ]);
     register_rest_route( $namespace, '/dimensions/makes', [ 'methods' => 'GET', 'callback' => 'get_myddpc_distinct_makes_callback', 'permission_callback' => '__return_true' ]);
@@ -88,6 +89,9 @@ function myddpc_app_register_rest_routes() {
     // --- User Management Endpoints ---
     register_rest_route($namespace, '/user/register', [ 'methods' => 'POST', 'callback' => 'myddpc_handle_user_registration', 'permission_callback' => '__return_true' ]);
     register_rest_route($namespace, '/user/login', [ 'methods' => 'POST', 'callback' => 'myddpc_handle_user_login', 'permission_callback' => '__return_true' ]);
+    register_rest_route($namespace, '/user/me', [ 'methods' => 'GET', 'callback' => 'myddpc_get_user_me_callback', 'permission_callback' => 'is_user_logged_in' ]);
+    register_rest_route($namespace, '/user/profile', [ 'methods' => 'POST', 'callback' => 'myddpc_update_user_profile_callback', 'permission_callback' => 'is_user_logged_in' ]);
+    register_rest_route($namespace, '/user/password', [ 'methods' => 'POST', 'callback' => 'myddpc_change_password_callback', 'permission_callback' => 'is_user_logged_in' ]);
     
     // --- Garage & Build List CRUD Endpoints ---
     register_rest_route($namespace, '/garage/vehicles', [ 'methods' => 'GET', 'callback' => 'myddpc_get_garage_vehicles_callback', 'permission_callback' => 'is_user_logged_in' ]);
@@ -109,6 +113,33 @@ function myddpc_app_register_rest_routes() {
     register_rest_route( $namespace, '/vehicle/full_data', [
         'methods'  => 'GET',
         'callback' => 'myddpc_get_full_vehicle_data_callback',
+        'permission_callback' => '__return_true',
+    ] );
+    // --- Community Bridge Endpoint ---
+    register_rest_route($namespace, '/community/builds/(?P<vehicle_id>\d+)', [
+        'methods'  => 'GET',
+        'callback' => 'myddpc_get_community_builds_callback',
+        'permission_callback' => '__return_true',
+        'args' => [
+            'vehicle_id' => [
+                'validate_callback' => function($param, $request, $key) {
+                    return is_numeric($param);
+                }
+            ]
+        ]
+    ] );
+    
+    // Test endpoint for debugging
+    register_rest_route($namespace, '/test/db', [
+        'methods'  => 'GET',
+        'callback' => 'myddpc_test_db_connection',
+        'permission_callback' => '__return_true',
+    ] );
+    
+    // Debug endpoint for garage issues
+    register_rest_route($namespace, '/debug/garage', [
+        'methods'  => 'GET',
+        'callback' => 'myddpc_debug_garage_issues',
         'permission_callback' => '__return_true',
     ] );
 }
@@ -159,6 +190,21 @@ function myddpc_create_garage_table_if_not_exists() {
             vehicle_data_id mediumint(9) NOT NULL,
             nickname varchar(255) NOT NULL,
             custom_image_url text NULL,
+            status varchar(50) DEFAULT 'operational',
+            vehicle_type varchar(50) DEFAULT 'Personal',
+            mileage int(11) DEFAULT NULL,
+            vin varchar(17) DEFAULT NULL,
+            engine_code varchar(50) DEFAULT NULL,
+            drivetrain varchar(50) DEFAULT NULL,
+            exterior_color varchar(100) DEFAULT NULL,
+            interior_color varchar(100) DEFAULT NULL,
+            production_date date DEFAULT NULL,
+            purchase_date date DEFAULT NULL,
+            purchase_price decimal(10,2) DEFAULT NULL,
+            purchased_from varchar(255) DEFAULT NULL,
+            purchase_mileage int(11) DEFAULT NULL,
+            service_intervals longtext DEFAULT NULL,
+            last_service longtext DEFAULT NULL,
             date_added datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (garage_id),
             KEY user_id (user_id),
@@ -167,6 +213,32 @@ function myddpc_create_garage_table_if_not_exists() {
         
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
+    } else {
+        // Check if new columns exist and add them if they don't
+        $columns_to_add = [
+            'status' => "ALTER TABLE $table_name ADD COLUMN status varchar(50) DEFAULT 'operational'",
+            'vehicle_type' => "ALTER TABLE $table_name ADD COLUMN vehicle_type varchar(50) DEFAULT 'Personal'",
+            'mileage' => "ALTER TABLE $table_name ADD COLUMN mileage int(11) DEFAULT NULL",
+            'vin' => "ALTER TABLE $table_name ADD COLUMN vin varchar(17) DEFAULT NULL",
+            'engine_code' => "ALTER TABLE $table_name ADD COLUMN engine_code varchar(50) DEFAULT NULL",
+            'drivetrain' => "ALTER TABLE $table_name ADD COLUMN drivetrain varchar(50) DEFAULT NULL",
+            'exterior_color' => "ALTER TABLE $table_name ADD COLUMN exterior_color varchar(100) DEFAULT NULL",
+            'interior_color' => "ALTER TABLE $table_name ADD COLUMN interior_color varchar(100) DEFAULT NULL",
+            'production_date' => "ALTER TABLE $table_name ADD COLUMN production_date date DEFAULT NULL",
+            'purchase_date' => "ALTER TABLE $table_name ADD COLUMN purchase_date date DEFAULT NULL",
+            'purchase_price' => "ALTER TABLE $table_name ADD COLUMN purchase_price decimal(10,2) DEFAULT NULL",
+            'purchased_from' => "ALTER TABLE $table_name ADD COLUMN purchased_from varchar(255) DEFAULT NULL",
+            'purchase_mileage' => "ALTER TABLE $table_name ADD COLUMN purchase_mileage int(11) DEFAULT NULL",
+            'service_intervals' => "ALTER TABLE $table_name ADD COLUMN service_intervals longtext DEFAULT NULL",
+            'last_service' => "ALTER TABLE $table_name ADD COLUMN last_service longtext DEFAULT NULL"
+        ];
+        
+        foreach ($columns_to_add as $column => $sql) {
+            $column_exists = $wpdb->get_var("SHOW COLUMNS FROM $table_name LIKE '$column'");
+            if (!$column_exists) {
+                $wpdb->query($sql);
+            }
+        }
     }
 }
 
@@ -220,6 +292,85 @@ function myddpc_create_saved_vehicles_table_if_not_exists() {
 // Ensure Discover_Query class is available
 if (file_exists(plugin_dir_path(__FILE__) . 'includes/class-discover-query.php')) {
     require_once plugin_dir_path(__FILE__) . 'includes/class-discover-query.php';
+}
+
+// Test database connection function
+function myddpc_test_db_connection() {
+    global $wpdb;
+    
+    try {
+        // Test basic connection
+        $result = $wpdb->get_var("SELECT 1");
+        if ($result !== '1') {
+            return new WP_Error('db_error', 'Database connection failed', ['status' => 500]);
+        }
+        
+        // Test if tables exist
+        $garage_table = $wpdb->prefix . 'user_garage';
+        $builds_table = $wpdb->prefix . 'user_garage_builds';
+        $vehicle_data_table = $wpdb->prefix . 'vehicle_data';
+        
+        $garage_exists = $wpdb->get_var("SHOW TABLES LIKE '$garage_table'") == $garage_table;
+        $builds_exists = $wpdb->get_var("SHOW TABLES LIKE '$builds_table'") == $builds_table;
+        $vehicle_data_exists = $wpdb->get_var("SHOW TABLES LIKE '$vehicle_data_table'") == $vehicle_data_table;
+        
+        return new WP_REST_Response([
+            'status' => 'success',
+            'message' => 'Database connection working',
+            'tables' => [
+                'garage' => $garage_exists,
+                'builds' => $builds_exists,
+                'vehicle_data' => $vehicle_data_exists
+            ],
+            'last_error' => $wpdb->last_error
+        ], 200);
+        
+    } catch (Exception $e) {
+        return new WP_Error('db_error', 'Database error: ' . $e->getMessage(), ['status' => 500]);
+    }
+}
+
+// Debug garage issues function
+function myddpc_debug_garage_issues() {
+    global $wpdb;
+    
+    try {
+        $debug_info = [
+            'user_id' => get_current_user_id(),
+            'is_logged_in' => is_user_logged_in(),
+            'user_roles' => wp_get_current_user()->roles ?? [],
+            'database_prefix' => $wpdb->prefix,
+            'last_error' => $wpdb->last_error,
+            'tables' => []
+        ];
+        
+        // Check table existence
+        $tables_to_check = [
+            'user_garage' => $wpdb->prefix . 'user_garage',
+            'user_garage_builds' => $wpdb->prefix . 'user_garage_builds',
+            'user_saved_vehicles' => $wpdb->prefix . 'user_saved_vehicles',
+            'vehicle_data' => $wpdb->prefix . 'vehicle_data'
+        ];
+        
+        foreach ($tables_to_check as $table_name => $full_table_name) {
+            $exists = $wpdb->get_var("SHOW TABLES LIKE '$full_table_name'") == $full_table_name;
+            $debug_info['tables'][$table_name] = [
+                'exists' => $exists,
+                'full_name' => $full_table_name
+            ];
+            
+            if ($exists) {
+                // Get table structure
+                $columns = $wpdb->get_results("SHOW COLUMNS FROM $full_table_name", ARRAY_A);
+                $debug_info['tables'][$table_name]['columns'] = array_column($columns, 'Field');
+            }
+        }
+        
+        return new WP_REST_Response($debug_info, 200);
+        
+    } catch (Exception $e) {
+        return new WP_Error('debug_error', 'Debug error: ' . $e->getMessage(), ['status' => 500]);
+    }
 }
 
 // --- Tool & User Callbacks ---
@@ -327,6 +478,36 @@ function get_myddpc_discover_vehicle_details_callback($request){
     return new WP_REST_Response($vehicle_data, 200);
 }
 
+function get_myddpc_model_trims_callback($request) {
+    if (!class_exists('Discover_Query')) return new WP_Error('class_not_found', 'Discover Query class is missing.', ['status' => 500]);
+    
+    $params = $request->get_params();
+    $year = isset($params['year']) ? (int) $params['year'] : null;
+    $make = isset($params['make']) ? sanitize_text_field($params['make']) : null;
+    $model = isset($params['model']) ? sanitize_text_field($params['model']) : null;
+    
+    if (!$year || !$make || !$model) {
+        return new WP_Error('bad_request', 'Year, Make, and Model are required.', ['status' => 400]);
+    }
+    
+    $query = new Discover_Query();
+    $trims = $query->get_model_trims($year, $make, $model);
+    
+    if (empty($trims)) {
+        return new WP_Error('not_found', 'No trims found for this model.', ['status' => 404]);
+    }
+    
+    return new WP_REST_Response([
+        'model_info' => [
+            'year' => $year,
+            'make' => $make,
+            'model' => $model,
+            'trim_count' => count($trims)
+        ],
+        'trims' => $trims
+    ], 200);
+}
+
 function myddpc_handle_user_registration(WP_REST_Request $request) {
     $params = $request->get_json_params();
     $email = sanitize_email($params['email']);
@@ -384,46 +565,141 @@ function myddpc_handle_user_login(WP_REST_Request $request) {
     ], 200);
 }
 
+// === GARAGE LIMITS & PERMISSIONS ===
+function myddpc_get_user_garage_limit_and_permission($user_id = null) {
+    if (!$user_id) $user_id = get_current_user_id();
+    $user = get_userdata($user_id);
+    if (!$user) return ['limit' => 0, 'can_use' => false, 'role' => null];
+    $roles = (array) $user->roles;
+    if (in_array('administrator', $roles) || in_array('keymaster', $roles)) {
+        return ['limit' => -1, 'can_use' => true, 'role' => 'admin']; // unlimited
+    }
+    // All other signed-in users get 2 slots
+    return ['limit' => 2, 'can_use' => true, 'role' => $roles ? $roles[0] : null];
+}
+
 // --- Garage & Build List Callbacks ---
 
 function myddpc_get_garage_vehicles_callback() {
     global $wpdb;
-    $user_id = get_current_user_id();
-    if ($user_id == 0) {
-        return new WP_Error('not_logged_in', 'User is not logged in.', ['status' => 401]);
+    
+    try {
+        // Add error logging
+        error_log('MyDDPC: Garage vehicles callback started');
+        
+        // Test basic database connection first
+        $test_result = $wpdb->get_var("SELECT 1");
+        if ($test_result !== '1') {
+            error_log('MyDDPC: Database connection failed');
+            return new WP_REST_Response([
+                'garage_limit' => 2,
+                'garage_count' => 0,
+                'can_add_more' => true,
+                'role' => 'user',
+                'vehicles' => [],
+                'error' => 'Database connection failed',
+                'debug_info' => [
+                    'db_test_result' => $test_result,
+                    'last_error' => $wpdb->last_error
+                ]
+            ], 200);
+        }
+        
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            error_log('MyDDPC: No user ID found');
+            return new WP_Error('not_authenticated', 'User not authenticated.', ['status' => 401]);
+        }
+    
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_REST_Response([
+            'error' => 'not_allowed',
+            'message' => 'You do not have permission to use the garage.',
+            'garage_limit' => $perm['limit'],
+            'garage_count' => 0,
+            'can_add_more' => false,
+            'vehicles' => [],
+        ], 200);
     }
 
-    // First, let's try to determine which garage table actually exists
-    $possible_tables = [
-        'qfh_user_garage',
-        $wpdb->prefix . 'user_garage'
-    ];
+    // Use the correct table names based on the creation functions
+    $garage_table = $wpdb->prefix . 'user_garage';
+    $builds_table = $wpdb->prefix . 'user_garage_builds';
+    $vehicle_data_table = $wpdb->prefix . 'vehicle_data';
     
-    $garage_table = null;
-    foreach ($possible_tables as $table) {
-        if ($wpdb->get_var("SHOW TABLES LIKE '$table'") == $table) {
-            $garage_table = $table;
-            break;
+    error_log('MyDDPC: Checking tables - garage: ' . $garage_table . ', builds: ' . $builds_table . ', vehicle_data: ' . $vehicle_data_table);
+    
+    // Check if garage table exists
+    if ($wpdb->get_var("SHOW TABLES LIKE '$garage_table'") != $garage_table) {
+        error_log('MyDDPC: Garage table does not exist, creating...');
+        // Table doesn't exist, create it
+        myddpc_create_garage_table_if_not_exists();
+    } else {
+        error_log('MyDDPC: Garage table exists');
+        // Table exists, but check if we need to add missing columns
+        $columns_to_check = [
+            'status' => "ALTER TABLE {$garage_table} ADD COLUMN status VARCHAR(50) DEFAULT 'operational'",
+            'vehicle_type' => "ALTER TABLE {$garage_table} ADD COLUMN vehicle_type VARCHAR(50) DEFAULT 'Personal'",
+            'mileage' => "ALTER TABLE {$garage_table} ADD COLUMN mileage INT DEFAULT NULL",
+            'vin' => "ALTER TABLE {$garage_table} ADD COLUMN vin VARCHAR(50) DEFAULT NULL",
+            'engine_code' => "ALTER TABLE {$garage_table} ADD COLUMN engine_code VARCHAR(50) DEFAULT NULL",
+            'drivetrain' => "ALTER TABLE {$garage_table} ADD COLUMN drivetrain VARCHAR(50) DEFAULT NULL",
+            'exterior_color' => "ALTER TABLE {$garage_table} ADD COLUMN exterior_color VARCHAR(100) DEFAULT NULL",
+            'interior_color' => "ALTER TABLE {$garage_table} ADD COLUMN interior_color VARCHAR(100) DEFAULT NULL",
+            'production_date' => "ALTER TABLE {$garage_table} ADD COLUMN production_date DATE DEFAULT NULL",
+            'purchase_date' => "ALTER TABLE {$garage_table} ADD COLUMN purchase_date DATE DEFAULT NULL",
+            'purchase_price' => "ALTER TABLE {$garage_table} ADD COLUMN purchase_price DECIMAL(10,2) DEFAULT NULL",
+            'purchased_from' => "ALTER TABLE {$garage_table} ADD COLUMN purchased_from VARCHAR(255) DEFAULT NULL",
+            'purchase_mileage' => "ALTER TABLE {$garage_table} ADD COLUMN purchase_mileage INT DEFAULT NULL",
+            'service_intervals' => "ALTER TABLE {$garage_table} ADD COLUMN service_intervals JSON DEFAULT NULL",
+            'last_service' => "ALTER TABLE {$garage_table} ADD COLUMN last_service JSON DEFAULT NULL"
+        ];
+        
+        foreach ($columns_to_check as $column => $sql) {
+            $column_exists = $wpdb->get_var("SHOW COLUMNS FROM {$garage_table} LIKE '{$column}'");
+            if (!$column_exists) {
+                error_log("MyDDPC: Adding missing column {$column} to garage table");
+                $wpdb->query($sql);
+            }
         }
     }
     
-    if (!$garage_table) {
-        return new WP_Error('table_not_found', 'Garage table not found.', ['status' => 500]);
+    // Check if builds table exists
+    if ($wpdb->get_var("SHOW TABLES LIKE '$builds_table'") != $builds_table) {
+        // Table doesn't exist, create it
+        myddpc_create_build_table_if_not_exists();
+    }
+    
+    // Check if saved vehicles table exists
+    $saved_table = $wpdb->prefix . 'user_saved_vehicles';
+    if ($wpdb->get_var("SHOW TABLES LIKE '$saved_table'") != $saved_table) {
+        // Table doesn't exist, create it
+        myddpc_create_saved_vehicles_table_if_not_exists();
     }
 
-    $builds_table = 'qfh_user_garage_builds';
-    $vehicle_data_table = $wpdb->prefix . 'vehicle_data';
-
-    // Start with basic garage data first
+    // Start with basic garage data first - select all available columns
     $query = $wpdb->prepare("
         SELECT
             g.garage_id,
             g.nickname AS name,
             g.custom_image_url,
             g.vehicle_data_id,
-            COALESCE(g.status, 'active') AS status,
-            COALESCE(g.vehicle_type, 'daily') AS type,
+            COALESCE(g.status, 'operational') AS status,
+            COALESCE(g.vehicle_type, 'Personal') AS type,
             g.mileage,
+            g.vin,
+            g.engine_code,
+            g.drivetrain,
+            g.exterior_color,
+            g.interior_color,
+            g.production_date,
+            g.purchase_date,
+            g.purchase_price,
+            g.purchased_from,
+            g.purchase_mileage,
+            g.service_intervals,
+            g.last_service,
             v.Year,
             v.Make,
             v.Model,
@@ -436,11 +712,15 @@ function myddpc_get_garage_vehicles_callback() {
             g.user_id = %d
     ", $user_id);
 
+    error_log('MyDDPC: Executing query for user ' . $user_id);
     $results = $wpdb->get_results($query, ARRAY_A);
 
     if ($wpdb->last_error) {
+        error_log('MyDDPC: Database error: ' . $wpdb->last_error);
         return new WP_Error('db_error', 'Database error: ' . $wpdb->last_error, ['status' => 500]);
     }
+    
+    error_log('MyDDPC: Query successful, found ' . count($results) . ' vehicles');
 
     // Now get build counts and investments for each vehicle
     foreach ($results as &$vehicle) {
@@ -471,41 +751,132 @@ function myddpc_get_garage_vehicles_callback() {
             }
         }
         
-        // Process and clean up data
+        // Process and clean up data - use actual values from database or defaults
         $vehicle['garage_id'] = $garage_id;
-        $vehicle['mileage'] = $vehicle['mileage'] ? intval($vehicle['mileage']) : null;
+        $vehicle['mileage'] = isset($vehicle['mileage']) ? intval($vehicle['mileage']) : null;
         $vehicle['modifications'] = intval($modifications);
         $vehicle['totalInvested'] = $investment ? floatval($investment) : 0;
+        $vehicle['status'] = isset($vehicle['status']) ? $vehicle['status'] : 'operational';
+        $vehicle['type'] = isset($vehicle['type']) ? $vehicle['type'] : 'Personal';
+        $vehicle['vin'] = isset($vehicle['vin']) ? $vehicle['vin'] : null;
+        $vehicle['engine_code'] = isset($vehicle['engine_code']) ? $vehicle['engine_code'] : null;
+        $vehicle['drivetrain'] = isset($vehicle['drivetrain']) ? $vehicle['drivetrain'] : null;
+        $vehicle['exterior_color'] = isset($vehicle['exterior_color']) ? $vehicle['exterior_color'] : null;
+        $vehicle['interior_color'] = isset($vehicle['interior_color']) ? $vehicle['interior_color'] : null;
+        $vehicle['production_date'] = isset($vehicle['production_date']) ? $vehicle['production_date'] : null;
+        $vehicle['purchase_date'] = isset($vehicle['purchase_date']) ? $vehicle['purchase_date'] : null;
+        $vehicle['purchase_price'] = isset($vehicle['purchase_price']) ? floatval($vehicle['purchase_price']) : null;
+        $vehicle['purchased_from'] = isset($vehicle['purchased_from']) ? $vehicle['purchased_from'] : null;
+        $vehicle['purchase_mileage'] = isset($vehicle['purchase_mileage']) ? intval($vehicle['purchase_mileage']) : null;
         
+        // Process JSON fields
+        if (!empty($vehicle['service_intervals'])) {
+            $vehicle['service_intervals'] = json_decode($vehicle['service_intervals'], true);
+        } else {
+            $vehicle['service_intervals'] = [
+                'oil_change' => 5000,
+                'brake_fluid' => 24000,
+                'transmission' => 60000,
+                'coolant' => 60000
+            ];
+        }
+        
+        if (!empty($vehicle['last_service'])) {
+            $vehicle['last_service'] = json_decode($vehicle['last_service'], true);
+        } else {
+            $vehicle['last_service'] = [
+                'oil_change' => '',
+                'brake_fluid' => '',
+                'transmission' => '',
+                'coolant' => ''
+            ];
+        }
+        
+        // Add vehicle_id for frontend image lookup
+        $vehicle['vehicle_id'] = $vehicle['vehicle_data_id'];
         // Remove vehicle_data_id from output as it's internal
         unset($vehicle['vehicle_data_id']);
     }
 
-    return new WP_REST_Response($results, 200);
+    $garage_count = count($results);
+    $can_add_more = ($perm['limit'] === -1) ? true : ($garage_count < $perm['limit']);
+    return new WP_REST_Response([
+        'garage_limit' => $perm['limit'],
+        'garage_count' => $garage_count,
+        'can_add_more' => $can_add_more,
+        'role' => $perm['role'],
+        'vehicles' => $results,
+    ], 200);
+    
+    } catch (Exception $e) {
+        error_log('MyDDPC: Exception in garage vehicles callback: ' . $e->getMessage());
+        error_log('MyDDPC: Exception trace: ' . $e->getTraceAsString());
+        
+        // Return a safe fallback response instead of an error
+        return new WP_REST_Response([
+            'garage_limit' => 2,
+            'garage_count' => 0,
+            'can_add_more' => true,
+            'role' => 'user',
+            'vehicles' => [],
+            'error' => 'Database error occurred, but continuing with empty garage',
+            'debug_info' => [
+                'exception' => $e->getMessage(),
+                'user_id' => get_current_user_id(),
+                'is_logged_in' => is_user_logged_in()
+            ]
+        ], 200);
+    }
 }
 
 function myddpc_add_garage_vehicle_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
-    $table_name = 'qfh_user_garage'; // Use your existing table name
-
-    if (empty($params['vehicle_id']) || empty($params['nickname'])) { return new WP_Error('bad_request', 'Vehicle ID and nickname are required.', ['status' => 400]); }
+    $table_name = $wpdb->prefix . 'user_garage';
+    if (empty($params['vehicle_id']) || empty($params['nickname'])) {
+        return new WP_Error('bad_request', 'Vehicle ID and nickname are required.', ['status' => 400]);
+    }
     $vehicle_data_id = absint($params['vehicle_id']);
     $nickname = sanitize_text_field($params['nickname']);
+    // ENFORCE: Only allow adding from saved list
+    $saved_table = $wpdb->prefix . 'user_saved_vehicles';
+    $is_saved = $wpdb->get_var($wpdb->prepare(
+        "SELECT saved_id FROM $saved_table WHERE user_id = %d AND vehicle_id = %d",
+        $user_id, $vehicle_data_id
+    ));
+    if (!$is_saved) {
+        return new WP_Error('not_saved', 'You can only add vehicles from your saved list.', ['status' => 403]);
+    }
+    // ENFORCE: Limit for members
+    $garage_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE user_id = %d", $user_id));
+    if ($perm['limit'] !== -1 && $garage_count >= $perm['limit']) {
+        return new WP_Error('limit_reached', 'You have reached your garage limit.', ['status' => 403]);
+    }
     $existing = $wpdb->get_var($wpdb->prepare( "SELECT garage_id FROM $table_name WHERE user_id = %d AND vehicle_data_id = %d", $user_id, $vehicle_data_id ));
-    if ($existing) { return new WP_Error('vehicle_exists', 'This vehicle is already in your garage.', ['status' => 409]); }
-    
+    if ($existing) {
+        return new WP_Error('vehicle_exists', 'This vehicle is already in your garage.', ['status' => 409]);
+    }
     $result = $wpdb->insert($table_name, [ 'user_id' => $user_id, 'vehicle_data_id' => $vehicle_data_id, 'nickname' => $nickname, 'date_added' => current_time('mysql'), ]);
-    if ($result === false) { return new WP_Error('db_error', 'Could not add vehicle to garage.', ['status' => 500]); }
+    if ($result === false) {
+        return new WP_Error('db_error', 'Could not add vehicle to garage.', ['status' => 500]);
+    }
     return new WP_REST_Response(['success' => true, 'message' => 'Vehicle added to garage.', 'garage_id' => $wpdb->insert_id], 201);
 }
 
 function myddpc_update_garage_vehicle_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
-    $table_name = 'qfh_user_garage';
+    $table_name = $wpdb->prefix . 'user_garage';
 
     if (empty($params['garage_id'])) {
         return new WP_Error('bad_request', 'Garage ID is required.', ['status' => 400]);
@@ -539,6 +910,54 @@ function myddpc_update_garage_vehicle_callback(WP_REST_Request $request) {
         $update_data['mileage'] = absint($params['mileage']);
         $update_format[] = '%d';
     }
+    if (isset($params['vin'])) {
+        $update_data['vin'] = sanitize_text_field($params['vin']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['engine_code'])) {
+        $update_data['engine_code'] = sanitize_text_field($params['engine_code']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['drivetrain'])) {
+        $update_data['drivetrain'] = sanitize_text_field($params['drivetrain']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['exterior_color'])) {
+        $update_data['exterior_color'] = sanitize_text_field($params['exterior_color']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['interior_color'])) {
+        $update_data['interior_color'] = sanitize_text_field($params['interior_color']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['production_date'])) {
+        $update_data['production_date'] = sanitize_text_field($params['production_date']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['purchase_date'])) {
+        $update_data['purchase_date'] = sanitize_text_field($params['purchase_date']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['purchase_price'])) {
+        $update_data['purchase_price'] = floatval($params['purchase_price']);
+        $update_format[] = '%f';
+    }
+    if (isset($params['purchased_from'])) {
+        $update_data['purchased_from'] = sanitize_text_field($params['purchased_from']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['purchase_mileage'])) {
+        $update_data['purchase_mileage'] = absint($params['purchase_mileage']);
+        $update_format[] = '%d';
+    }
+    if (isset($params['service_intervals'])) {
+        $update_data['service_intervals'] = json_encode($params['service_intervals']);
+        $update_format[] = '%s';
+    }
+    if (isset($params['last_service'])) {
+        $update_data['last_service'] = json_encode($params['last_service']);
+        $update_format[] = '%s';
+    }
     // ADDED: Handle custom_image_url update
     if (isset($params['custom_image_url'])) {
         $update_data['custom_image_url'] = esc_url_raw($params['custom_image_url']);
@@ -561,9 +980,13 @@ function myddpc_update_garage_vehicle_callback(WP_REST_Request $request) {
 function myddpc_delete_garage_vehicle_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
-    $garage_table = 'qfh_user_garage'; // Use your existing table name
-    $builds_table = 'qfh_user_garage_builds'; // Use your existing table name
+    $garage_table = $wpdb->prefix . 'user_garage';
+    $builds_table = $wpdb->prefix . 'user_garage_builds';
 
     if (empty($params['garage_id'])) { return new WP_Error('bad_request', 'Garage ID is required.', ['status' => 400]); }
     $garage_id = absint($params['garage_id']);
@@ -580,9 +1003,13 @@ function myddpc_delete_garage_vehicle_callback(WP_REST_Request $request) {
 function myddpc_get_build_list_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $garage_id = absint($request['garage_id']);
-    $garage_table = 'qfh_user_garage'; // Use your existing table name
-    $builds_table = 'qfh_user_garage_builds'; // Use your existing table name
+    $garage_table = $wpdb->prefix . 'user_garage';
+    $builds_table = $wpdb->prefix . 'user_garage_builds';
 
     $owner_id = $wpdb->get_var($wpdb->prepare("SELECT user_id FROM $garage_table WHERE garage_id = %d", $garage_id));
     if ($owner_id != $user_id) { return new WP_Error('permission_denied', 'Access denied.', ['status' => 403]); }
@@ -599,8 +1026,12 @@ function myddpc_get_build_list_callback(WP_REST_Request $request) {
 function myddpc_save_build_job_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
-    $builds_table = 'qfh_user_garage_builds'; // Use your existing table name
+    $builds_table = $wpdb->prefix . 'user_garage_builds';
 
     $data = [
         'garage_entry_id'     => isset($params['garage_id']) ? absint($params['garage_id']) : null,
@@ -618,8 +1049,8 @@ function myddpc_save_build_job_callback(WP_REST_Request $request) {
         return new WP_Error('bad_request', 'Garage ID and Job Title are required.', ['status' => 400]); 
     }
     
-    // Verify ownership using qfh_user_garage table
-    $garage_table = 'qfh_user_garage';
+    // Verify ownership using garage table
+    $garage_table = $wpdb->prefix . 'user_garage';
     $owner_id = $wpdb->get_var($wpdb->prepare("SELECT user_id FROM $garage_table WHERE garage_id = %d", $data['garage_entry_id']));
     if ($owner_id != $user_id) { 
         return new WP_Error('permission_denied', 'Access denied.', ['status' => 403]); 
@@ -653,14 +1084,19 @@ function myddpc_save_build_job_callback(WP_REST_Request $request) {
 function myddpc_delete_build_job_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
+    $perm = myddpc_get_user_garage_limit_and_permission($user_id);
+    if (!$perm['can_use']) {
+        return new WP_Error('not_allowed', 'You do not have permission to use the garage.', ['status' => 403]);
+    }
     $params = $request->get_json_params();
-    $builds_table = 'qfh_user_garage_builds'; // Use your existing table name
+    $builds_table = $wpdb->prefix . 'user_garage_builds';
 
     if (empty($params['build_entry_id'])) { return new WP_Error('bad_request', 'Build Entry ID is required.', ['status' => 400]); }
     $build_entry_id = absint($params['build_entry_id']);
 
     // Verify ownership by joining with garage table
-    $owner_id = $wpdb->get_var($wpdb->prepare("SELECT g.user_id FROM $builds_table b JOIN qfh_user_garage g ON b.garage_entry_id = g.garage_id WHERE b.build_entry_id = %d", $build_entry_id));
+    $garage_table = $wpdb->prefix . 'user_garage';
+    $owner_id = $wpdb->get_var($wpdb->prepare("SELECT g.user_id FROM $builds_table b JOIN $garage_table g ON b.garage_entry_id = g.garage_id WHERE b.build_entry_id = %d", $build_entry_id));
     if ($owner_id != $user_id) { return new WP_Error('permission_denied', 'You do not have permission to delete this job.', ['status' => 403]); }
 
     $result = $wpdb->delete($builds_table, ['build_entry_id' => $build_entry_id]);
@@ -674,8 +1110,8 @@ function myddpc_delete_build_job_callback(WP_REST_Request $request) {
 function myddpc_get_garage_metrics_callback(WP_REST_Request $request) {
     global $wpdb;
     $user_id = get_current_user_id();
-    $garage_table = 'qfh_user_garage'; // Use your existing table name
-    $builds_table = 'qfh_user_garage_builds'; // Use your existing table name
+    $garage_table = $wpdb->prefix . 'user_garage';
+    $builds_table = $wpdb->prefix . 'user_garage_builds';
 
     // 1. Get all garage IDs for the current user
     $garage_ids = $wpdb->get_col($wpdb->prepare("SELECT garage_id FROM $garage_table WHERE user_id = %d", $user_id));
@@ -888,6 +1324,8 @@ function myddpc_get_user_me_callback(WP_REST_Request $request) {
         'email' => $user->user_email,
         'location' => get_user_meta($user->ID, 'myddpc_location', true),
         'avatar_url' => get_user_meta($user->ID, 'myddpc_avatar_url', true),
+        'bio' => get_user_meta($user->ID, 'myddpc_bio', true),
+        'member_since' => $user->user_registered,
     ];
 
     return new WP_REST_Response($user_data, 200);
@@ -905,6 +1343,10 @@ function myddpc_update_user_profile_callback(WP_REST_Request $request) {
 
     if (isset($params['location'])) {
         update_user_meta($user->ID, 'myddpc_location', sanitize_text_field($params['location']));
+    }
+
+    if (isset($params['bio'])) {
+        update_user_meta($user->ID, 'myddpc_bio', sanitize_textarea_field($params['bio']));
     }
 
     if (isset($params['avatar_url'])) {
@@ -937,27 +1379,7 @@ function myddpc_change_password_callback(WP_REST_Request $request) {
 
 
 // 5. Register the new API routes
-add_action('rest_api_init', function () {
-    register_rest_route('myddpc/v2', '/user/me', [
-        'methods' => 'GET',
-        'callback' => 'myddpc_get_user_me_callback',
-        'permission_callback' => 'is_user_logged_in',
-    ]);
-
-    register_rest_route('myddpc/v2', '/user/profile', [
-        'methods' => 'POST',
-        'callback' => 'myddpc_update_user_profile_callback',
-        'permission_callback' => 'is_user_logged_in',
-    ]);
-
-    register_rest_route('myddpc/v2', '/user/password', [
-        'methods' => 'POST',
-        'callback' => 'myddpc_change_password_callback',
-        'permission_callback' => 'is_user_logged_in',
-    ]);
-
-
-});
+// Note: User endpoints are now registered in the main myddpc_app_register_rest_routes() function
 
 // Ensure all required tables are created on plugin activation and init
 register_activation_hook(__FILE__, 'myddpc_create_saved_vehicles_table_if_not_exists');
@@ -1165,6 +1587,97 @@ function myddpc_get_full_vehicle_data_callback( WP_REST_Request $request ) {
     ];
 
     return new WP_REST_Response( $structured_data, 200 );
+}
+
+/**
+ * Community Bridge: Get builds based on a specific vehicle model
+ */
+function myddpc_get_community_builds_callback( WP_REST_Request $request ) {
+    global $wpdb;
+    $vehicle_id = absint($request['vehicle_id']);
+    
+    if ( ! $vehicle_id ) {
+        return new WP_Error( 'bad_request', 'Missing required vehicle ID.', [ 'status' => 400 ] );
+    }
+
+    // First, get the vehicle data to find matching criteria
+    $vehicle_data_table = $wpdb->prefix . 'vehicle_data';
+    $vehicle_data = $wpdb->get_row( $wpdb->prepare(
+        "SELECT Year, Make, Model, Trim FROM {$vehicle_data_table} WHERE ID = %d",
+        $vehicle_id
+    ), ARRAY_A );
+
+    if ( ! $vehicle_data ) {
+        return new WP_Error( 'not_found', 'Vehicle not found.', [ 'status' => 404 ] );
+    }
+
+    // Find garage vehicles that match this model (same year, make, model)
+    $garage_table = $wpdb->prefix . 'user_garage';
+    $builds_table = $wpdb->prefix . 'user_garage_builds';
+    
+    $matching_garage_vehicles = $wpdb->get_results( $wpdb->prepare(
+        "SELECT g.*, u.display_name as owner_name, u.user_login as owner_username
+         FROM {$garage_table} g
+         JOIN {$wpdb->users} u ON g.user_id = u.ID
+         JOIN {$vehicle_data_table} v ON g.vehicle_data_id = v.ID
+         WHERE v.Year = %d AND v.Make = %s AND v.Model = %s
+         ORDER BY g.date_added DESC
+         LIMIT 10",
+        $vehicle_data['Year'],
+        $vehicle_data['Make'],
+        $vehicle_data['Model']
+    ), ARRAY_A );
+
+    if ( empty($matching_garage_vehicles) ) {
+        return new WP_REST_Response([
+            'has_builds' => false,
+            'build_count' => 0,
+            'builds' => []
+        ], 200 );
+    }
+
+    // Get build data for each matching vehicle
+    $builds_data = [];
+    foreach ( $matching_garage_vehicles as $garage_vehicle ) {
+        $builds = $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$builds_table} 
+             WHERE garage_entry_id = %d 
+             ORDER BY date_added DESC",
+            $garage_vehicle['garage_id']
+        ), ARRAY_A );
+
+        if ( ! empty($builds) ) {
+            $builds_data[] = [
+                'garage_vehicle' => [
+                    'id' => $garage_vehicle['garage_id'],
+                    'nickname' => $garage_vehicle['nickname'],
+                    'owner_name' => $garage_vehicle['owner_name'],
+                    'owner_username' => $garage_vehicle['owner_username'],
+                    'date_added' => $garage_vehicle['date_added'],
+                    'total_builds' => count($builds),
+                    'completed_builds' => count(array_filter($builds, function($build) {
+                        return $build['status'] === 'complete';
+                    }))
+                ],
+                'builds' => array_map(function($build) {
+                    return [
+                        'id' => $build['build_entry_id'],
+                        'title' => $build['job_title'],
+                        'type' => $build['job_type'],
+                        'status' => $build['status'],
+                        'date_added' => $build['date_added'],
+                        'installation_date' => $build['installation_date']
+                    ];
+                }, $builds)
+            ];
+        }
+    }
+
+    return new WP_REST_Response([
+        'has_builds' => !empty($builds_data),
+        'build_count' => count($builds_data),
+        'builds' => $builds_data
+    ], 200 );
 }
 
 // --- ADD THIS: Function to handle the new shortcode ---
