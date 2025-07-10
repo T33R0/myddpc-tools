@@ -117,7 +117,7 @@ function renderTableHeader() {
         { key: 'Model', label: 'Model' },
         { key: 'Trim', label: 'Trim' },
         { key: 'Engine size (l)', label: 'Engine (L)' },
-        { key: 'Cylinders', label: 'Cylinders' },
+        { key: 'Cylinders', label: 'Engine Configuration' },
         { key: 'Drive type', label: 'Drive' },
         { key: 'Transmission', label: 'Transmission' },
         { key: 'Body type', label: 'Body' },

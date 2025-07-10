@@ -61,7 +61,8 @@ class Discover_Query {
 
     /**
      * Get filtered, sorted, and paginated vehicle results.
-     * MODIFIED: Groups by year-make-model-body_type to show one card per model with trim selectors.
+     * REFACTORED: Groups by year-make-model to show one consolidated record per vehicle model.
+     * Aggregates all associated trims into a single vehicle object to eliminate duplicates.
      */
     public function get_discover_results( $filters = [], $limit = 25, $offset = 0, $sort_by = 'Year', $sort_dir = 'desc' ) {
         // --- WHERE CLAUSE BUILDER ---
@@ -72,7 +73,7 @@ class Discover_Query {
             // Re-create the full list of filterable columns from your reference.
             $all_filter_keys = [
                 'year' => 'Year', 'make' => 'Make', 'body_type' => 'Body type', 'car_classification' => 'Car classification',
-                'drive_type' => 'Drive type', 'transmission' => 'Transmission', 'cylinders' => 'Cylinders',
+                'drive_type' => 'Drive type', 'transmission' => 'Transmission', 'cylinders' => 'Engine Configuration',
                 'doors' => 'Doors', 'total_seating' => 'Total seating', 'fuel_type' => 'Fuel type',
                 'country_of_origin' => 'Country of origin'
             ];
@@ -93,13 +94,22 @@ class Discover_Query {
         $sort_dir_safe = strtolower($sort_dir) === 'asc' ? 'ASC' : 'DESC';
         $orderby_sql = '`' . esc_sql($sort_by_safe) . '` ' . $sort_dir_safe;
 
-        // --- GROUPED RESULTS QUERY ---
-        // Use GROUP BY to get one representative entry per year-make-model-body_type combination
-        $grouped_query = $this->wpdb->prepare(
+        // --- CONSOLIDATED RESULTS QUERY ---
+        // Group by Year, Make, Model only to get one unique record per vehicle model
+        $consolidated_query = $this->wpdb->prepare(
             "SELECT 
                 MIN(ID) as representative_id,
-                `Year`, `Make`, `Model`, `Body type`,
+                `Year`, `Make`, `Model`,
                 MIN(`Trim`) as representative_trim,
+                MIN(`Body type`) as representative_body_type,
+                MIN(`Car classification`) as representative_classification,
+                MIN(`Drive type`) as representative_drive_type,
+                MIN(`Transmission`) as representative_transmission,
+                MIN(`Cylinders`) as representative_cylinders,
+                MIN(`Doors`) as representative_doors,
+                MIN(`Total seating`) as representative_seating,
+                MIN(`Fuel type`) as representative_fuel_type,
+                MIN(`Country of origin`) as representative_origin,
                 MIN(`Horsepower (HP)`) as min_horsepower,
                 MAX(`Horsepower (HP)`) as max_horsepower,
                 MIN(`Torque (ft-lbs)`) as min_torque,
@@ -108,21 +118,28 @@ class Discover_Query {
                 MAX(`Curb weight (lbs)`) as max_weight,
                 MIN(`EPA combined MPG`) as min_mpg,
                 MAX(`EPA combined MPG`) as max_mpg,
+                MIN(`Cargo capacity (cu ft)`) as min_cargo,
+                MAX(`Cargo capacity (cu ft)`) as max_cargo,
+                MIN(`Maximum towing capacity (lbs)`) as min_towing,
+                MAX(`Maximum towing capacity (lbs)`) as max_towing,
+                MIN(`Ground clearance (in)`) as min_clearance,
+                MAX(`Ground clearance (in)`) as max_clearance,
                 COUNT(*) as trim_count,
-                GROUP_CONCAT(DISTINCT `Trim` ORDER BY `Trim` ASC SEPARATOR ';') as available_trims
+                GROUP_CONCAT(DISTINCT `Trim` ORDER BY `Trim` ASC SEPARATOR ';') as available_trims,
+                GROUP_CONCAT(DISTINCT `Body type` ORDER BY `Body type` ASC SEPARATOR ';') as available_body_types
              FROM {$this->table_name} 
              WHERE " . $where_sql . " 
-             GROUP BY `Year`, `Make`, `Model`, `Body type`
+             GROUP BY `Year`, `Make`, `Model`
              ORDER BY " . $orderby_sql . ", `Make` ASC, `Model` ASC 
              LIMIT %d OFFSET %d",
             array_merge($params, [$limit, $offset])
         );
         
-        $grouped_results = $this->wpdb->get_results($grouped_query, ARRAY_A);
+        $consolidated_results = $this->wpdb->get_results($consolidated_query, ARRAY_A);
 
         // --- GET FULL DATA FOR REPRESENTATIVE VEHICLES ---
-        if (!empty($grouped_results)) {
-            $representative_ids = array_column($grouped_results, 'representative_id');
+        if (!empty($consolidated_results)) {
+            $representative_ids = array_column($consolidated_results, 'representative_id');
             $ids_placeholder = implode(',', array_fill(0, count($representative_ids), '%d'));
             
             $full_data_query = $this->wpdb->prepare(
@@ -137,29 +154,50 @@ class Discover_Query {
                 $full_data_lookup[$vehicle['ID']] = $vehicle;
             }
             
-            // Merge grouped data with full representative data
+            // Merge consolidated data with full representative data
             $results = [];
-            foreach ($grouped_results as $grouped) {
-                $representative_id = $grouped['representative_id'];
+            foreach ($consolidated_results as $consolidated) {
+                $representative_id = $consolidated['representative_id'];
                 if (isset($full_data_lookup[$representative_id])) {
                     $vehicle = $full_data_lookup[$representative_id];
                     
-                    // Add grouping metadata for frontend trim handling
-                    $vehicle['_group_metadata'] = [
-                        'trim_count' => $grouped['trim_count'],
-                        'available_trims' => explode(';', $grouped['available_trims']),
-                        'horsepower_range' => $grouped['min_horsepower'] == $grouped['max_horsepower'] 
-                            ? $grouped['min_horsepower'] 
-                            : $grouped['min_horsepower'] . '-' . $grouped['max_horsepower'],
-                        'torque_range' => $grouped['min_torque'] == $grouped['max_torque'] 
-                            ? $grouped['min_torque'] 
-                            : $grouped['min_torque'] . '-' . $grouped['max_torque'],
-                        'weight_range' => $grouped['min_weight'] == $grouped['max_weight'] 
-                            ? $grouped['min_weight'] 
-                            : $grouped['min_weight'] . '-' . $grouped['max_weight'],
-                        'mpg_range' => $grouped['min_mpg'] == $grouped['max_mpg'] 
-                            ? $grouped['min_mpg'] 
-                            : $grouped['min_mpg'] . '-' . $grouped['max_mpg']
+                    // Override representative fields with consolidated data
+                    $vehicle['Body type'] = $consolidated['representative_body_type'];
+                    $vehicle['Car classification'] = $consolidated['representative_classification'];
+                    $vehicle['Drive type'] = $consolidated['representative_drive_type'];
+                    $vehicle['Transmission'] = $consolidated['representative_transmission'];
+                    $vehicle['Cylinders'] = $consolidated['representative_cylinders'];
+                    $vehicle['Doors'] = $consolidated['representative_doors'];
+                    $vehicle['Total seating'] = $consolidated['representative_seating'];
+                    $vehicle['Fuel type'] = $consolidated['representative_fuel_type'];
+                    $vehicle['Country of origin'] = $consolidated['representative_origin'];
+                    
+                    // Add consolidation metadata for frontend trim handling
+                    $vehicle['_consolidated_metadata'] = [
+                        'trim_count' => $consolidated['trim_count'],
+                        'available_trims' => explode(';', $consolidated['available_trims']),
+                        'available_body_types' => explode(';', $consolidated['available_body_types']),
+                        'horsepower_range' => $consolidated['min_horsepower'] == $consolidated['max_horsepower'] 
+                            ? $consolidated['min_horsepower'] 
+                            : $consolidated['min_horsepower'] . '-' . $consolidated['max_horsepower'],
+                        'torque_range' => $consolidated['min_torque'] == $consolidated['max_torque'] 
+                            ? $consolidated['min_torque'] 
+                            : $consolidated['min_torque'] . '-' . $consolidated['max_torque'],
+                        'weight_range' => $consolidated['min_weight'] == $consolidated['max_weight'] 
+                            ? $consolidated['min_weight'] 
+                            : $consolidated['min_weight'] . '-' . $consolidated['max_weight'],
+                        'mpg_range' => $consolidated['min_mpg'] == $consolidated['max_mpg'] 
+                            ? $consolidated['min_mpg'] 
+                            : $consolidated['min_mpg'] . '-' . $consolidated['max_mpg'],
+                        'cargo_range' => $consolidated['min_cargo'] == $consolidated['max_cargo'] 
+                            ? $consolidated['min_cargo'] 
+                            : $consolidated['min_cargo'] . '-' . $consolidated['max_cargo'],
+                        'towing_range' => $consolidated['min_towing'] == $consolidated['max_towing'] 
+                            ? $consolidated['min_towing'] 
+                            : $consolidated['min_towing'] . '-' . $consolidated['max_towing'],
+                        'clearance_range' => $consolidated['min_clearance'] == $consolidated['max_clearance'] 
+                            ? $consolidated['min_clearance'] 
+                            : $consolidated['min_clearance'] . '-' . $consolidated['max_clearance']
                     ];
                     
                     $results[] = $vehicle;
@@ -169,9 +207,9 @@ class Discover_Query {
             $results = [];
         }
 
-        // --- TOTAL COUNT QUERY (for grouped results) ---
+        // --- TOTAL COUNT QUERY (for consolidated results) ---
         $total_query = $this->wpdb->prepare(
-            "SELECT COUNT(DISTINCT CONCAT(`Year`, '-', `Make`, '-', `Model`, '-', `Body type`)) 
+            "SELECT COUNT(DISTINCT CONCAT(`Year`, '-', `Make`, '-', `Model`)) 
              FROM {$this->table_name} WHERE " . $where_sql,
             $params
         );
