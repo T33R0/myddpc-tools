@@ -77,7 +77,7 @@ class Discover_Query {
             'car_classification'  => 'Car classification',
             'drive_type'          => 'Drive type',
             'transmission'        => 'Transmission',
-            'cylinders'           => 'Cylinders',
+            'cylinders'           => 'Engine Configuration',
             'doors'               => 'Doors',
             'total_seating'       => 'Total seating'
         ];

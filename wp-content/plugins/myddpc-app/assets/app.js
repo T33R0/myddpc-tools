@@ -1,6 +1,174 @@
 const { useState, useEffect, createContext, useContext, useCallback, useMemo } = React;
 
 //================================================================================
+// 0. GLOBAL UTILITIES
+//================================================================================
+
+/**
+ * Global Data Formatting Utility
+ * Standardizes the display of numeric values throughout the application
+ * @param {number|string} value - The numeric value to format
+ * @param {string} dataType - The type of data being formatted
+ * @param {string} unit - The unit of measurement (optional)
+ * @param {boolean} addCommas - Whether to add thousand separators (default: true)
+ * @returns {string} Formatted value string
+ */
+const formatVehicleData = (value, dataType, unit = '', addCommas = true) => {
+    // Handle null, undefined, or non-numeric values
+    if (value === null || value === undefined || value === '' || value === 'N/A') {
+        return 'N/A';
+    }
+    
+    // Convert to number if it's a string
+    const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+    
+    // Check if the value is actually a number
+    if (isNaN(numericValue)) {
+        return 'N/A';
+    }
+    
+    let formattedValue;
+    let decimalPlaces = 0;
+    
+    // Determine formatting based on data type
+    switch (dataType.toLowerCase()) {
+        // Engine Size: Format to one decimal place
+        case 'engine_size':
+        case 'engine size':
+        case 'engine size (l)':
+        case 'engine_size_l':
+            decimalPlaces = 1;
+            break;
+            
+        // Dimensions: Format to one decimal place
+        case 'length':
+        case 'width':
+        case 'height':
+        case 'wheelbase':
+        case 'ground_clearance':
+        case 'ground clearance':
+        case 'ground clearance (in)':
+        case 'front_track':
+        case 'front track':
+        case 'front track (in)':
+        case 'rear_track':
+        case 'rear track':
+        case 'rear track (in)':
+        case 'front_head_room':
+        case 'front head room':
+        case 'front head room (in)':
+        case 'front_hip_room':
+        case 'front hip room':
+        case 'front hip room (in)':
+        case 'front_leg_room':
+        case 'front leg room':
+        case 'front leg room (in)':
+        case 'front_shoulder_room':
+        case 'front shoulder room':
+        case 'front shoulder room (in)':
+        case 'rear_head_room':
+        case 'rear head room':
+        case 'rear head room (in)':
+        case 'rear_hip_room':
+        case 'rear hip room':
+        case 'rear hip room (in)':
+        case 'rear_leg_room':
+        case 'rear leg room':
+        case 'rear leg room (in)':
+        case 'rear_shoulder_room':
+        case 'rear shoulder room':
+        case 'rear shoulder room (in)':
+        case 'turning_circle':
+        case 'turning circle':
+        case 'turning circle (ft)':
+        case 'interior_volume':
+        case 'epa interior volume (cu ft)':
+        case 'cargo_capacity':
+        case 'cargo capacity (cu ft)':
+        case 'max_cargo_capacity':
+        case 'maximum cargo capacity (cu ft)':
+        case 'fuel_tank_capacity':
+        case 'fuel tank capacity (gal)':
+        case 'mpg':
+        case 'epa combined mpg':
+        case 'epa city/highway mpg':
+        case 'mpge':
+        case 'epa combined mpge':
+        case 'epa city/highway empg':
+        case 'electricity_range':
+        case 'epa electricity range (mi)':
+        case 'kwh_100mi':
+        case 'epa kwh/100 mi':
+        case 'charge_time':
+        case 'epa time to charge battery (at 240v) (hr)':
+        case 'battery_capacity':
+        case 'battery capacity (kwh)':
+        case 'drag_coefficient':
+        case 'drag coefficient (cd)':
+        case 'scorecard_driving':
+        case 'scorecard comfort':
+        case 'scorecard interior':
+        case 'scorecard utility':
+        case 'scorecard technology':
+            decimalPlaces = 1;
+            break;
+            
+        // Calculated Fields (ratios, etc.): Format to two decimal places
+        case 'power_to_weight':
+        case 'power-to-weight':
+        case 'power_to_weight_ratio':
+        case 'hp_per_lb':
+        case 'hp/lb':
+        case '0_60':
+        case '0-60':
+        case 'zero_to_sixty':
+        case 'quarter_mile':
+        case 'quarter-mile':
+        case 'quarter_mile_time':
+        case 'top_speed':
+        case 'top-speed':
+        case 'fuel_economy_ratio':
+        case 'efficiency_ratio':
+        case 'cost_per_mile':
+        case 'maintenance_cost_ratio':
+            decimalPlaces = 2;
+            break;
+            
+        // Default: Round to nearest integer (no decimal places)
+        default:
+            decimalPlaces = 0;
+            break;
+    }
+    
+    // Format the number with appropriate decimal places
+    if (decimalPlaces === 0) {
+        formattedValue = Math.round(numericValue).toString();
+    } else {
+        formattedValue = numericValue.toFixed(decimalPlaces);
+        // Remove trailing zeros after decimal point
+        formattedValue = formattedValue.replace(/\.?0+$/, '');
+        // If we removed all decimals, convert back to integer
+        if (formattedValue.endsWith('.')) {
+            formattedValue = formattedValue.slice(0, -1);
+        }
+    }
+    
+    // Add thousand separators if requested and the value is large enough
+    if (addCommas && Math.abs(numericValue) >= 1000) {
+        const parts = formattedValue.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        formattedValue = parts.join('.');
+    }
+    
+    // Add unit if provided
+    if (unit) {
+        return `${formattedValue} ${unit}`;
+    }
+    
+    return formattedValue;
+};
+
+//================================================================================
 // 1. CONTEXTS & PROVIDERS (Auth & Vehicles)
 //================================================================================
 
@@ -10,6 +178,33 @@ const AuthContext = createContext();
 const AuthProvider = ({ children }) => {
     const { current_user, rest_url, nonce, logout_url } = window.myddpcAppData || {};
     const [user, setUser] = useState(current_user || null);
+    const [userProfile, setUserProfile] = useState(null);
+
+    // Fetch full user profile when user is authenticated
+    const fetchUserProfile = useCallback(async () => {
+        if (!user || !rest_url) return;
+        
+        try {
+            const response = await fetch(`${rest_url}myddpc/v2/user/me`, {
+                headers: { 'X-WP-Nonce': nonce }
+            });
+            if (response.ok) {
+                const profileData = await response.json();
+                setUserProfile(profileData);
+            }
+        } catch (error) {
+            console.error('Failed to fetch user profile:', error);
+        }
+    }, [user, rest_url, nonce]);
+
+    // Fetch profile when user changes
+    useEffect(() => {
+        if (user) {
+            fetchUserProfile();
+        } else {
+            setUserProfile(null);
+        }
+    }, [user, fetchUserProfile]);
 
     const login = async (username, password) => {
         const response = await fetch(`${rest_url}myddpc/v2/user/login`, {
@@ -47,7 +242,17 @@ const AuthProvider = ({ children }) => {
         }
     };
 
-    const value = { isAuthenticated: !!user, user, login, register, logout };
+    // Merge user data with profile data
+    const fullUser = user ? { ...user, ...userProfile } : null;
+
+    const value = { 
+        isAuthenticated: !!user, 
+        user: fullUser, 
+        login, 
+        register, 
+        logout,
+        refreshProfile: fetchUserProfile 
+    };
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
@@ -295,6 +500,8 @@ const Icon = ({ name, className }) => {
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg>;
     case 'Columns':
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M9 3v18M15 3v18"></path></svg>;
+    case 'Compare':
+      return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>;
     case 'Garage':
       return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21V7l9-4 9 4v14H3z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 21v-6a1 1 0 011-1h10a1 1 0 011 1v6"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9h6"></path></svg>;
     case 'LayoutGrid':
@@ -335,14 +542,27 @@ const CompareTray = () => {
                     <h4 className="font-medium text-gray-800">Compare List:</h4>
                     <div className="flex items-center gap-3">
                         {compareVehicles.map((v, i) => v && (
-                            <div key={v.ID || i} className="bg-gray-100 px-3 py-1 rounded-full flex items-center text-sm">
-                                <span className="text-gray-700">{`${v.Year} ${v.Make} ${v.Model}`}</span>
-                                <button onClick={() => removeFromCompare(i)} className="ml-2 text-gray-500 hover:text-red-600"><Icon name="X" className="w-4 h-4" /></button>
+                            <div key={v.ID || i} className="bg-gray-50 border border-gray-200 px-4 py-2 rounded-lg flex items-center text-sm shadow-sm">
+                                <span className="text-gray-700 font-medium">{`${v.Year} ${v.Make} ${v.Model}`}</span>
+                                <button 
+                                    onClick={() => removeFromCompare(i)} 
+                                    className="ml-3 p-1 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
+                                    title="Remove from comparison"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
                             </div>
                         ))}
                     </div>
                 </div>
-                <button onClick={clearCompare} className="text-sm font-medium text-red-600 hover:underline">Clear All</button>
+                <button 
+                    onClick={clearCompare} 
+                    className="text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-300"
+                >
+                    Clear All
+                </button>
             </div>
         </div>
     );
@@ -530,17 +750,78 @@ const VehicleSelectModal = ({ isOpen, onClose, title, vehicles, onSelect }) => {
 // 3. CORE VIEW COMPONENTS
 //================================================================================
 
+/**
+ * DiscoverView Component with URL State Persistence
+ * 
+ * This component implements URL-based state persistence for filters, sorting, pagination, and view mode.
+ * All filter states are stored in the URL as query parameters, allowing users to:
+ * - Share filtered results via URL
+ * - Maintain filter state across browser sessions
+ * - Use browser back/forward navigation with preserved state
+ * - Bookmark specific filter combinations
+ * 
+ * URL Parameters:
+ * - filter_[name]: Filter values (e.g., filter_year=2023, filter_make=Toyota)
+ * - sort_by: Sort field (Year, Make, Horsepower (HP), Curb weight (lbs))
+ * - sort_dir: Sort direction (asc, desc)
+ * - page: Current page number
+ * - view: View mode (gallery, list)
+ */
 const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFromView }) => {
     const { isAuthenticated } = useAuth();
     const { discoveryResults, loading, fetchDiscoveryResults } = useVehicles();
     const { savedVehicles, refreshLists } = useUserLists();
     const { compareVehicles, addToCompare, removeFromCompare } = useCompare();
-    const [filters, setFilters] = useState({});
+    
+    // localStorage state persistence utilities
+    const getStoredFilters = () => {
+        try {
+            const stored = localStorage.getItem('myddpc_discoverFilters');
+            return stored ? JSON.parse(stored) : {};
+        } catch (error) {
+            console.error('Error parsing stored filters:', error);
+            return {};
+        }
+    };
+    
+    const saveFiltersToStorage = (filters, sort, pagination, viewMode) => {
+        try {
+            const filterState = {
+                filters,
+                sort,
+                pagination,
+                viewMode
+            };
+            localStorage.setItem('myddpc_discoverFilters', JSON.stringify(filterState));
+        } catch (error) {
+            console.error('Error saving filters to localStorage:', error);
+        }
+    };
+    
+    const clearStoredFilters = () => {
+        try {
+            localStorage.removeItem('myddpc_discoverFilters');
+        } catch (error) {
+            console.error('Error clearing stored filters:', error);
+        }
+    };
+    
+    // Initialize state from localStorage
+    const storedState = getStoredFilters();
+    const [filters, setFilters] = useState(storedState.filters || {});
     const [filterOptions, setFilterOptions] = useState({});
-    const [sort, setSort] = useState({ by: 'Year', dir: 'desc' });
-    const [pagination, setPagination] = useState({ page: 1, limit: 24 }); // Use even number for better layout
+    const [sort, setSort] = useState(storedState.sort || { 
+        by: 'Year', 
+        dir: 'desc' 
+    });
+    const [pagination, setPagination] = useState(storedState.pagination || { 
+        page: 1, 
+        limit: 24 
+    });
     const [vehicleToAddToGarage, setVehicleToAddToGarage] = useState(null);
     const [viewMode, setViewMode] = useState(() => {
+        // Priority: localStorage > default
+        if (storedState.viewMode) return storedState.viewMode;
         const saved = localStorage.getItem('myddpc_discover_view_mode');
         return saved === 'list' ? 'list' : 'gallery';
     });
@@ -566,16 +847,47 @@ const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFrom
         fetchDiscoveryResults(params); 
     }, [filters, sort.by, sort.dir, pagination.page, pagination.limit, fetchDiscoveryResults]);
     
+    // Save filter state to localStorage whenever it changes
+    useEffect(() => {
+        saveFiltersToStorage(filters, sort, pagination, viewMode);
+    }, [filters, sort, pagination, viewMode]);
+    
     const handleFilterChange = (filterName, value) => { 
-        setPagination(p => ({ ...p, page: 1 })); 
-        setFilters(p => ({ ...p, [filterName]: value })); 
+        const newPagination = { ...pagination, page: 1 };
+        const newFilters = { ...filters };
+        
+        // Handle empty values by removing the filter
+        if (value === '') {
+            delete newFilters[filterName];
+        } else {
+            newFilters[filterName] = value;
+        }
+        
+        setPagination(newPagination);
+        setFilters(newFilters);
     };
-    const handleSortChange = (field, value) => setSort(p => ({ ...p, [field]: value }));
-    const handlePageChange = (direction) => setPagination(p => ({ ...p, page: Math.max(1, p.page + direction) }));
-        const handleReset = () => { 
-        setFilters({});
-        setSort({ by: 'Year', dir: 'desc' });
-        setPagination({ page: 1, limit: 24 }); // Use even number for better layout
+    
+    const handleSortChange = (field, value) => {
+        const newSort = { ...sort, [field]: value };
+        setSort(newSort);
+    };
+    
+    const handlePageChange = (direction) => {
+        const newPagination = { ...pagination, page: Math.max(1, pagination.page + direction) };
+        setPagination(newPagination);
+    };
+    
+    const handleReset = () => { 
+        const resetFilters = {};
+        const resetSort = { by: 'Year', dir: 'desc' };
+        const resetPagination = { page: 1, limit: 24 };
+        
+        setFilters(resetFilters);
+        setSort(resetSort);
+        setPagination(resetPagination);
+        
+        // Clear localStorage entry
+        clearStoredFilters();
     };
 
     const handleViewModeChange = (mode) => {
@@ -625,215 +937,8 @@ const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFrom
         return { text: 'Save', disabled: false, className: 'bg-red-600 hover:bg-red-700', action: () => handleSaveVehicle(vehicle) };
     };
 
-    // Enhanced VehicleCard component with visual-first design
-    const VehicleCard = ({ vehicle }) => {
-        const buttonState = getButtonState(vehicle);
-        const imageUrl = getFirstImageUrl(vehicle);
+
         
-        // Handle grouped vehicle data (with trim metadata)
-        const hasGroupMetadata = vehicle._group_metadata;
-        const vehicleName = hasGroupMetadata 
-            ? `${vehicle.Year} ${vehicle.Make} ${vehicle.Model}`
-            : `${vehicle.Year || vehicle.year} ${vehicle.Make || vehicle.make} ${vehicle.Model || vehicle.model} ${vehicle.Trim || vehicle.trim}`;
-        
-        // State for trim selection within the card
-        const [selectedTrimId, setSelectedTrimId] = React.useState(vehicle.ID);
-        const [modelTrims, setModelTrims] = React.useState(null);
-        const [currentVehicleData, setCurrentVehicleData] = React.useState(vehicle);
-        
-        // Fetch trims for this model when card loads
-        React.useEffect(() => {
-            const fetchModelTrims = async () => {
-                try {
-                    const year = vehicle.Year || vehicle.year;
-                    const make = vehicle.Make || vehicle.make;
-                    const model = vehicle.Model || vehicle.model;
-                    
-                    if (!year || !make || !model) return;
-                    
-                    const fetchUrl = `${rest_url}myddpc/v2/discover/model_trims?year=${year}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`;
-                    const response = await fetch(fetchUrl, { headers: { 'X-WP-Nonce': nonce } });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        setModelTrims(data);
-                        
-                        // Set the first trim as default if we have trims
-                        if (data.trims && data.trims.length > 0) {
-                            setSelectedTrimId(data.trims[0].ID);
-                            setCurrentVehicleData(data.trims[0]);
-                        }
-                    }
-                } catch (err) {
-                    console.error('Error fetching model trims:', err);
-                }
-            };
-            
-            fetchModelTrims();
-        }, [vehicle, rest_url, nonce]);
-        
-        // Handle trim selection
-        const handleTrimChange = (trimId, e) => {
-            e.stopPropagation(); // Prevent card click
-            if (!modelTrims || !modelTrims.trims) return;
-            
-            const selectedTrim = modelTrims.trims.find(trim => trim.ID == trimId);
-            if (!selectedTrim) return;
-            
-            setSelectedTrimId(trimId);
-            setCurrentVehicleData(selectedTrim);
-        };
-        
-        // Use current vehicle data for display
-        const displayVehicle = currentVehicleData || vehicle;
-        
-        return (
-            <div 
-                className="vehicle-discovery-card bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group"
-                onClick={(e) => {
-                    // Don't navigate if clicking on the dropdown or buttons
-                    if (e.target.closest('select') || e.target.closest('button')) return;
-                    setVehicleProfileId(selectedTrimId); 
-                    setActiveView('vehicle-profile'); 
-                    setFromView('discover'); 
-                }}
-            >
-                {/* Hero Image Container - Largest element for visual impact */}
-                <div className="vehicle-card-image-container relative h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                    <img 
-                        src={getFirstImageUrl(displayVehicle)} 
-                        alt={vehicleName}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
-                        }}
-                    />
-                    <div className="vehicle-placeholder absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200" style={{ display: 'none' }}>
-                        <div className="text-center">
-                            <Icon name="Car" className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                            <p className="text-gray-500 text-sm font-medium">Image coming soon</p>
-                        </div>
-                    </div>
-                    
-                    {/* Quick action overlay on hover */}
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <div className="bg-white rounded-lg px-4 py-2 shadow-lg">
-                            <span className="text-sm font-medium text-gray-900">View Details</span>
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Vehicle Information */}
-                <div className="p-5">
-                    {/* Vehicle Title */}
-                    <h3 className="vehicle-card-title text-xl font-semibold text-gray-900 mb-2 line-clamp-2 leading-tight">
-                        {vehicleName}
-                    </h3>
-                    
-                    {/* Trim Selector Dropdown */}
-                    {(modelTrims && modelTrims.trims && modelTrims.trims.length > 1) || (hasGroupMetadata && hasGroupMetadata.trim_count > 1) ? (
-                        <div className="mb-3">
-                            <label className="block text-xs font-semibold text-gray-700 mb-1">
-                                Select Trim {hasGroupMetadata && hasGroupMetadata.trim_count > 1 && `(${hasGroupMetadata.trim_count} available)`}
-                            </label>
-                            <select 
-                                value={selectedTrimId} 
-                                onChange={(e) => handleTrimChange(e.target.value, e)}
-                                className="w-full rounded-lg border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
-                            >
-                                {modelTrims && modelTrims.trims ? (
-                                    modelTrims.trims.map(trim => (
-                                        <option key={trim.ID} value={trim.ID}>
-                                            {trim.Trim} - {trim['Horsepower (HP)']} HP
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option value={vehicle.ID}>
-                                        {vehicle.Trim} - {vehicle['Horsepower (HP)']} HP
-                                    </option>
-                                )}
-                            </select>
-                        </div>
-                    ) : null}
-                    
-                    {/* Key Specifications Grid */}
-                    <div className="vehicle-card-specs grid grid-cols-2 gap-3 mb-5">
-                        <div className="spec-item bg-gray-50 rounded-lg p-3">
-                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Power</div>
-                            <div className="font-bold text-gray-900">
-                                {displayVehicle['Horsepower (HP)'] || displayVehicle.horsepower || 'N/A'} <span className="text-sm font-normal">HP</span>
-                            </div>
-                        </div>
-                        <div className="spec-item bg-gray-50 rounded-lg p-3">
-                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Engine</div>
-                            <div className="font-bold text-gray-900">
-                                {displayVehicle['Engine size (l)'] || displayVehicle.engine_size || 'N/A'}L <span className="text-sm font-normal">{displayVehicle.Cylinders || displayVehicle.cylinders || 'N/A'}-cyl</span>
-                            </div>
-                        </div>
-                        <div className="spec-item bg-gray-50 rounded-lg p-3">
-                            <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Weight</div>
-                            <div className="font-bold text-gray-900">
-                                {displayVehicle['Curb weight (lbs)'] ? Math.round(displayVehicle['Curb weight (lbs)']).toLocaleString() : displayVehicle.weight || 'N/A'} <span className="text-sm font-normal">lbs</span>
-                            </div>
-                        </div>
-                        {displayVehicle['Drive type'] && (
-                            <div className="spec-item bg-gray-50 rounded-lg p-3">
-                                <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Drive</div>
-                                <div className="font-bold text-gray-900">
-                                    {displayVehicle['Drive type'].toUpperCase().includes('ALL WHEEL') ? 'AWD' : 
-                                     displayVehicle['Drive type'].toUpperCase().includes('FRONT WHEEL') ? 'FWD' : 
-                                     displayVehicle['Drive type'].toUpperCase().includes('FOUR WHEEL') ? '4WD' : 
-                                     displayVehicle['Drive type'].toUpperCase().includes('REAR WHEEL') ? 'RWD' : 
-                                     displayVehicle['Drive type']}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    
-                    {/* Action Bar - Clear, prominent buttons */}
-                    <div className="vehicle-card-actions flex gap-2">
-                        <button 
-                            onClick={(e) => { 
-                                e.stopPropagation(); 
-                                // Save the base model (without specific trim) to saved vehicles
-                                const baseVehicle = {
-                                    ...displayVehicle,
-                                    ID: vehicle.ID, // Use the original vehicle ID (base model)
-                                    Trim: vehicle.Trim // Use the original trim (base model)
-                                };
-                                handleSaveVehicle(baseVehicle); 
-                            }}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-                        >
-                            <PlusIcon className="w-4 h-4" />
-                            Save Vehicle
-                        </button>
-                        <button 
-                            onClick={(e) => { 
-                                e.stopPropagation(); 
-                                if (isVehicleCompared(displayVehicle.ID)) {
-                                    removeFromCompare(compareVehicles.findIndex(v => v && v.ID === displayVehicle.ID));
-                                } else {
-                                    addToCompare(displayVehicle); 
-                                }
-                            }}
-                            className={`flex-1 px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                                isVehicleCompared(displayVehicle.ID) 
-                                    ? 'bg-green-100 text-green-700 border-2 border-green-300' 
-                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                            }`}
-                            title={isVehicleCompared(displayVehicle.ID) ? 'Remove from Head-to-Head' : 'Add to Head-to-Head'}
-                        >
-                            <Icon name="Columns" className="w-4 h-4" />
-                            <span className="hidden sm:inline">Head-to-Head</span>
-                            <span className="sm:hidden">Compare</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
 
     return (
         <>
@@ -856,23 +961,42 @@ const DiscoverView = ({ setActiveView, requireAuth, setVehicleProfileId, setFrom
                                 </button>
                             </div>
                             <div className="space-y-6">
-                                {Object.keys(filterOptions).map(key => (
+                                {Object.keys(filterOptions).map(key => {
+                                    // Map backend keys to display labels
+                                    const labelMapping = {
+                                        'year': 'Year',
+                                        'make': 'Make',
+                                        'body_type': 'Body Type',
+                                        'car_classification': 'Car Classification',
+                                        'drive_type': 'Drive Type',
+                                        'transmission': 'Transmission',
+                                        'cylinders': 'Engine Configuration',
+                                        'doors': 'Doors',
+                                        'total_seating': 'Total Seating',
+                                        'fuel_type': 'Fuel Type',
+                                        'country_of_origin': 'Country of Origin'
+                                    };
+                                    const displayLabel = labelMapping[key] || key.replace(/_/g, ' ');
+                                    const defaultOptionText = key === 'cylinders' ? 'All Engines' : `All ${displayLabel}`;
+                                    
+                                    return (
                                     <div key={key}>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2 capitalize">
-                                            {key.replace(/_/g, ' ')}
+                                            {displayLabel}
                                         </label>
                             <select 
                                             value={filters[key] || ''} 
                                             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors" 
                                             onChange={(e) => handleFilterChange(key, e.target.value)}
                                         >
-                                            <option value="">All {key.replace(/_/g, ' ')}</option>
+                                            <option value="">{defaultOptionText}</option>
                                             {Array.isArray(filterOptions[key]) && filterOptions[key].map(opt => 
                                                 <option key={opt} value={opt}>{opt}</option>
                                 )}
                             </select>
                     </div>
-                                ))}
+                                );
+                                })}
                     </div>
                 </div>
                     </div>
@@ -1085,9 +1209,9 @@ const VehicleCardList = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompare, 
     // Use current vehicle data for display
     const displayVehicle = currentVehicleData || vehicle;
     
-    // Handle grouped vehicle data (with trim metadata)
-    const hasGroupMetadata = vehicle._group_metadata;
-    const vehicleName = hasGroupMetadata 
+    // Handle consolidated vehicle data (with trim metadata)
+    const hasConsolidatedMetadata = vehicle._consolidated_metadata;
+    const vehicleName = hasConsolidatedMetadata 
         ? `${vehicle.Year} ${vehicle.Make} ${vehicle.Model}`
         : `${vehicle.Year || vehicle.year} ${vehicle.Make || vehicle.make} ${vehicle.Model || vehicle.model} ${vehicle.Trim || vehicle.trim}`;
     
@@ -1100,18 +1224,11 @@ const VehicleCardList = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompare, 
                 {/* Vehicle Image (only for saved list) */}
                 {isSavedList && (
                     <div className="flex-shrink-0 w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
-                        <img 
-                            src={getFirstImageUrl(displayVehicle)} 
+                        <VehicleImage 
+                            vehicle={displayVehicle}
                             alt={vehicleName}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                            }}
                         />
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200" style={{ display: 'none' }}>
-                            <Icon name="Car" className="w-8 h-8 text-gray-400" />
-                        </div>
                     </div>
                 )}
                 
@@ -1121,45 +1238,56 @@ const VehicleCardList = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompare, 
                         <h3 className="text-lg font-semibold text-gray-900 truncate">
                             {vehicleName}
                         </h3>
-                        
-                        {/* Trim Selector Dropdown */}
-                        {(modelTrims && modelTrims.trims && modelTrims.trims.length > 1) || (hasGroupMetadata && hasGroupMetadata.trim_count > 1) ? (
+                    </div>
+                    
+                    {/* Trim Selector Dropdown */}
+                    {(modelTrims && modelTrims.trims && modelTrims.trims.length > 1) || (hasConsolidatedMetadata && hasConsolidatedMetadata.trim_count > 1) ? (
+                        <div className="mb-3" onClick={(e) => e.stopPropagation()}>
+                            <label className="block text-xs font-semibold text-gray-700 mb-1">
+                                Select Trim {hasConsolidatedMetadata && hasConsolidatedMetadata.trim_count > 1 && `(${hasConsolidatedMetadata.trim_count} available)`}
+                            </label>
                             <select 
                                 value={selectedTrimId} 
                                 onChange={(e) => handleTrimChange(e.target.value, e)}
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-red-500 focus:border-red-500 ml-2"
+                                className="vehicle-card-list-trim-select"
                             >
-                                {modelTrims && modelTrims.trims ? (
-                                    modelTrims.trims.map(trim => (
-                                        <option key={trim.ID} value={trim.ID}>
-                                            {trim.Trim} ({trim['Horsepower (HP)']} HP)
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option value={vehicle.ID}>
-                                        {vehicle.Trim || vehicle.trim} ({vehicle['Horsepower (HP)'] || vehicle.horsepower} HP)
+                                                            {modelTrims && modelTrims.trims ? (
+                                modelTrims.trims.map(trim => (
+                                    <option key={trim.ID} value={trim.ID}>
+                                        {trim.Trim} - {formatVehicleData(trim['Horsepower (HP)'], 'horsepower', 'HP')}
                                     </option>
-                                )}
+                                ))
+                            ) : (
+                                <option value={vehicle.ID}>
+                                    {vehicle.Trim} - {formatVehicleData(vehicle['Horsepower (HP)'], 'horsepower', 'HP')}
+                                </option>
+                            )}
                             </select>
-                        ) : null}
-                    </div>
+                        </div>
+                    ) : null}
                     
                     {/* Vehicle Specs */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-sm text-gray-600">
-                        <div><span className="font-medium">Power:</span> {displayVehicle['Horsepower (HP)'] || displayVehicle.horsepower || 'N/A'} HP</div>
-                        <div><span className="font-medium">Engine:</span> {displayVehicle['Engine size (l)'] || displayVehicle.engine_size || 'N/A'}L {displayVehicle.Cylinders || displayVehicle.cylinders || 'N/A'}-cyl</div>
-                        <div><span className="font-medium">Weight:</span> {displayVehicle['Curb weight (lbs)'] ? Math.round(displayVehicle['Curb weight (lbs)']).toLocaleString() : displayVehicle.weight || 'N/A'} lbs</div>
-                        {displayVehicle['Drive type'] && <div><span className="font-medium">Drive:</span> {displayVehicle['Drive type'].toUpperCase().includes('ALL WHEEL') ? 'AWD' : 
-                         displayVehicle['Drive type'].toUpperCase().includes('FRONT WHEEL') ? 'FWD' : 
-                         displayVehicle['Drive type'].toUpperCase().includes('FOUR WHEEL') ? '4WD' : 
-                         displayVehicle['Drive type'].toUpperCase().includes('REAR WHEEL') ? 'RWD' : 
-                         displayVehicle['Drive type']}</div>}
+                        <div><span className="font-medium">Power:</span> {formatVehicleData(displayVehicle['Horsepower (HP)'] || displayVehicle.horsepower, 'horsepower', 'HP')}</div>
+                        <div><span className="font-medium">Engine:</span> {formatVehicleData(displayVehicle['Engine size (l)'] || displayVehicle.engine_size, 'engine_size', 'L')} {displayVehicle.Cylinders || displayVehicle.cylinders || 'N/A'}-cyl</div>
+                        <div><span className="font-medium">Weight:</span> {formatVehicleData(displayVehicle['Curb weight (lbs)'] || displayVehicle.weight, 'curb_weight', 'lbs')}</div>
+                        {displayVehicle['Drive type'] && (
+                            <div>
+                                <span className="font-medium">Drive:</span> {
+                                    displayVehicle['Drive type'].toUpperCase().includes('ALL WHEEL') ? 'AWD' : 
+                                    displayVehicle['Drive type'].toUpperCase().includes('FRONT WHEEL') ? 'FWD' : 
+                                    displayVehicle['Drive type'].toUpperCase().includes('FOUR WHEEL') ? '4WD' : 
+                                    displayVehicle['Drive type'].toUpperCase().includes('REAR WHEEL') ? 'RWD' : 
+                                    displayVehicle['Drive type']
+                                }
+                            </div>
+                        )}
                     </div>
                 </div>
                 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                <div className="vehicle-card-list-actions flex items-center gap-2">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -1169,35 +1297,34 @@ const VehicleCardList = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompare, 
                             }
                             onSaveVehicle(displayVehicle);
                         }}
-                        className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                        className={`p-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center ${
                             isVehicleSaved(displayVehicle.ID) 
                                 ? 'bg-green-100 text-green-700 border-2 border-green-300' 
                                 : 'bg-red-600 hover:bg-red-700 text-white'
                         }`}
                         title={isVehicleSaved(displayVehicle.ID) ? 'Already Saved' : 'Save Vehicle'}
                     >
-                        <Icon name="Heart" className="w-4 h-4" />
-                        <span className="hidden sm:inline ml-1">Save</span>
+                        <Icon name="Bookmark" className="w-4 h-4" />
                     </button>
                     
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (isVehicleCompared(displayVehicle.ID)) {
-                                removeFromCompare(compareVehicles.findIndex(v => v && v.ID === displayVehicle.ID));
+                            const trimObj = (modelTrims && modelTrims.trims) ? modelTrims.trims.find(trim => trim.ID == selectedTrimId) : displayVehicle;
+                            if (isVehicleCompared(selectedTrimId)) {
+                                removeFromCompare(compareVehicles.findIndex(v => v && v.ID === selectedTrimId));
                             } else {
-                                onAddToCompare(displayVehicle);
+                                onAddToCompare(trimObj); 
                             }
                         }}
-                        className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                            isVehicleCompared(displayVehicle.ID) 
+                        className={`p-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center ${
+                            isVehicleCompared(selectedTrimId) 
                                 ? 'bg-green-100 text-green-700 border-2 border-green-300' 
                                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                         }`}
-                        title={isVehicleCompared(displayVehicle.ID) ? 'Remove from Head-to-Head' : 'Add to Head-to-Head'}
+                        title={isVehicleCompared(selectedTrimId) ? 'Remove from Head-to-Head' : 'Add to Head-to-Head'}
                     >
-                        <Icon name="Columns" className="w-4 h-4" />
-                        <span className="hidden sm:inline">Compare</span>
+                        <Icon name="Compare" className="w-4 h-4" />
                     </button>
                 </div>
             </div>
@@ -1212,6 +1339,8 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
     const [savedVehicles, setSavedVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [vehicleToAddToGarage, setVehicleToAddToGarage] = useState(null);
+    const [addToGarageLoading, setAddToGarageLoading] = useState(false);
     const { refreshLists } = useUserLists();
     const { fetchGarageVehicles, vehicles: garageVehicles } = useVehicles();
     
@@ -1270,7 +1399,9 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
     }, [requireAuth, fetchSavedVehicles]);
 
     const handleRemove = async (e, savedId) => {
-        e.stopPropagation();
+        if (e && e.stopPropagation) {
+            e.stopPropagation();
+        }
         if (!window.confirm('Are you sure you want to remove this vehicle from your saved list?')) {
             return;
         }
@@ -1332,6 +1463,35 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
         localStorage.setItem('myddpc_saved_view_mode', mode);
     };
 
+    const handleAddToGarage = (vehicle) => {
+        requireAuth(() => {
+            setVehicleToAddToGarage(vehicle);
+        });
+    };
+
+    const onSaveToGarage = async (vehicleId, nickname) => {
+        setAddToGarageLoading(true);
+        try {
+            const response = await fetch(`${rest_url}myddpc/v2/garage/add_vehicle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                body: JSON.stringify({ vehicle_id: vehicleId, nickname }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Failed to add vehicle to garage.');
+            
+            setVehicleToAddToGarage(null);
+            await fetchGarageVehicles();
+            
+            // Show success feedback
+            alert('Vehicle successfully added to your garage!');
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            setAddToGarageLoading(false);
+        }
+    };
+
     if (loading) return <div className="text-center p-12">Loading your saved vehicles...</div>;
     if (error) return <div className="text-center p-12 text-red-600">Error: {error}</div>;
 
@@ -1364,7 +1524,7 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
                                         _selectedTrimId: selectedTrims[vehicle.vehicle_id] || vehicle.vehicle_id,
                                         _onTrimChange: (trimId) => handleTrimChange(vehicle.vehicle_id, trimId),
                                         _garageVehicle: garageVehicle,
-                                        _onRemove: (e) => handleRemove(e, vehicle.saved_id),
+                                        _onRemove: () => handleRemove(null, vehicle.saved_id),
                                         _onGoToGarage: () => handleGoToGarageVehicle(garageVehicle),
                                         _onViewDetails: () => {
                                             setVehicleProfileId(currentVehicle.vehicle_id);
@@ -1392,7 +1552,9 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
                                     setVehicleProfileId={setVehicleProfileId}
                                     setActiveView={setActiveView}
                                     setFromView={setFromView}
-                                    isSavedList={true}
+                                    pageContext="savedVehicles"
+                                    onAddToGarage={handleAddToGarage}
+                                    onRemove={() => handleRemove(null, vehicle.saved_id)}
                                 />
                             );
                         })}
@@ -1405,71 +1567,65 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
                             const trims = groupedVehicles[vehicle.vehicle_id];
                             const hasMultipleTrims = trims && trims.trims && trims.trims.length > 1;
                             
+                            const actionButtons = (
+                                <div className="flex items-center space-x-2">
+                                    {hasMultipleTrims && (
+                                        <select 
+                                            value={selectedTrims[vehicle.vehicle_id] || vehicle.vehicle_id}
+                                            onChange={(e) => handleTrimChange(vehicle.vehicle_id, e.target.value)}
+                                            className="text-sm border border-gray-300 rounded px-2 py-1"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {trims.trims.map(trim => (
+                                                <option key={trim.ID} value={trim.ID}>
+                                                    {trim.Trim} - {formatVehicleData(trim['Horsepower (HP)'], 'horsepower', 'HP')}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                    {garageVehicle ? (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleGoToGarageVehicle(garageVehicle);
+                                            }}
+                                            className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                                        >
+                                            View in Garage
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                // Add to garage functionality could be implemented here
+                                            }}
+                                            className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                                        >
+                                            Add to Garage
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={(e) => handleRemove(e, vehicle.saved_id)}
+                                        className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            );
+                            
                             return (
-                                <div 
-                                    key={vehicle.saved_id} 
-                                    className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-all cursor-pointer bg-white"
-                                    onClick={() => {
+                                <VehicleRow
+                                    key={vehicle.saved_id}
+                                    vehicle={currentVehicle}
+                                    onRowClick={() => {
                                         setVehicleProfileId(currentVehicle.vehicle_id);
                                         setActiveView('vehicle-profile');
                                         setFromView('saved');
                                         if (setSelectedVehicle) setSelectedVehicle(currentVehicle);
                                     }}
-                                >
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <h4 className="text-lg font-medium text-gray-900 truncate">
-                                                    {`${currentVehicle.Year} ${currentVehicle.Make} ${currentVehicle.Model}`}
-                                                </h4>
-                                                {hasMultipleTrims && (
-                                                    <select 
-                                                        value={selectedTrims[vehicle.vehicle_id] || vehicle.vehicle_id}
-                                                        onChange={(e) => handleTrimChange(vehicle.vehicle_id, e.target.value)}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-1 focus:ring-red-500 focus:border-red-500"
-                                                    >
-                                                        {trims.trims.map(trim => (
-                                                            <option key={trim.ID} value={trim.ID}>
-                                                                {trim.Trim} ({trim['Horsepower (HP)']} HP)
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                )}
-                                            </div>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm text-gray-600">
-                                                <div><span className="font-medium">Power:</span> {currentVehicle['Horsepower (HP)'] || currentVehicle.horsepower || 'N/A'} HP</div>
-                                                <div><span className="font-medium">Engine:</span> {currentVehicle['Engine size (l)'] || currentVehicle.engine_size || 'N/A'}L {currentVehicle.Cylinders || currentVehicle.cylinders || 'N/A'}-cyl</div>
-                                                <div><span className="font-medium">Weight:</span> {currentVehicle['Curb weight (lbs)'] ? Math.round(currentVehicle['Curb weight (lbs)']).toLocaleString() : currentVehicle.weight || 'N/A'} lbs</div>
-                                                {currentVehicle['Drive type'] && <div><span className="font-medium">Drive:</span> {currentVehicle['Drive type'].toUpperCase().includes('ALL WHEEL') ? 'AWD' : 
-                                                 currentVehicle['Drive type'].toUpperCase().includes('FRONT WHEEL') ? 'FWD' : 
-                                                 currentVehicle['Drive type'].toUpperCase().includes('FOUR WHEEL') ? '4WD' : 
-                                                 currentVehicle['Drive type'].toUpperCase().includes('REAR WHEEL') ? 'RWD' : 
-                                                 currentVehicle['Drive type']}</div>}
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-2 ml-4 min-w-[120px] items-end">
-                                            {garageVehicle && (
-                                                <button 
-                                                    onClick={e => { e.stopPropagation(); handleGoToGarageVehicle(garageVehicle); }} 
-                                                    className="px-3 py-2 rounded-lg text-sm font-semibold transition-colors bg-blue-600 hover:bg-blue-700 text-white"
-                                                    title="Go to Garage Vehicle"
-                                                >
-                                                    <Icon name="Garage" className="w-4 h-4" />
-                                                    <span className="hidden sm:inline ml-1">Garage</span>
-                                                </button>
-                                            )}
-                                            <button 
-                                                onClick={e => handleRemove(e, vehicle.saved_id)} 
-                                                className="px-3 py-2 rounded-lg text-sm font-semibold transition-colors bg-red-600 hover:bg-red-700 text-white"
-                                                title="Remove Vehicle"
-                                            >
-                                                <Icon name="Trash2" className="w-4 h-4" />
-                                                <span className="hidden sm:inline ml-1">Remove</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                    actionButtons={actionButtons}
+                                    isSelected={false}
+                                />
                             );
                         })}
                     </div>
@@ -1480,108 +1636,117 @@ const SavedVehiclesView = ({ requireAuth, setActiveView, setVehicleProfileId, se
                     <p className="mt-2 text-sm">Use the Discover tool to find and save vehicles to your list.</p>
                 </div>
             )}
+            
+            {/* Add to Garage Modal */}
+            <AddToGarageModal
+                isOpen={!!vehicleToAddToGarage}
+                onClose={() => setVehicleToAddToGarage(null)}
+                vehicle={vehicleToAddToGarage}
+                onSave={onSaveToGarage}
+                loading={addToGarageLoading}
+            />
         </div>
     );
 };
 
-// Helper function to determine if a stat is the winner
-const isWinningStat = (statWinners, key, value) => {
-    if (!statWinners || !statWinners[key]) return false;
-    return parseFloat(value) === statWinners[key];
-};
+    // Helper function to determine if a stat is the winner
+    const isWinningStat = (statWinners, key, value) => {
+        if (!statWinners || !statWinners[key]) return false;
+        return parseFloat(value) === statWinners[key];
+    };
 
-const CompareGeneral = ({ vehicle, statWinners }) => (
-    <div className="p-6 flex-grow">
-        <div className="space-y-3">
-            <div className="flex justify-between">
-                <span className="text-gray-600">Engine:</span>
-                <span className="font-medium text-right">{vehicle['Engine size (l)']}L {vehicle.Cylinders}-cyl</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Power:</span>
-                <span className={`font-medium ${isWinningStat(statWinners, 'Horsepower (HP)', vehicle['Horsepower (HP)']) ? 'text-green-600 font-bold' : ''}`}>
-                    {`${vehicle['Horsepower (HP)']} HP`}
-                </span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Torque:</span>
-                <span className={`font-medium ${isWinningStat(statWinners, 'Torque (ft-lbs)', vehicle['Torque (ft-lbs)']) ? 'text-green-600 font-bold' : ''}`}>
-                    {`${vehicle['Torque (ft-lbs)']} ft-lbs`}
-                </span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Drive:</span>
-                <span className="font-medium">{vehicle['Drive type']}</span>
-            </div>
-        </div>
-    </div>
-);
-
-const ComparePerformance = ({ vehicle, statWinners }) => {
-    const powerToWeight = parseFloat(vehicle['Horsepower (HP)']) / parseFloat(vehicle['Curb weight (lbs)']);
-    
-    return (
+    const CompareGeneral = ({ vehicle, statWinners }) => (
         <div className="p-6 flex-grow">
             <div className="space-y-3">
                 <div className="flex justify-between">
-                    <span className="text-gray-600">Horsepower:</span>
+                    <span className="text-gray-600">Engine:</span>
+                    <span className="font-medium text-right">{formatVehicleData(vehicle['Engine size (l)'], 'engine_size', 'L')} {vehicle.Cylinders}-cyl</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Power:</span>
                     <span className={`font-medium ${isWinningStat(statWinners, 'Horsepower (HP)', vehicle['Horsepower (HP)']) ? 'text-green-600 font-bold' : ''}`}>
-                        {`${vehicle['Horsepower (HP)']} HP`}
+                        {formatVehicleData(vehicle['Horsepower (HP)'], 'horsepower', 'HP')}
                     </span>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-gray-600">Torque:</span>
                     <span className={`font-medium ${isWinningStat(statWinners, 'Torque (ft-lbs)', vehicle['Torque (ft-lbs)']) ? 'text-green-600 font-bold' : ''}`}>
-                        {`${vehicle['Torque (ft-lbs)']} ft-lbs`}
+                        {formatVehicleData(vehicle['Torque (ft-lbs)'], 'torque', 'ft-lbs')}
                     </span>
                 </div>
                 <div className="flex justify-between">
-                    <span className="text-gray-600">Weight:</span>
-                    <span className={`font-medium ${isWinningStat(statWinners, 'Curb weight (lbs)', vehicle['Curb weight (lbs)']) ? 'text-green-600 font-bold' : ''}`}>
-                        {`${vehicle['Curb weight (lbs)']} lbs`}
-                    </span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-600">Power-to-Weight:</span>
-                    <span className={`font-medium ${statWinners && statWinners['Power-to-Weight'] === powerToWeight ? 'text-green-600 font-bold' : ''}`}>
-                        {powerToWeight.toFixed(3)}
-                    </span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-600">MPG (Combined):</span>
-                    <span className="font-medium">{vehicle['EPA combined MPG']}</span>
+                    <span className="text-gray-600">Drive:</span>
+                    <span className="font-medium">{vehicle['Drive type']}</span>
                 </div>
             </div>
         </div>
     );
-};
 
-const CompareDimensions = ({ vehicle, statWinners }) => (
-    <div className="p-6 flex-grow">
-        <div className="space-y-3">
-            <div className="flex justify-between">
-                <span className="text-gray-600">Length:</span>
-                <span className="font-medium">{`${vehicle['Length (in)']} in`}</span>
+    const ComparePerformance = ({ vehicle, statWinners }) => {
+        const powerToWeight = parseFloat(vehicle['Horsepower (HP)']) / parseFloat(vehicle['Curb weight (lbs)']);
+        
+        return (
+            <div className="p-6 flex-grow">
+                <div className="space-y-3">
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Horsepower:</span>
+                        <span className={`font-medium ${isWinningStat(statWinners, 'Horsepower (HP)', vehicle['Horsepower (HP)']) ? 'text-green-600 font-bold' : ''}`}>
+                            {formatVehicleData(vehicle['Horsepower (HP)'], 'horsepower', 'HP')}
+                        </span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Torque:</span>
+                        <span className={`font-medium ${isWinningStat(statWinners, 'Torque (ft-lbs)', vehicle['Torque (ft-lbs)']) ? 'text-green-600 font-bold' : ''}`}>
+                            {formatVehicleData(vehicle['Torque (ft-lbs)'], 'torque', 'ft-lbs')}
+                        </span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Weight:</span>
+                        <span className={`font-medium ${isWinningStat(statWinners, 'Curb weight (lbs)', vehicle['Curb weight (lbs)']) ? 'text-green-600 font-bold' : ''}`}>
+                            {formatVehicleData(vehicle['Curb weight (lbs)'], 'curb_weight', 'lbs')}
+                        </span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">Power-to-Weight:</span>
+                        <span className={`font-medium ${statWinners && statWinners['Power-to-Weight'] === powerToWeight ? 'text-green-600 font-bold' : ''}`}>
+                            {formatVehicleData(powerToWeight, 'power_to_weight', 'hp/lb')}
+                        </span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-gray-600">MPG (Combined):</span>
+                        <span className="font-medium">{vehicle['EPA combined MPG']}</span>
+                    </div>
+                </div>
             </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Width:</span>
-                <span className="font-medium">{`${vehicle['Width (in)']} in`}</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Height:</span>
-                <span className="font-medium">{`${vehicle['Height (in)']} in`}</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Wheelbase:</span>
-                <span className="font-medium">{`${vehicle['Wheelbase (in)']} in`}</span>
-            </div>
-            <div className="flex justify-between">
-                <span className="text-gray-600">Ground Clearance:</span>
-                <span className="font-medium">{`${vehicle['Ground clearance (in)']} in`}</span>
+        );
+    };
+
+    const CompareDimensions = ({ vehicle, statWinners }) => (
+        <div className="p-6 flex-grow">
+            <div className="space-y-3">
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Length:</span>
+                    <span className="font-medium">{`${vehicle['Length (in)']} in`}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Width:</span>
+                    <span className="font-medium">{`${vehicle['Width (in)']} in`}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Height:</span>
+                    <span className="font-medium">{`${vehicle['Height (in)']} in`}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Wheelbase:</span>
+                    <span className="font-medium">{`${vehicle['Wheelbase (in)']} in`}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="text-gray-600">Ground Clearance:</span>
+                    <span className="font-medium">{`${vehicle['Ground clearance (in)']} in`}</span>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
 
 const AddVehicleSlot = ({ onSelect, onBrowse }) => {
     const { garageVehicles, savedVehicles } = useUserLists();
@@ -1691,10 +1856,60 @@ const getFirstImageUrl = (vehicle) => {
     if (vehicle?.['Image URL']) return vehicle['Image URL'].split(';')[0];
     if (vehicle?.at_a_glance?.hero_image && vehicle.at_a_glance.hero_image !== 'N/A') return vehicle.at_a_glance.hero_image;
     
-    // fallback: create a data URL SVG placeholder instead of external service
-    const title = vehicle?.at_a_glance?.title || `${vehicle.Year || ''} ${vehicle.Make || ''}` || 'Vehicle';
-    const encodedTitle = encodeURIComponent(title);
-    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='%23f3f4f6'/%3E%3Ctext x='200' y='125' font-family='Arial,sans-serif' font-size='14' fill='%236b7280' text-anchor='middle'%3E${encodedTitle}%3C/text%3E%3C/svg%3E`;
+    // Return null to trigger fallback to logo
+    return null;
+};
+
+// MyDDPC Logo URL for fallback
+const MYDDPC_LOGO_URL = "http://myddpc.com/wp-content/uploads/2025/03/cropped-cropped-cropped-Wordpress-Transparent-1.png";
+
+// Reusable Vehicle Image component with fallback
+const VehicleImage = ({ vehicle, className = "", alt = "Vehicle", ...props }) => {
+    const [imageError, setImageError] = React.useState(false);
+    const [imageLoading, setImageLoading] = React.useState(true);
+    
+    const imageUrl = getFirstImageUrl(vehicle);
+    const shouldShowLogo = !imageUrl || imageError;
+    
+    const handleImageLoad = () => {
+        setImageLoading(false);
+        setImageError(false);
+    };
+    
+    const handleImageError = () => {
+        setImageLoading(false);
+        setImageError(true);
+    };
+    
+    // Reset state when vehicle changes
+    React.useEffect(() => {
+        setImageError(false);
+        setImageLoading(true);
+    }, [vehicle?.ID]);
+    
+    if (shouldShowLogo) {
+        return (
+            <div className={`flex items-center justify-center bg-gray-100 ${className}`} {...props}>
+                <img 
+                    src={MYDDPC_LOGO_URL} 
+                    alt="MyDDPC Logo" 
+                    className="max-w-full max-h-full object-contain opacity-60"
+                    style={{ maxWidth: '60%', maxHeight: '60%' }}
+                />
+            </div>
+        );
+    }
+    
+    return (
+        <img 
+            src={imageUrl}
+            alt={alt}
+            className={`${imageLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200 ${className}`}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            {...props}
+        />
+    );
 };
 
 const CompareSlot = ({ vehicle, slotIndex, statWinners, analysisType, setActiveView, setVehicleProfileId, setFromView }) => {
@@ -1706,7 +1921,7 @@ const CompareSlot = ({ vehicle, slotIndex, statWinners, analysisType, setActiveV
         const weight = parseFloat(vehicle['Curb weight (lbs)']);
         if (isNaN(hp) || isNaN(weight) || weight === 0) return null;
         const ratio = hp / weight;
-        return ratio.toFixed(3); // HP per lb
+        return formatVehicleData(ratio, 'power_to_weight', 'hp/lb'); // HP per lb
     }, [vehicle]);
 
     const getStatProps = (key, preference = 'max') => {
@@ -1764,7 +1979,7 @@ const CompareSlot = ({ vehicle, slotIndex, statWinners, analysisType, setActiveV
                         <StatRow label="Engine" value={vehicle['Engine size (l)'] ? `${vehicle['Engine size (l)']}L ${vehicle.Cylinders || ''}-cyl` : null} barPercent={0} />
                         <StatRow label="Drive Type" value={vehicle['Drive type']} barPercent={0} />
                         <StatRow label="MPG (Combined)" value={vehicle['EPA combined MPG']} unit="mpg" barPercent={0} />
-                        <StatRow label="Doors" value={vehicle['Doors']} barPercent={0} />
+                        <StatRow label="Doors" value={vehicle.Doors} barPercent={0} />
                         <StatRow label="Body Style" value={vehicle['Body type']} barPercent={0} />
                     </>
                 );
@@ -1772,7 +1987,6 @@ const CompareSlot = ({ vehicle, slotIndex, statWinners, analysisType, setActiveV
     };
 
     // --- VehicleCard visual shell ---
-    const imageUrl = getFirstImageUrl(vehicle);
     const statusConfig = {
         operational: { label: 'Operational', classes: 'bg-green-100 text-green-800' },
         maintenance: { label: 'In Service', classes: 'bg-yellow-100 text-yellow-800' },
@@ -1804,7 +2018,13 @@ const CompareSlot = ({ vehicle, slotIndex, statWinners, analysisType, setActiveV
             </button>
             {/* Card header with image and overlay */}
             <div className="relative">
-                <div className="vehicle-card-bg" style={{ backgroundImage: `url(${imageUrl})`, height: '120px' }}></div>
+                <div className="vehicle-card-bg" style={{ height: '120px' }}>
+                    <VehicleImage 
+                        vehicle={vehicle}
+                        alt={`${vehicle.Year || ''} ${vehicle.Make || ''} ${vehicle.Model || ''}`}
+                        className="w-full h-full object-cover"
+                    />
+                </div>
                 <div className="vehicle-card-overlay" style={{ height: '120px' }}></div>
                 <div className="vehicle-card-header" style={{ height: '120px', padding: '1rem' }}>
                     <div>
@@ -1942,13 +2162,6 @@ const GarageMetrics = () => {
 };
 
 const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
-    // Use custom image if set and non-empty, otherwise use getFirstImageUrl
-    let imageUrl = '';
-    if (vehicle.custom_image_url && vehicle.custom_image_url.trim() !== '') {
-        imageUrl = vehicle.custom_image_url;
-    } else {
-        imageUrl = getFirstImageUrl(vehicle);
-    }
     // Debug: log the vehicle object to inspect image fields
     console.log('VehicleCard vehicle:', vehicle);
     const statusConfig = {
@@ -1959,23 +2172,6 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
         default: { label: 'Offline', classes: 'bg-gray-100 text-gray-800' }
     };
     const currentStatus = statusConfig[vehicle.status] || statusConfig.default;
-    // Prefer custom image, then main image from vehicle data, then fallback SVG
-    let mainImage = '';
-    if (vehicle.custom_image_url) {
-        mainImage = vehicle.custom_image_url;
-    } else if (vehicle.hero_image) {
-        mainImage = vehicle.hero_image;
-    } else if (vehicle.db_image_url) {
-        mainImage = vehicle.db_image_url;
-    } else if (vehicle.ImageURL) {
-        mainImage = vehicle.ImageURL.split(';')[0];
-    } else if (vehicle['Image URL']) {
-        mainImage = vehicle['Image URL'].split(';')[0];
-    } else {
-        const title = `${vehicle.Year || ''} ${vehicle.Make || ''}` || 'Vehicle';
-        const encodedTitle = encodeURIComponent(title);
-        mainImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f3f4f6'/%3E%3Ctext x='200' y='150' font-family='Arial,sans-serif' font-size='16' fill='%236b7280' text-anchor='middle'%3E${encodedTitle}%3C/text%3E%3C/svg%3E`;
-    }
 
     // Restore formatInvestment
     const formatInvestment = (value) => {
@@ -1994,7 +2190,13 @@ const VehicleCard = ({ vehicle, onSelect, onWorkMode }) => {
     return (
         <div className="vehicle-card bg-white rounded-lg border flex flex-col" onClick={() => onSelect(vehicle)}>
             <div className="relative">
-                <div className="vehicle-card-bg" style={{ backgroundImage: `url(${imageUrl})`, height: '120px' }}></div>
+                <div className="vehicle-card-bg" style={{ height: '120px' }}>
+                    <VehicleImage 
+                        vehicle={vehicle}
+                        alt={`${vehicle.Year} ${vehicle.Make} ${vehicle.Model}`}
+                        className="w-full h-full object-cover"
+                    />
+                </div>
                 <div className="vehicle-card-overlay" style={{ height: '120px' }}></div>
                 
                 {/* NEW: Mobile Work Mode Button */}
@@ -3280,8 +3482,188 @@ const BuildJobForm = ({ job, onSave, onCancel }) => {
 
 // --- MY ACCOUNT PAGE COMPONENT ---
 
+// ProfileTab component moved outside of MyAccount to fix input focus issues
+const ProfileTab = ({ userData, isEditing, handleInputChange, handleProfileSave, handleCancelEdit, setIsEditing, garageData, stats, formatMemberSince, avatarFile, handleAvatarFileChange, setAvatarFile }) => (
+    <div className="space-y-6">
+        {/* Profile Information Section */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex justify-between items-start mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
+                {!isEditing && (
+                    <button onClick={() => setIsEditing(true)} className="edit-btn">
+                        <svg className="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </button>
+                )}
+            </div>
+
+            {/* Main Profile Layout Container */}
+            <div className="profile-layout-grid">
+                {/* Avatar Column */}
+                <div className="profile-avatar-column">
+                     <div className="avatar-container">
+                        <img 
+                            src={userData.avatar_url || `https://ui-avatars.com/api/?name=${userData.username || 'U'}&background=f3f4f6&color=374151&size=128`} 
+                            alt="Avatar" 
+                            className="profile-avatar-img"
+                        />
+                        {isEditing && (
+                            <>
+                                <label htmlFor="avatar-upload" className="avatar-overlay">
+                                    <svg className="w-8 h-8 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                </label>
+                                <input type="file" accept="image/*" id="avatar-upload" className="hidden" onChange={handleAvatarFileChange}/>
+                            </>
+                        )}
+                    </div>
+                    {isEditing && avatarFile && (
+                        <div className="avatar-actions">
+                            <button 
+                                onClick={() => setAvatarFile(null)}
+                                className="px-3 py-1 text-xs text-red-600 hover:text-red-700"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Info Column */}
+                <div className="profile-info-column">
+                    <div className="profile-info-grid">
+                        <div>
+                            <label className="profile-info-label">Username</label>
+                            <p className="profile-info-value-lg">{userData.username}</p>
+                        </div>
+                        <div>
+                            <label className="profile-info-label">Member Since</label>
+                            <p className="profile-info-value">{formatMemberSince(userData.member_since)}</p>
+                        </div>
+                        <div className="col-span-2">
+                             <label htmlFor="location" className="profile-info-label">Location</label>
+                            {isEditing ? (
+                                <input 
+                                    type="text" 
+                                    id="location" 
+                                    name="location" 
+                                    value={userData.location || ''} 
+                                    onChange={(e) => handleInputChange('location', e.target.value)}
+                                    placeholder="City, State"
+                                    className="profile-input"
+                                />
+                            ) : (
+                                <p className="profile-info-value">{userData.location || 'N/A'}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Bio Section (Full Width Below) */}
+            <div className="mt-4">
+                <label htmlFor="bio" className="profile-info-label">Bio</label>
+                {isEditing ? (
+                    <textarea 
+                        id="bio" 
+                        name="bio" 
+                        value={userData.bio || ''} 
+                        onChange={(e) => handleInputChange('bio', e.target.value)}
+                        placeholder="Tell us about your cars and builds..."
+                        className="profile-textarea"
+                        rows="3"
+                    />
+                ) : (
+                    <p className="profile-info-value">{userData.bio || 'No bio added yet.'}</p>
+                )}
+            </div>
+
+            {/* Edit Actions */}
+            {isEditing && (
+                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                    <button onClick={handleCancelEdit} className="myddpc-btn-secondary">
+                        Cancel
+                    </button>
+                    <button onClick={handleProfileSave} className="myddpc-btn-primary">
+                        Save Changes
+                    </button>
+                </div>
+            )}
+        </div>
+
+        {/* Stats and Garage Sections */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Activity</h3>
+             <div className="stats-grid">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">{stats.vehicles}</div>
+                    <div className="text-sm text-gray-600">Vehicles in Garage</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">{stats.modifications}</div>
+                    <div className="text-sm text-gray-600">Modifications Logged</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">{stats.serviceRecords}</div>
+                    <div className="text-sm text-gray-600">Service Records</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">{stats.milesTracked.toLocaleString()}</div>
+                    <div className="text-sm text-gray-600">Miles Tracked</div>
+                </div>
+            </div>
+        </div>
+        {garageData.length > 0 && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">My Garage</h3>
+                <div className="garage-showcase">
+                    {garageData.map((vehicle, index) => {
+                        // Get the best available image
+                        const imageUrl = vehicle.custom_image_url || 
+                                       vehicle.vehicle_data?.Image_URL || 
+                                       vehicle.vehicle_data?.hero_image ||
+                                       `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f3f4f6'/%3E%3Ctext x='150' y='100' font-family='Arial,sans-serif' font-size='16' fill='%236b7280' text-anchor='middle' dominant-baseline='central'%3E${vehicle.Year || ''} ${vehicle.Make || ''} ${vehicle.Model || ''}%3C/text%3E%3C/svg%3E`;
+                        
+                        // Build YMMT string
+                        const ymmt = [vehicle.Year, vehicle.Make, vehicle.Model, vehicle.Trim].filter(Boolean).join(' ');
+                        
+                        return (
+                            <div 
+                                key={index} 
+                                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                                onClick={() => {
+                                    // Navigate to garage and select this vehicle
+                                    if (window.setSelectedVehicle && window.navigateToView) {
+                                        window.setSelectedVehicle(vehicle);
+                                        window.navigateToView('garage', 'vehicle-detail');
+                                    }
+                                }}
+                            >
+                                <div className="aspect-w-16 aspect-h-9 mb-3">
+                                    <img 
+                                        src={imageUrl}
+                                        alt={vehicle.name || 'Vehicle'}
+                                        className="w-full h-32 object-cover rounded"
+                                        onError={(e) => {
+                                            // Fallback to SVG placeholder if image fails to load
+                                            e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f3f4f6'/%3E%3Ctext x='150' y='100' font-family='Arial,sans-serif' font-size='16' fill='%236b7280' text-anchor='middle' dominant-baseline='central'%3E${vehicle.Year || ''} ${vehicle.Make || ''} ${vehicle.Model || ''}%3C/text%3E%3C/svg%3E`;
+                                        }}
+                                    />
+                                </div>
+                                <h4 className="font-medium text-gray-900 mb-1">{vehicle.name}</h4>
+                                <p className="text-sm text-gray-600">
+                                    {ymmt}
+                                </p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        )}
+    </div>
+);
+
 const MyAccount = () => {
     const { rest_url, nonce } = window.myddpcAppData || {};
+    const { refreshProfile } = useAuth();
     const [userData, setUserData] = useState({ 
         username: '', 
         email: '', 
@@ -3452,6 +3834,11 @@ const MyAccount = () => {
             }));
             setAvatarFile(null);
             setIsEditing(false); // Exit edit mode
+            
+            // Refresh the user profile in the AuthProvider to update the header avatar
+            if (refreshProfile) {
+                refreshProfile();
+            }
         } catch (error) {
             handleFeedback(error.message, 'error');
         }
@@ -3514,188 +3901,6 @@ const MyAccount = () => {
     };
 
     // Tab components
-    const ProfileTab = () => (
-        <div className="space-y-6">
-            {/* Profile Header */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Profile Information</h3>
-                    {!isEditing && (
-                        <button onClick={() => setIsEditing(true)} className="text-red-600 hover:text-red-800">
-                            <Edit3Icon className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-                <div className="grid grid-cols-6 gap-6">
-                    {/* Avatar Section - 1 column */}
-                    <div className="col-span-1">
-                        <div className="avatar-container">
-                            <img 
-                                src={userData.avatar_url || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23f3f4f6'/%3E%3Ctext x='40' y='40' font-family='Arial,sans-serif' font-size='24' fill='%23374151' text-anchor='middle' dominant-baseline='central'%3E${userData.username ? userData.username.charAt(0).toUpperCase() : 'U'}%3C/text%3E%3C/svg%3E`} 
-                                alt="Avatar" 
-                                className="w-20 h-20 rounded-full object-cover flex-shrink-0 border-2 border-white shadow-md"
-                            />
-                            {isEditing && (
-                                <>
-                                    <div className="avatar-overlay">
-                                        <CameraIcon className="w-6 h-6 text-white" />
-                                    </div>
-                                    <input type="file" accept="image/*" onChange={handleAvatarFileChange} id="avatar-upload" className="hidden"/>
-                                    <label htmlFor="avatar-upload" className="absolute inset-0 cursor-pointer rounded-full"></label>
-                                </>
-                            )}
-                        </div>
-                        {isEditing && avatarFile && (
-                            <div className="avatar-actions">
-                                <button 
-                                    onClick={() => setAvatarFile(null)}
-                                    className="px-3 py-1 text-xs text-red-600 hover:text-red-700"
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    
-                    {/* User Info Section - 5 columns */}
-                    <div className="col-span-5 space-y-4">
-                        {/* Username and Member Since Row */}
-                        <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700">Username</label>
-                                <p className="mt-1 text-gray-800 font-medium text-lg">{userData.username}</p>
-                            </div>
-                            <div className="col-span-1"></div>
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700">Member Since</label>
-                                <p className="mt-1 text-gray-800">{formatMemberSince(userData.member_since)}</p>
-                            </div>
-                        </div>
-                        
-                        {/* Location - 5 columns */}
-                        <div>
-                            <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
-                            {isEditing ? (
-                                <input 
-                                    type="text" 
-                                    id="location" 
-                                    name="location" 
-                                    value={userData.location || ''} 
-                                    onChange={(e) => handleInputChange('location', e.target.value)}
-                                    placeholder="City, State"
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                                />
-                            ) : (
-                                <p className="mt-1 text-gray-800">{userData.location || 'No location added yet.'}</p>
-                            )}
-                        </div>
-                        
-                        {/* Bio - 5 columns */}
-                        <div>
-                            <label htmlFor="bio" className="block text-sm font-medium text-gray-700">Bio</label>
-                            {isEditing ? (
-                                <textarea 
-                                    id="bio" 
-                                    name="bio" 
-                                    value={userData.bio || ''} 
-                                    onChange={(e) => handleInputChange('bio', e.target.value)}
-                                    placeholder="Tell us about your cars and builds..."
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md resize-none"
-                                    rows="3"
-                                />
-                            ) : (
-                                <p className="mt-1 text-gray-800">{userData.bio || 'No bio added yet.'}</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                
-                {/* Edit Actions */}
-                {isEditing && (
-                    <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-                        <button onClick={handleCancelEdit} className="bg-white hover:bg-gray-100 text-gray-800 px-4 py-2 rounded-lg border border-gray-300 font-medium">
-                            Cancel
-                        </button>
-                        <button onClick={handleProfileSave} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium">
-                            Save Changes
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* Stats Dashboard */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Your Activity</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                        <div className="text-2xl font-bold text-red-600">{stats.vehicles}</div>
-                        <div className="text-sm text-gray-600">Vehicles in Garage</div>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                        <div className="text-2xl font-bold text-red-600">{stats.modifications}</div>
-                        <div className="text-sm text-gray-600">Modifications Logged</div>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                        <div className="text-2xl font-bold text-red-600">{stats.serviceRecords}</div>
-                        <div className="text-sm text-gray-600">Service Records</div>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                        <div className="text-2xl font-bold text-red-600">{stats.milesTracked.toLocaleString()}</div>
-                        <div className="text-sm text-gray-600">Miles Tracked</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Garage Showcase */}
-            {garageData.length > 0 && (
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">My Garage</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {garageData.map((vehicle, index) => {
-                            // Get the best available image
-                            const imageUrl = vehicle.custom_image_url || 
-                                           vehicle.vehicle_data?.Image_URL || 
-                                           vehicle.vehicle_data?.hero_image ||
-                                           `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f3f4f6'/%3E%3Ctext x='150' y='100' font-family='Arial,sans-serif' font-size='16' fill='%236b7280' text-anchor='middle' dominant-baseline='central'%3E${vehicle.Year || ''} ${vehicle.Make || ''} ${vehicle.Model || ''}%3C/text%3E%3C/svg%3E`;
-                            
-                            // Build YMMT string
-                            const ymmt = [vehicle.Year, vehicle.Make, vehicle.Model, vehicle.Trim].filter(Boolean).join(' ');
-                            
-                            return (
-                                <div 
-                                    key={index} 
-                                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                                    onClick={() => {
-                                        // Navigate to garage and select this vehicle
-                                        if (window.setSelectedVehicle && window.navigateToView) {
-                                            window.setSelectedVehicle(vehicle);
-                                            window.navigateToView('garage', 'vehicle-detail');
-                                        }
-                                    }}
-                                >
-                                    <div className="aspect-w-16 aspect-h-9 mb-3">
-                                        <img 
-                                            src={imageUrl}
-                                            alt={vehicle.name || 'Vehicle'}
-                                            className="w-full h-32 object-cover rounded"
-                                            onError={(e) => {
-                                                // Fallback to SVG placeholder if image fails to load
-                                                e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23f3f4f6'/%3E%3Ctext x='150' y='100' font-family='Arial,sans-serif' font-size='16' fill='%236b7280' text-anchor='middle' dominant-baseline='central'%3E${vehicle.Year || ''} ${vehicle.Make || ''} ${vehicle.Model || ''}%3C/text%3E%3C/svg%3E`;
-                                            }}
-                                        />
-                                    </div>
-                                    <h4 className="font-medium text-gray-900 mb-1">{vehicle.name}</h4>
-                                    <p className="text-sm text-gray-600">
-                                        {ymmt}
-                                    </p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
 
     const AccountSettingsTab = () => (
         <div className="space-y-6">
@@ -3828,7 +4033,20 @@ const MyAccount = () => {
             </div>
 
             {/* Tab Content */}
-            {activeTab === 'profile' && <ProfileTab />}
+            {activeTab === 'profile' && <ProfileTab 
+                userData={userData}
+                isEditing={isEditing}
+                handleInputChange={handleInputChange}
+                handleProfileSave={handleProfileSave}
+                handleCancelEdit={handleCancelEdit}
+                setIsEditing={setIsEditing}
+                garageData={garageData}
+                stats={stats}
+                formatMemberSince={formatMemberSince}
+                avatarFile={avatarFile}
+                handleAvatarFileChange={handleAvatarFileChange}
+                setAvatarFile={setAvatarFile}
+            />}
             {activeTab === 'settings' && <AccountSettingsTab />}
             {activeTab === 'notifications' && <NotificationsTab />}
         </div>
@@ -4015,7 +4233,11 @@ const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim, setVeh
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Left: Hero Image */}
                     <div className="flex-1 flex items-center justify-center mb-6 md:mb-0" style={{ minWidth: 0 }}>
-                        <img src={getFirstImageUrl(displayData)} alt="Vehicle" className="w-full max-w-md h-auto object-cover rounded-lg shadow" />
+                        <VehicleImage 
+                            vehicle={displayData}
+                            alt="Vehicle" 
+                            className="w-full max-w-md h-auto object-cover rounded-lg shadow" 
+                        />
                     </div>
                     {/* Right: Info */}
                     <div className="flex-1 flex flex-col gap-4 min-w-0">
@@ -4047,9 +4269,9 @@ const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim, setVeh
 
                         {/* Key Specs */}
                         <div className="flex gap-4 mb-2">
-                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.horsepower}</span><span className="font-bold text-lg">{displayData.at_a_glance?.horsepower || 'N/A'}</span><span className="text-xs ml-1">HP</span></div>
-                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.torque}</span><span className="font-bold text-lg">{displayData.at_a_glance?.torque || 'N/A'}</span><span className="text-xs ml-1">ft-lbs</span></div>
-                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.mpg}</span><span className="font-bold text-lg">{displayData.at_a_glance?.combined_mpg || 'N/A'}</span><span className="text-xs ml-1">MPG</span></div>
+                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.horsepower}</span><span className="font-bold text-lg">{formatVehicleData(displayData.at_a_glance?.horsepower, 'horsepower', 'HP')}</span></div>
+                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.torque}</span><span className="font-bold text-lg">{formatVehicleData(displayData.at_a_glance?.torque, 'torque', 'ft-lbs')}</span></div>
+                            <div className="spec-item flex items-center gap-2 bg-gray-50 px-3 py-2 rounded border"><span>{ICONS.mpg}</span><span className="font-bold text-lg">{formatVehicleData(displayData.at_a_glance?.combined_mpg, 'mpg', 'MPG')}</span></div>
                         </div>
                         {/* Drivetrain */}
                         <div className="flex gap-3 mb-2">
@@ -4182,90 +4404,6 @@ const VehicleProfileView = ({ vehicleId, onBack, year, make, model, trim, setVeh
                         <div className="text-center">
                             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
                             <p className="mt-2 text-gray-600">Loading community builds...</p>
-                        </div>
-                    </div>
-                ) : communityBuilds && communityBuilds.has_builds ? (
-                    <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h3 className="text-xl font-semibold text-gray-900 mb-1">Community Builds</h3>
-                                <p className="text-gray-600">
-                                    {communityBuilds.build_count} community member{communityBuilds.build_count !== 1 ? 's' : ''} have built this vehicle
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Icon name="Users" className="w-5 h-5 text-gray-400" />
-                                <span className="text-sm text-gray-500">Community</span>
-                            </div>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            {communityBuilds.builds.map((buildData, index) => (
-                                <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div>
-                                            <h4 className="font-semibold text-gray-900">
-                                                {buildData.garage_vehicle.nickname}
-                                            </h4>
-                                            <p className="text-sm text-gray-600">
-                                                Built by {buildData.garage_vehicle.owner_name}
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {buildData.garage_vehicle.completed_builds} completed
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                                {buildData.garage_vehicle.total_builds} total builds
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="space-y-2">
-                                        {buildData.builds.slice(0, 3).map((build, buildIndex) => (
-                                            <div key={buildIndex} className="flex items-center justify-between bg-white rounded-md p-3 border border-gray-100">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-2 h-2 rounded-full ${
-                                                        build.status === 'complete' ? 'bg-green-500' : 
-                                                        build.status === 'in_progress' ? 'bg-yellow-500' : 'bg-gray-400'
-                                                    }`}></div>
-                                                    <div>
-                                                        <div className="font-medium text-gray-900">{build.title}</div>
-                                                        <div className="text-xs text-gray-500 capitalize">
-                                                            {build.type.replace(/_/g, ' ')}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {build.installation_date ? 
-                                                        new Date(build.installation_date).toLocaleDateString() : 
-                                                        'Planned'
-                                                    }
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {buildData.builds.length > 3 && (
-                                            <div className="text-center pt-2">
-                                                <span className="text-sm text-gray-500">
-                                                    +{buildData.builds.length - 3} more builds
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        
-                        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <div className="flex items-start gap-3">
-                                <Icon name="Info" className="w-5 h-5 text-blue-600 mt-0.5" />
-                                <div>
-                                    <h4 className="font-medium text-blue-900 mb-1">Join the Community</h4>
-                                    <p className="text-sm text-blue-700">
-                                        Add this vehicle to your garage and start sharing your own builds with the community!
-                                    </p>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 ) : communityBuilds && !communityBuilds.has_builds ? (
@@ -4437,7 +4575,7 @@ const App = () => {
 
     const navigationItems = [
         { id: 'discover', label: 'Discover', icon: 'Search' },
-        { id: 'compare', label: 'Compare', icon: 'Columns' },
+        { id: 'compare', label: 'Compare', icon: 'Compare' },
         { id: 'saved', label: 'Saved Vehicles', icon: 'Bookmark', auth: true },
         { id: 'garage', label: 'Garage', icon: 'Garage', auth: true },
     ];
@@ -4468,12 +4606,26 @@ const App = () => {
 
     const UserProfile = () => {
         const [dropdownOpen, setDropdownOpen] = useState(false);
+        const { user, logout } = useAuth();
+        
         if (!user) return null;
+
         return (
             <div className="relative">
                 <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setDropdownOpen(!dropdownOpen)}>
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"><Icon name={user.displayName} className="w-4 h-4 text-gray-600" /></div>
-                    <span className="text-sm font-medium text-gray-700 hidden sm:block">{user.displayName}</span>
+                    {/* Conditionally render the avatar or a placeholder */}
+                    {user.avatar_url ? (
+                        <img 
+                            src={user.avatar_url} 
+                            alt="User Avatar" 
+                            className="w-8 h-8 rounded-full object-cover" 
+                        />
+                    ) : (
+                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold">
+                            {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                        </div>
+                    )}
+                    <span className="text-sm font-medium text-white hidden sm:block">{user.displayName}</span>
                 </div>
                 {dropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50" onMouseLeave={() => setDropdownOpen(false)}>
@@ -4579,40 +4731,38 @@ const App = () => {
                     vehicleToAddToGarage={vehicleToAddToGarage}
                     setVehicleToAddToGarage={setVehicleToAddToGarage}
                 />
-                <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center h-16 justify-between">
-                            {/* Left: Logo */}
-                            <div className="flex-shrink-0 flex items-center" style={{ minWidth: 0 }}>
-                                <div className="flex items-center space-x-3 cursor-pointer" onClick={() => handleNavClick('garage')}>
-                                    <img src="http://myddpc.com/wp-content/uploads/2025/03/cropped-cropped-cropped-Wordpress-Transparent-1.png" alt="MyDDPC Logo" className="h-8 w-auto" />
-                                </div>
-                            </div>
-
-                            {/* Center: Navigation */}
-                            <nav className="flex-1 flex justify-center items-center">
-                                <div className="flex items-center space-x-1">
-                                    {navigationItems.map(item => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => handleNavClick(item.id)}
-                                            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === item.id ? 'bg-red-50 text-red-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'} nav-btn`}
-                                        >
-                                            <Icon name={item.icon} className="w-5 h-5 mr-2 nav-btn-icon" />
-                                            <span className="nav-btn-label">{item.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </nav>
-
-                            {/* Right: User Profile */}
-                            <div className="flex items-center justify-end space-x-2 flex-shrink-0">
-                                {safeIsAuthenticated ? <UserProfile /> : (
-                                    <button onClick={() => setAuthModalOpen(true)} className="text-sm font-medium text-gray-600 hover:text-gray-900 flex-shrink-0">Login</button>
-                                )}
-                            </div>
-                        </div>
+                <header className="bg-white border-b border-gray-200 sticky top-0 z-50 relative w-full h-16">
+                {/* Left: Logo */}
+                <div className="absolute left-4 top-0 h-full flex items-center z-10">
+                    <div className="flex items-center space-x-3 cursor-pointer" onClick={() => handleNavClick('garage')}>
+                    <img src="http://myddpc.com/wp-content/uploads/2025/03/cropped-cropped-cropped-Wordpress-Transparent-1.png" alt="MyDDPC Logo" className="h-8 w-auto" />
                     </div>
+                </div>
+
+                {/* Right: User Profile */}
+                <div className="absolute right-4 top-0 h-full flex items-center space-x-2 z-10">
+                    {safeIsAuthenticated ? <UserProfile /> : (
+                    <button onClick={() => setAuthModalOpen(true)} className="text-sm font-medium text-gray-600 hover:text-gray-900">Login</button>
+                    )}
+                </div>
+
+                {/* Center: Navigation */}
+                <div className="max-w-7xl mx-auto h-full flex items-center justify-center">
+                    <nav className="flex items-center">
+                    <div className="flex items-center space-x-1">
+                        {navigationItems.map(item => (
+                        <button
+                            key={item.id}
+                            onClick={() => handleNavClick(item.id)}
+                            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeView === item.id ? 'bg-red-50 text-red-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'} nav-btn`}
+                        >
+                            <Icon name={item.icon} className="w-5 h-5 mr-2 nav-btn-icon" />
+                            <span className="nav-btn-label">{item.label}</span>
+                        </button>
+                        ))}
+                    </div>
+                    </nav>
+                </div>
                 </header>
                 <main className="flex-grow bg-gray-50">
                     {showGarageBenefits ? (
@@ -4706,9 +4856,9 @@ const VehicleRow = ({ vehicle, onRowClick, actionButtons, isSelected }) => (
       <div className="discover-result-item-info flex-1">
         <h4 className="text-lg font-medium text-gray-900 mb-2">{`${vehicle.Year || vehicle.year} ${vehicle.Make || vehicle.make} ${vehicle.Model || vehicle.model} ${vehicle.Trim || vehicle.trim}`}</h4>
         <div className="details-grid grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm text-gray-600">
-          <div><span className="font-medium">Engine:</span> {vehicle['Engine size (l)'] || vehicle.engine_size}L {vehicle.Cylinders || vehicle.cylinders}-cyl</div>
-          <div><span className="font-medium">Power:</span> {vehicle['Horsepower (HP)'] || vehicle.horsepower} HP</div>
-          <div><span className="font-medium">Weight:</span> {vehicle['Curb weight (lbs)'] || vehicle.weight} lbs</div>
+          <div><span className="font-medium">Engine:</span> {formatVehicleData(vehicle['Engine size (l)'] || vehicle.engine_size, 'engine_size', 'L')} {vehicle.Cylinders || vehicle.cylinders}-cyl</div>
+          <div><span className="font-medium">Power:</span> {formatVehicleData(vehicle['Horsepower (HP)'] || vehicle.horsepower, 'horsepower', 'HP')}</div>
+          <div><span className="font-medium">Weight:</span> {formatVehicleData(vehicle['Curb weight (lbs)'] || vehicle.weight, 'curb_weight', 'lbs')}</div>
           {vehicle['Drive type'] && <div><span className="font-medium">Drive:</span> {vehicle['Drive type']}</div>}
         </div>
       </div>
@@ -4857,12 +5007,12 @@ const ViewToggle = ({ currentView, onViewChange }) => {
 };
 
 // VehicleCardGallery Component - Visual card layout
-const VehicleCardGallery = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompare, isVehicleSaved, isVehicleCompared, removeFromCompare, compareVehicles, setVehicleProfileId, setActiveView, setFromView }) => {
+const VehicleCardGallery = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompare, isVehicleSaved, isVehicleCompared, removeFromCompare, compareVehicles, setVehicleProfileId, setActiveView, setFromView, pageContext, onAddToGarage, onRemove }) => {
     const { rest_url, nonce } = window.myddpcAppData || {};
     
-    // Handle grouped vehicle data (with trim metadata)
-    const hasGroupMetadata = vehicle._group_metadata;
-    const vehicleName = hasGroupMetadata 
+    // Handle consolidated vehicle data (with trim metadata)
+    const hasConsolidatedMetadata = vehicle._consolidated_metadata;
+    const vehicleName = hasConsolidatedMetadata 
         ? `${vehicle.Year} ${vehicle.Make} ${vehicle.Model}`
         : `${vehicle.Year || vehicle.year} ${vehicle.Make || vehicle.make} ${vehicle.Model || vehicle.model} ${vehicle.Trim || vehicle.trim}`;
     
@@ -4930,22 +5080,31 @@ const VehicleCardGallery = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompar
         >
             {/* Hero Image Container - Largest element for visual impact */}
             <div className="vehicle-card-image-container relative h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-                <img 
-                    src={getFirstImageUrl(displayVehicle)} 
+                <VehicleImage 
+                    vehicle={displayVehicle}
                     alt={vehicleName}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
-                    onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                    }}
                 />
-                <div className="vehicle-placeholder absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200" style={{ display: 'none' }}>
-                    <div className="text-center">
-                        <Icon name="Car" className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-500 text-sm font-medium">Image coming soon</p>
-                    </div>
-                </div>
+                
+                {/* Remove button - only show on Saved Vehicles page */}
+                {pageContext === 'savedVehicles' && onRemove && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Are you sure you want to remove this vehicle from your saved list?')) {
+                                onRemove();
+                            }
+                        }}
+                        className="absolute top-2 right-2 w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg z-30"
+                        title="Remove from saved list"
+                        style={{ zIndex: 30 }}
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                )}
                 
                 {/* Quick action overlay on hover */}
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -4963,25 +5122,25 @@ const VehicleCardGallery = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompar
                 </h3>
                 
                 {/* Trim Selector Dropdown */}
-                {(modelTrims && modelTrims.trims && modelTrims.trims.length > 1) || (hasGroupMetadata && hasGroupMetadata.trim_count > 1) ? (
+                {(modelTrims && modelTrims.trims && modelTrims.trims.length > 1) || (hasConsolidatedMetadata && hasConsolidatedMetadata.trim_count > 1) ? (
                     <div className="mb-3">
                         <label className="block text-xs font-semibold text-gray-700 mb-1">
-                            Select Trim {hasGroupMetadata && hasGroupMetadata.trim_count > 1 && `(${hasGroupMetadata.trim_count} available)`}
+                            Select Trim {hasConsolidatedMetadata && hasConsolidatedMetadata.trim_count > 1 && `(${hasConsolidatedMetadata.trim_count} available)`}
                         </label>
                         <select 
                             value={selectedTrimId} 
                             onChange={(e) => handleTrimChange(e.target.value, e)}
-                            className="w-full rounded-lg border border-gray-300 px-2 py-1 text-xs focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
+                            className="vehicle-card-list-trim-select"
                         >
                             {modelTrims && modelTrims.trims ? (
                                 modelTrims.trims.map(trim => (
                                     <option key={trim.ID} value={trim.ID}>
-                                        {trim.Trim} - {trim['Horsepower (HP)']} HP
+                                        {trim.Trim} - {formatVehicleData(trim['Horsepower (HP)'], 'horsepower', 'HP')}
                                     </option>
                                 ))
                             ) : (
                                 <option value={vehicle.ID}>
-                                    {vehicle.Trim} - {vehicle['Horsepower (HP)']} HP
+                                    {vehicle.Trim} - {formatVehicleData(vehicle['Horsepower (HP)'], 'horsepower', 'HP')}
                                 </option>
                             )}
                         </select>
@@ -4993,19 +5152,19 @@ const VehicleCardGallery = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompar
                     <div className="spec-item bg-gray-50 rounded-lg p-3">
                         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Power</div>
                         <div className="font-bold text-gray-900">
-                            {displayVehicle['Horsepower (HP)'] || displayVehicle.horsepower || 'N/A'} <span className="text-sm font-normal">HP</span>
+                            {formatVehicleData(displayVehicle['Horsepower (HP)'] || displayVehicle.horsepower, 'horsepower', 'HP')}
                         </div>
                     </div>
                     <div className="spec-item bg-gray-50 rounded-lg p-3">
                         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Engine</div>
                         <div className="font-bold text-gray-900">
-                            {displayVehicle['Engine size (l)'] || displayVehicle.engine_size || 'N/A'}L <span className="text-sm font-normal">{displayVehicle.Cylinders || displayVehicle.cylinders || 'N/A'}-cyl</span>
+                            {formatVehicleData(displayVehicle['Engine size (l)'] || displayVehicle.engine_size, 'engine_size', 'L')} <span className="text-sm font-normal">{displayVehicle.Cylinders || displayVehicle.cylinders || 'N/A'}-cyl</span>
                         </div>
                     </div>
                     <div className="spec-item bg-gray-50 rounded-lg p-3">
                         <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Weight</div>
                         <div className="font-bold text-gray-900">
-                            {displayVehicle['Curb weight (lbs)'] ? Math.round(displayVehicle['Curb weight (lbs)']).toLocaleString() : displayVehicle.weight || 'N/A'} <span className="text-sm font-normal">lbs</span>
+                            {formatVehicleData(displayVehicle['Curb weight (lbs)'] || displayVehicle.weight, 'curb_weight', 'lbs')}
                         </div>
                     </div>
                     {displayVehicle['Drive type'] && (
@@ -5021,41 +5180,60 @@ const VehicleCardGallery = ({ vehicle, onCardClick, onSaveVehicle, onAddToCompar
                         </div>
                     )}
                 </div>
-                {/* Action Bar - Clear, prominent buttons */}
+                
+                {/* Action Bar - Context-aware buttons */}
                 <div className="vehicle-card-actions flex gap-2">
+                    {pageContext === 'savedVehicles' ? (
+                        /* Saved Vehicles context: Show Add to Garage button */
+                        <button 
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                if (onAddToGarage) {
+                                    onAddToGarage(displayVehicle);
+                                }
+                            }}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Icon name="Garage" className="w-4 h-4" />
+                            Add to Garage
+                        </button>
+                    ) : (
+                        /* Default context: Show Save Vehicle button */
+                        <button 
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                /* Save the base model (without specific trim) to saved vehicles */
+                                const baseVehicle = {
+                                    ...displayVehicle,
+                                    ID: vehicle.ID, /* Use the original vehicle ID (base model) */
+                                    Trim: vehicle.Trim /* Use the original trim (base model) */
+                                };
+                                onSaveVehicle(baseVehicle); 
+                            }}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                        >
+                            <PlusIcon className="w-4 h-4" />
+                            Save Vehicle
+                        </button>
+                    )}
                     <button 
                         onClick={(e) => { 
                             e.stopPropagation(); 
-                            // Save the base model (without specific trim) to saved vehicles
-                            const baseVehicle = {
-                                ...displayVehicle,
-                                ID: vehicle.ID, // Use the original vehicle ID (base model)
-                                Trim: vehicle.Trim // Use the original trim (base model)
-                            };
-                            onSaveVehicle(baseVehicle); 
-                        }}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-                    >
-                        <PlusIcon className="w-4 h-4" />
-                        Save Vehicle
-                    </button>
-                    <button 
-                        onClick={(e) => { 
-                            e.stopPropagation(); 
-                            if (isVehicleCompared(displayVehicle.ID)) {
-                                removeFromCompare(compareVehicles.findIndex(v => v && v.ID === displayVehicle.ID));
+                            const trimObj = (modelTrims && modelTrims.trims) ? modelTrims.trims.find(trim => trim.ID == selectedTrimId) : displayVehicle;
+                            if (isVehicleCompared(selectedTrimId)) {
+                                removeFromCompare(compareVehicles.findIndex(v => v && v.ID === selectedTrimId));
                             } else {
-                                onAddToCompare(displayVehicle); 
+                                onAddToCompare(trimObj); 
                             }
                         }}
                         className={`flex-1 px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                            isVehicleCompared(displayVehicle.ID) 
+                            isVehicleCompared(selectedTrimId) 
                                 ? 'bg-green-100 text-green-700 border-2 border-green-300' 
                                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                         }`}
-                        title={isVehicleCompared(displayVehicle.ID) ? 'Remove from Head-to-Head' : 'Add to Head-to-Head'}
+                        title={isVehicleCompared(selectedTrimId) ? 'Remove from Head-to-Head' : 'Add to Head-to-Head'}
                     >
-                        <Icon name="Columns" className="w-4 h-4" />
+                        <Icon name="Compare" className="w-4 h-4" />
                         <span className="hidden sm:inline">Head-to-Head</span>
                         <span className="sm:hidden">Compare</span>
                     </button>

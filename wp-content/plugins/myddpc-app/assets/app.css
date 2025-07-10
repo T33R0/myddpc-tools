@@ -726,7 +726,8 @@
 #myddpc-react-root .vehicle-discovery-grid {
     display: grid;
     grid-template-columns: repeat(1, minmax(0, 1fr));
-    gap: 1.5rem;
+    gap: 1.25rem;
+    align-items: stretch; /* Ensure grid items stretch to fill available height */
 }
 
 @media (min-width: 768px) {
@@ -741,7 +742,7 @@
     }
 }
 
-/* Vehicle Discovery Card */
+/* Vehicle Discovery Card - Optimized Equal Height Implementation */
 #myddpc-react-root .vehicle-discovery-card {
     background: white;
     border: 1px solid #e5e7eb;
@@ -749,7 +750,10 @@
     overflow: hidden;
     transition: all 0.2s ease;
     cursor: pointer;
-    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 400px; /* Minimal height to prevent overly small cards */
 }
 
 #myddpc-react-root .vehicle-discovery-card:hover {
@@ -761,7 +765,7 @@
 /* Vehicle Card Image Container */
 #myddpc-react-root .vehicle-card-image-container {
     position: relative;
-    height: 12rem;
+    height: 10rem;
     background: #f3f4f6;
     overflow: hidden;
 }
@@ -792,13 +796,22 @@
     padding: 1rem;
 }
 
+/* Vehicle Card Content Container - Flex grow to fill available space */
+#myddpc-react-root .vehicle-discovery-card .p-5 {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: space-between;
+}
+
 /* Vehicle Card Title */
 #myddpc-react-root .vehicle-card-title {
     font-size: 1.125rem;
     font-weight: 500;
     color: #111827;
-    margin-bottom: 0.75rem;
-    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -808,17 +821,18 @@
 /* Vehicle Card Specifications */
 #myddpc-react-root .vehicle-card-specs {
     margin-bottom: 1rem;
+    flex-grow: 1;
 }
 
 #myddpc-react-root .vehicle-card-specs > div {
     display: flex;
     justify-content: space-between;
     font-size: 0.875rem;
-    line-height: 1.4;
+    line-height: 1.3;
 }
 
 #myddpc-react-root .vehicle-card-specs > div:not(:last-child) {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.375rem;
 }
 
 #myddpc-react-root .vehicle-card-specs span:first-child {
@@ -835,6 +849,7 @@
     display: flex;
     gap: 0.5rem;
     margin-top: auto;
+    flex-shrink: 0;
 }
 
 #myddpc-react-root .vehicle-card-actions button {
@@ -900,7 +915,7 @@
 @media (min-width: 768px) and (max-width: 1279px) {
     #myddpc-react-root .vehicle-discovery-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1.25rem;
+        gap: 1rem;
     }
 }
 
@@ -1228,6 +1243,7 @@
 @media (max-width: 1023px) {
     #myddpc-react-root .vehicle-discovery-card {
         margin-bottom: 1rem;
+        min-height: 550px; /* Slightly smaller minimum height for tablets */
     }
     
     #myddpc-react-root .vehicle-card-image-container {
@@ -1244,6 +1260,78 @@
     }
 }
 
+/* List view button styling to match card view */
+#myddpc-react-root .vehicle-card-list-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+#myddpc-react-root .vehicle-card-list-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+}
+
+#myddpc-react-root .vehicle-card-list-actions button svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Ensure consistent button styling between card and list views */
+#myddpc-react-root .vehicle-card-list-actions button.bg-red-600 {
+    background-color: #DC2626;
+}
+
+#myddpc-react-root .vehicle-card-list-actions button.bg-red-600:hover {
+    background-color: #B91C1C;
+}
+
+#myddpc-react-root .vehicle-card-list-actions button.bg-gray-100 {
+    background-color: #F3F4F6;
+}
+
+#myddpc-react-root .vehicle-card-list-actions button.bg-gray-100:hover {
+    background-color: #E5E7EB;
+}
+
+#myddpc-react-root .vehicle-card-list-actions button.bg-green-100 {
+    background-color: #D1FAE5;
+}
+
+#myddpc-react-root .vehicle-card-list-actions button.text-green-700 {
+    color: #065F46;
+}
+
+#myddpc-react-root .vehicle-card-list-actions button.border-green-300 {
+    border-color: #6EE7B7;
+}
+
+/* Responsive adjustments for list view buttons */
+@media (max-width: 767px) {
+    #myddpc-react-root .vehicle-card-list-actions {
+        flex-direction: row;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+    
+    #myddpc-react-root .vehicle-card-list-actions button {
+        min-width: 2.5rem;
+        min-height: 2.5rem;
+        padding: 0.5rem;
+    }
+}
+
 @media (max-width: 767px) {
     #myddpc-react-root .discover-view-grid {
         grid-template-columns: 1fr;
@@ -1257,6 +1345,7 @@
     
     #myddpc-react-root .vehicle-discovery-card {
         margin-bottom: 1rem;
+        min-height: 500px; /* Smaller minimum height for mobile */
     }
     
     #myddpc-react-root .vehicle-card-image-container {
@@ -1472,6 +1561,179 @@
 
 
 
+/* Main Profile Layout */
+#myddpc-react-root .profile-layout-grid {
+    display: flex;
+    flex-wrap: wrap; /* Allows wrapping on smaller screens */
+    gap: 1.5rem; /* 24px */
+    align-items: flex-start;
+}
+
+#myddpc-react-root .profile-avatar-column {
+    flex: 0 0 128px; /* Fixed width for the avatar column (128px) */
+}
+
+#myddpc-react-root .profile-info-column {
+    flex: 1; /* Takes up the remaining space */
+    min-width: 0; /* Prevents flex item from overflowing */
+}
+
+/* New Avatar Sizing & Styling */
+#myddpc-react-root .avatar-container {
+    position: relative;
+    width: 128px;
+    height: 128px;
+}
+
+#myddpc-react-root .profile-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 9999px; /* Circular */
+    object-fit: cover; /* Prevents image stretching */
+    border: 3px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+#myddpc-react-root .avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 9999px;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+#myddpc-react-root .avatar-container:hover .avatar-overlay {
+    opacity: 1;
+}
+
+/* Grid within the info column for alignment */
+#myddpc-react-root .profile-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+/* Styling for labels and values */
+#myddpc-react-root .profile-info-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280; /* text-gray-500 */
+    margin-bottom: 0.25rem;
+}
+
+#myddpc-react-root .profile-info-value {
+    font-size: 1rem;
+    color: #111827; /* text-gray-900 */
+}
+
+#myddpc-react-root .profile-info-value-lg {
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 600;
+    color: #111827; /* text-gray-900 */
+}
+
+#myddpc-react-root .col-span-2 {
+    grid-column: span 2 / span 2;
+}
+
+/* Input field styling */
+#myddpc-react-root .profile-input, 
+#myddpc-react-root .profile-textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db; /* border-gray-300 */
+    border-radius: 0.375rem;
+    background-color: #F9FAFB;
+    transition: all 0.2s ease;
+}
+
+#myddpc-react-root .profile-input:focus, 
+#myddpc-react-root .profile-textarea:focus {
+    border-color: #DC2626; /* theme red */
+    box-shadow: 0 0 0 1px #DC2626;
+    outline: none;
+}
+
+/* Generic Button Styles */
+#myddpc-react-root .myddpc-btn-primary {
+    background-color: #DC2626; /* theme red */
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+#myddpc-react-root .myddpc-btn-primary:hover {
+    background-color: #B91C1C;
+}
+
+#myddpc-react-root .myddpc-btn-secondary {
+    background-color: #F3F4F6; /* gray-100 */
+    color: #111827;
+    padding: 0.5rem 1rem;
+    border: 1px solid #D1D5DB;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+#myddpc-react-root .myddpc-btn-secondary:hover {
+    background-color: #E5E7EB;
+}
+
+/* Button styles */
+#myddpc-react-root .myddpc-btn-primary {
+    background-color: #dc2626;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#myddpc-react-root .myddpc-btn-primary:hover {
+    background-color: #b91c1c;
+}
+
+#myddpc-react-root .myddpc-btn-secondary {
+    background-color: white;
+    color: #374151;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    border: 1px solid #d1d5db;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#myddpc-react-root .myddpc-btn-secondary:hover {
+    background-color: #f9fafb;
+}
+
+/* Edit button */
+#myddpc-react-root .edit-btn {
+    color: #dc2626;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+#myddpc-react-root .edit-btn:hover {
+    background: #fef2f2;
+}
+
 /* Avatar hover effects */
 #myddpc-react-root .avatar-container {
     position: relative;
@@ -1500,4 +1762,39 @@
     align-items: center;
     gap: 0.5rem;
     margin-top: 0.75rem;
+}
+
+/* Mobile responsiveness for profile layout */
+@media (max-width: 768px) {
+    #myddpc-react-root .profile-layout-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    #myddpc-react-root .profile-info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    #myddpc-react-root .profile-avatar-column {
+        align-items: center;
+    }
+}
+
+/* --- Align trim dropdown and action buttons in list view --- */
+#myddpc-react-root .vehicle-card-list-trim-select {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid #D1D5DB;
+    padding: 0.5rem 0.75rem; /* px-3 py-2 */
+    font-size: 0.875rem;    /* text-sm */
+    transition: all 0.2s ease-in-out;
+    box-sizing: border-box;
+}
+#myddpc-react-root .vehicle-card-list-trim-select:focus {
+    outline: none;
+    border-color: #EF4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+#myddpc-react-root .vehicle-card-list-actions button {
+    min-height: 2.5rem; /* Match dropdown height (py-2) */
 }
