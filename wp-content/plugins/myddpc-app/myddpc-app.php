@@ -510,15 +510,37 @@ function get_myddpc_model_trims_callback($request) {
 
 function myddpc_handle_user_registration(WP_REST_Request $request) {
     $params = $request->get_json_params();
+    
+    // Validate required parameters exist
+    if (!isset($params['email']) || !isset($params['username']) || !isset($params['password'])) {
+        return new WP_Error('missing_parameters', 'Email, username, and password are required.', ['status' => 400]);
+    }
+    
     $email = sanitize_email($params['email']);
     $username = sanitize_user($params['username']);
     $password = $params['password'];
 
-    if (empty($email) || !is_email($email)) return new WP_Error('invalid_email', 'Invalid email address.', ['status' => 400]);
-    if (empty($username)) return new WP_Error('invalid_username', 'Username is required.', ['status' => 400]);
-    if (empty($password)) return new WP_Error('invalid_password', 'Password is required.', ['status' => 400]);
-    if (username_exists($username)) return new WP_Error('username_exists', 'Username already exists.', ['status' => 409]);
-    if (email_exists($email)) return new WP_Error('email_exists', 'Email address is already in use.', ['status' => 409]);
+    // Enhanced validation
+    if (empty($email) || !is_email($email)) {
+        return new WP_Error('invalid_email', 'Invalid email address format.', ['status' => 400]);
+    }
+    
+    if (empty($username) || strlen($username) < 3) {
+        return new WP_Error('invalid_username', 'Username must be at least 3 characters long.', ['status' => 400]);
+    }
+    
+    if (empty($password) || strlen($password) < 6) {
+        return new WP_Error('invalid_password', 'Password must be at least 6 characters long.', ['status' => 400]);
+    }
+    
+    // Check for existing users
+    if (username_exists($username)) {
+        return new WP_Error('username_exists', 'Username already exists.', ['status' => 409]);
+    }
+    
+    if (email_exists($email)) {
+        return new WP_Error('email_exists', 'Email address is already in use.', ['status' => 409]);
+    }
 
     $user_id = wp_create_user($username, $password, $email);
     if (is_wp_error($user_id)) return new WP_Error('registration_failed', $user_id->get_error_message(), ['status' => 500]);

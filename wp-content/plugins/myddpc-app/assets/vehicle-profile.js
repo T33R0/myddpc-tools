@@ -116,12 +116,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
+            // Validate vehicle ID
+            if (!/^\d+$/.test(vehicleId)) {
+                throw new Error('Invalid vehicle ID format');
+            }
+
             // Use the localized REST URL from WordPress
             const response = await fetch(`${myddpcAppData.rest_url}myddpc/v2/vehicle/${vehicleId}`);
+            
             if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.statusText}`);
+                if (response.status === 404) {
+                    throw new Error('Vehicle not found. Please check the URL and try again.');
+                } else if (response.status >= 500) {
+                    throw new Error('Server error. Please try again later.');
+                } else {
+                    throw new Error(`Network error: ${response.status} ${response.statusText}`);
+                }
             }
+            
             const data = await response.json();
+            
+            // Validate response data
+            if (!data || typeof data !== 'object') {
+                throw new Error('Invalid response format from server');
+            }
 
             // --- Populate the page with data ---
             // At-a-Glance section
@@ -174,7 +192,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Failed to load vehicle data:', error);
-            preloader.innerHTML = `<p>Error: Could not load vehicle data. Please check the console for details.</p>`;
+            
+            // Show user-friendly error message
+            let errorMessage = 'An error occurred while loading vehicle data.';
+            
+            if (error.message.includes('Vehicle not found')) {
+                errorMessage = 'Vehicle not found. Please check the URL and try again.';
+            } else if (error.message.includes('Server error')) {
+                errorMessage = 'Server error. Please try again later.';
+            } else if (error.message.includes('Invalid vehicle ID')) {
+                errorMessage = 'Invalid vehicle ID. Please check the URL.';
+            } else if (error.message.includes('Network error')) {
+                errorMessage = 'Network error. Please check your connection and try again.';
+            }
+            
+            preloader.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <p style="color: #dc2626; margin-bottom: 1rem;">${errorMessage}</p>
+                    <button onclick="window.history.back()" style="background: #dc2626; color: white; padding: 0.5rem 1rem; border: none; border-radius: 0.375rem; cursor: pointer;">
+                        Go Back
+                    </button>
+                </div>
+            `;
         }
     };
 

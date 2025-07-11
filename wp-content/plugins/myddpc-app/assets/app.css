@@ -930,6 +930,16 @@
     animation: spin 1s linear infinite;
 }
 
+/* Loading skeleton animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+#myddpc-react-root .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* Enhanced Vehicle Discovery Styles */
 #myddpc-react-root .rounded-xl {
     border-radius: 0.75rem;
@@ -1797,4 +1807,29 @@
 }
 #myddpc-react-root .vehicle-card-list-actions button {
     min-height: 2.5rem; /* Match dropdown height (py-2) */
+}
+
+/* --- Corrected Header Layout (Flexbox) --- */
+#myddpc-react-root header .max-w-7xl {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+#myddpc-react-root header .flex.items-center.space-x-3 {
+    flex-shrink: 0;
+}
+
+#myddpc-react-root header nav {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
+
+#myddpc-react-root header .absolute.right-4 {
+    position: static;
+    flex-shrink: 0;
 }

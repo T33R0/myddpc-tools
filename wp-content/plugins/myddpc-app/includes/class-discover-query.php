@@ -39,6 +39,11 @@ class Discover_Query {
     public function get_discover_filter_options() {
         $options = [];
         foreach ($this->filter_columns as $column) {
+            // Use whitelist approach for column names to prevent SQL injection
+            if (!in_array($column, $this->filter_columns)) {
+                continue; // Skip invalid columns
+            }
+            
             $sql_column_name = '`' . esc_sql(trim($column)) . '`';
             // Sanitize the key for JSON output (e.g., 'Body type' becomes 'body_type')
             $json_key = strtolower(str_replace([' ', '(', ')'], ['_', '', ''], $column));
@@ -82,8 +87,11 @@ class Discover_Query {
                 // Check if the filter key is valid and has a non-empty value
                 if (isset($all_filter_keys[$key]) && !empty($value)) {
                     $column_name = $all_filter_keys[$key];
-                    $where_clauses[] = "`" . esc_sql($column_name) . "` = %s";
-                    $params[] = $value;
+                    // Additional security: ensure column name is in our whitelist
+                    if (in_array($column_name, $this->filter_columns) || in_array($column_name, $this->allowed_sort_columns)) {
+                        $where_clauses[] = "`" . esc_sql($column_name) . "` = %s";
+                        $params[] = $value;
+                    }
                 }
             }
         }
